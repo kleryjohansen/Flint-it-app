@@ -7,9 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EE9859D22FFFB530007EB100 /* wathpairworkout Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = EE9859D12FFFB530007EB100 /* wathpairworkout Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EE9859D22FFFB530007EB100 /* watchBuild.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = EE9859D12FFFB530007EB100 /* watchBuild.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE9859FB30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
+		EE985C1630050D12007EB100 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE985C0D30050D12007EB100 /* DesignSystem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,7 +30,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				EE9859D22FFFB530007EB100 /* wathpairworkout Watch App.app in Embed Watch Content */,
+				EE9859D22FFFB530007EB100 /* watchBuild.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -37,21 +38,22 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		EE9859BC2FFFB45F007EB100 /* watchpairworkout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchpairworkout.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE9859CC2FFFB530007EB100 /* wathpairworkout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = wathpairworkout.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		EE9859D12FFFB530007EB100 /* wathpairworkout Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "wathpairworkout Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE9859BC2FFFB45F007EB100 /* FlintItApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlintItApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE9859CC2FFFB530007EB100 /* phoneBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = phoneBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE9859D12FFFB530007EB100 /* watchBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMetrics.swift; sourceTree = "<group>"; };
+		EE985C0D30050D12007EB100 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		EE9859BE2FFFB45F007EB100 /* watchpairworkout */ = {
+		EE9859BE2FFFB45F007EB100 /* phoneBuild */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = watchpairworkout;
+			path = phoneBuild;
 			sourceTree = "<group>";
 		};
-		EE9859D52FFFB530007EB100 /* wathpairworkout Watch App */ = {
+		EE9859D52FFFB530007EB100 /* watchBuild */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "wathpairworkout Watch App";
+			path = watchBuild;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -77,8 +79,8 @@
 		EE9859B32FFFB45F007EB100 = {
 			isa = PBXGroup;
 			children = (
-				EE9859BE2FFFB45F007EB100 /* watchpairworkout */,
-				EE9859D52FFFB530007EB100 /* wathpairworkout Watch App */,
+				EE9859BE2FFFB45F007EB100 /* phoneBuild */,
+				EE9859D52FFFB530007EB100 /* watchBuild */,
 				EE9859BD2FFFB45F007EB100 /* Products */,
 				EE9859E32FFFB67B007EB100 /* Shared */,
 			);
@@ -87,9 +89,9 @@
 		EE9859BD2FFFB45F007EB100 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EE9859BC2FFFB45F007EB100 /* watchpairworkout.app */,
-				EE9859CC2FFFB530007EB100 /* wathpairworkout.app */,
-				EE9859D12FFFB530007EB100 /* wathpairworkout Watch App.app */,
+				EE9859BC2FFFB45F007EB100 /* FlintItApp.app */,
+				EE9859CC2FFFB530007EB100 /* phoneBuild.app */,
+				EE9859D12FFFB530007EB100 /* watchBuild.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -98,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */,
+				EE985C0D30050D12007EB100 /* DesignSystem.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -105,9 +108,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EE9859BB2FFFB45F007EB100 /* watchpairworkout */ = {
+		EE9859BB2FFFB45F007EB100 /* FlintItApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "watchpairworkout" */;
+			buildConfigurationList = EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "FlintItApp" */;
 			buildPhases = (
 				EE9859B82FFFB45F007EB100 /* Sources */,
 				EE9859B92FFFB45F007EB100 /* Frameworks */,
@@ -118,18 +121,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				EE9859BE2FFFB45F007EB100 /* watchpairworkout */,
+				EE9859BE2FFFB45F007EB100 /* phoneBuild */,
 			);
-			name = watchpairworkout;
+			name = FlintItApp;
 			packageProductDependencies = (
 			);
 			productName = watchpairworkout;
-			productReference = EE9859BC2FFFB45F007EB100 /* watchpairworkout.app */;
+			productReference = EE9859BC2FFFB45F007EB100 /* FlintItApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		EE9859CB2FFFB530007EB100 /* wathpairworkout */ = {
+		EE9859CB2FFFB530007EB100 /* phoneBuild */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EE9859E02FFFB531007EB100 /* Build configuration list for PBXNativeTarget "wathpairworkout" */;
+			buildConfigurationList = EE9859E02FFFB531007EB100 /* Build configuration list for PBXNativeTarget "phoneBuild" */;
 			buildPhases = (
 				EE9859CA2FFFB530007EB100 /* Resources */,
 				EE9859DF2FFFB531007EB100 /* Embed Watch Content */,
@@ -139,16 +142,16 @@
 			dependencies = (
 				EE9859D42FFFB530007EB100 /* PBXTargetDependency */,
 			);
-			name = wathpairworkout;
+			name = phoneBuild;
 			packageProductDependencies = (
 			);
 			productName = wathpairworkout;
-			productReference = EE9859CC2FFFB530007EB100 /* wathpairworkout.app */;
+			productReference = EE9859CC2FFFB530007EB100 /* phoneBuild.app */;
 			productType = "com.apple.product-type.application.watchapp2-container";
 		};
-		EE9859D02FFFB530007EB100 /* wathpairworkout Watch App */ = {
+		EE9859D02FFFB530007EB100 /* watchBuild */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EE9859DC2FFFB531007EB100 /* Build configuration list for PBXNativeTarget "wathpairworkout Watch App" */;
+			buildConfigurationList = EE9859DC2FFFB531007EB100 /* Build configuration list for PBXNativeTarget "watchBuild" */;
 			buildPhases = (
 				EE9859CD2FFFB530007EB100 /* Sources */,
 				EE9859CE2FFFB530007EB100 /* Frameworks */,
@@ -159,13 +162,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				EE9859D52FFFB530007EB100 /* wathpairworkout Watch App */,
+				EE9859D52FFFB530007EB100 /* watchBuild */,
 			);
-			name = "wathpairworkout Watch App";
+			name = watchBuild;
 			packageProductDependencies = (
 			);
 			productName = "wathpairworkout Watch App";
-			productReference = EE9859D12FFFB530007EB100 /* wathpairworkout Watch App.app */;
+			productReference = EE9859D12FFFB530007EB100 /* watchBuild.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -189,7 +192,7 @@
 					};
 				};
 			};
-			buildConfigurationList = EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "watchpairworkout" */;
+			buildConfigurationList = EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "FlintItApp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -203,9 +206,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EE9859BB2FFFB45F007EB100 /* watchpairworkout */,
-				EE9859CB2FFFB530007EB100 /* wathpairworkout */,
-				EE9859D02FFFB530007EB100 /* wathpairworkout Watch App */,
+				EE9859BB2FFFB45F007EB100 /* FlintItApp */,
+				EE9859CB2FFFB530007EB100 /* phoneBuild */,
+				EE9859D02FFFB530007EB100 /* watchBuild */,
 			);
 		};
 /* End PBXProject section */
@@ -239,6 +242,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE985C1630050D12007EB100 /* DesignSystem.swift in Sources */,
 				EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -256,7 +260,7 @@
 /* Begin PBXTargetDependency section */
 		EE9859D42FFFB530007EB100 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = EE9859D02FFFB530007EB100 /* wathpairworkout Watch App */;
+			target = EE9859D02FFFB530007EB100 /* watchBuild */;
 			targetProxy = EE9859D32FFFB530007EB100 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -556,7 +560,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "watchpairworkout" */ = {
+		EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "FlintItApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE9859C52FFFB461007EB100 /* Debug */,
@@ -565,7 +569,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "watchpairworkout" */ = {
+		EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "FlintItApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE9859C82FFFB461007EB100 /* Debug */,
@@ -574,7 +578,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EE9859DC2FFFB531007EB100 /* Build configuration list for PBXNativeTarget "wathpairworkout Watch App" */ = {
+		EE9859DC2FFFB531007EB100 /* Build configuration list for PBXNativeTarget "watchBuild" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE9859DD2FFFB531007EB100 /* Debug */,
@@ -583,7 +587,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EE9859E02FFFB531007EB100 /* Build configuration list for PBXNativeTarget "wathpairworkout" */ = {
+		EE9859E02FFFB531007EB100 /* Build configuration list for PBXNativeTarget "phoneBuild" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE9859E12FFFB531007EB100 /* Debug */,

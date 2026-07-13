@@ -10,7 +10,12 @@ class iOSConnectivityService: NSObject, ObservableObject, MCSessionDelegate, MCN
     @Published var isPeerConnected = false
     @Published var watchMetrics = WorkoutMetrics()
     
+    @Published var discoveredPeers: [MCPeerID] = []
+    @Published var incomingInvite: IncomingInvite?
+    
     var onReceivedDiscoveryToken: ((NIDiscoveryToken) -> Void)?
+    var onReceivedWorkoutStart: (() -> Void)?
+    var onReceivedWorkoutEnd: (() -> Void)?
     
     private let serviceType = "workout-pair"
     private let myPeerID = MCPeerID(displayName: UIDevice.current.name)
@@ -41,11 +46,45 @@ class iOSConnectivityService: NSObject, ObservableObject, MCSessionDelegate, MCN
         
         advertiser = MCNearbyServiceAdvertiser(peer: myPeerID, discoveryInfo: nil, serviceType: serviceType)
         advertiser?.delegate = self
-        advertiser?.startAdvertisingPeer()
-        
+    }
+    
+    func startBrowsing() {
         browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
         browser?.delegate = self
         browser?.startBrowsingForPeers()
+        
+        advertiser?.startAdvertisingPeer()
+        discoveredPeers.removeAll()
+    }
+    
+    func stopBrowsing() {
+        browser?.stopBrowsingForPeers()
+        advertiser?.stopAdvertisingPeer()
+    }
+    
+    func invitePeer(_ peerID: MCPeerID) {
+        guard let mcSession = mcSession else { return }
+        browser?.invitePeer(peerID, to: mcSession, withContext: nil, timeout: 15)
+    }
+    
+    func acceptInvite() {
+        if let invite = incomingInvite {
+            invite.handler(true, mcSession)
+        }
+        incomingInvite = nil
+    }
+    
+    func declineInvite() {
+        if let invite = incomingInvite {
+            invite.handler(false, nil)
+        }
+        incomingInvite = nil
+    }
+    
+    func disconnect() {
+        mcSession?.disconnect()
+        isPeerConnected = false
+        discoveredPeers.removeAll()
     }
     
     func notifyWatchToStartWorkout() {
@@ -59,9 +98,24 @@ class iOSConnectivityService: NSObject, ObservableObject, MCSessionDelegate, MCN
         })
     }
     
+    func notifyPeerToStartWorkout() {
+        guard let mcSession = mcSession, !mcSession.connectedPeers.isEmpty else { return }
+        let message = ["command": "START_WORKOUT"]
+        if let data = try? JSONEncoder().encode(message) {
+            try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
+        }
+    }
+    
+    func notifyPeerToEndWorkout() {
+        guard let mcSession = mcSession, !mcSession.connectedPeers.isEmpty else { return }
+        let message = ["command": "END_WORKOUT"]
+        if let data = try? JSONEncoder().encode(message) {
+            try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
+        }
+    }
+    
     func sendToken(_ token: NIDiscoveryToken) {
         guard let mcSession = mcSession, !mcSession.connectedPeers.isEmpty else { return }
-        
         if let data = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
             try? mcSession.send(data, toPeers: mcSession.connectedPeers, with: .reliable)
         }
@@ -92,8 +146,23 @@ class iOSConnectivityService: NSObject, ObservableObject, MCSessionDelegate, MCN
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+        // First try decoding as a token
         if let token = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NIDiscoveryToken.self, from: data) {
             onReceivedDiscoveryToken?(token)
+            return
+        }
+        
+        // Then try decoding as a dictionary message
+        if let message = try? JSONDecoder().decode([String: String].self, from: data) {
+            if message["command"] == "START_WORKOUT" {
+                DispatchQueue.main.async {
+                    self.onReceivedWorkoutStart?()
+                }
+            } else if message["command"] == "END_WORKOUT" {
+                DispatchQueue.main.async {
+                    self.onReceivedWorkoutEnd?()
+                }
+            }
         }
     }
     
@@ -103,12 +172,23 @@ class iOSConnectivityService: NSObject, ObservableObject, MCSessionDelegate, MCN
     
     // MARK: - MCNearbyServiceAdvertiserDelegate
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
-        invitationHandler(true, mcSession)
+        DispatchQueue.main.async {
+            self.incomingInvite = IncomingInvite(peerID: peerID, handler: invitationHandler)
+        }
     }
     
     // MARK: - MCNearbyServiceBrowserDelegate
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
-        browser.invitePeer(peerID, to: mcSession!, withContext: nil, timeout: 10)
+        DispatchQueue.main.async {
+            if !self.discoveredPeers.contains(peerID) {
+                self.discoveredPeers.append(peerID)
+            }
+        }
     }
-    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {}
+    
+    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
+        DispatchQueue.main.async {
+            self.discoveredPeers.removeAll { $0 == peerID }
+        }
+    }
 }
