@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EE1B4B223006199B0080CC08 /* FlintColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B21300619990080CC08 /* FlintColors.swift */; };
+		EE1B4B233006199B0080CC08 /* FlintColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B21300619990080CC08 /* FlintColors.swift */; };
+		EE1B4B25300619B10080CC08 /* FlintModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B24300619AF0080CC08 /* FlintModifiers.swift */; };
+		EE1B4B26300619B10080CC08 /* FlintModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B24300619AF0080CC08 /* FlintModifiers.swift */; };
+		EE1B4B28300619C60080CC08 /* FlintButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */; };
+		EE1B4B29300619C60080CC08 /* FlintButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */; };
 		EE9859D22FFFB530007EB100 /* watchBuild.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = EE9859D12FFFB530007EB100 /* watchBuild.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE9859FB30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
@@ -38,6 +44,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		EE1B4B21300619990080CC08 /* FlintColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlintColors.swift; sourceTree = "<group>"; };
+		EE1B4B24300619AF0080CC08 /* FlintModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlintModifiers.swift; sourceTree = "<group>"; };
+		EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlintButtonStyles.swift; sourceTree = "<group>"; };
+		EE1B4B7B300621300080CC08 /* FlintItApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlintItApp.entitlements; sourceTree = "<group>"; };
 		EE9859BC2FFFB45F007EB100 /* FlintItApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlintItApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859CC2FFFB530007EB100 /* phoneBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = phoneBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859D12FFFB530007EB100 /* watchBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -79,6 +89,7 @@
 		EE9859B32FFFB45F007EB100 = {
 			isa = PBXGroup;
 			children = (
+				EE1B4B7B300621300080CC08 /* FlintItApp.entitlements */,
 				EE9859BE2FFFB45F007EB100 /* phoneBuild */,
 				EE9859D52FFFB530007EB100 /* watchBuild */,
 				EE9859BD2FFFB45F007EB100 /* Products */,
@@ -99,6 +110,9 @@
 		EE9859E32FFFB67B007EB100 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */,
+				EE1B4B24300619AF0080CC08 /* FlintModifiers.swift */,
+				EE1B4B21300619990080CC08 /* FlintColors.swift */,
 				EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */,
 				EE985C0D30050D12007EB100 /* DesignSystem.swift */,
 			);
@@ -242,8 +256,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE1B4B28300619C60080CC08 /* FlintButtonStyles.swift in Sources */,
 				EE985C1630050D12007EB100 /* DesignSystem.swift in Sources */,
 				EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */,
+				EE1B4B233006199B0080CC08 /* FlintColors.swift in Sources */,
+				EE1B4B25300619B10080CC08 /* FlintModifiers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,7 +268,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE1B4B26300619B10080CC08 /* FlintModifiers.swift in Sources */,
+				EE1B4B223006199B0080CC08 /* FlintColors.swift in Sources */,
 				EE9859FB30020B8D007EB100 /* WorkoutMetrics.swift in Sources */,
+				EE1B4B29300619C60080CC08 /* FlintButtonStyles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -392,6 +412,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8V4LVBCX83;
@@ -424,6 +445,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8V4LVBCX83;

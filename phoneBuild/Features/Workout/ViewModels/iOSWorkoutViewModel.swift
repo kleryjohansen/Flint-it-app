@@ -4,8 +4,8 @@ import NearbyInteraction
 import MultipeerConnectivity
 
 class iOSWorkoutViewModel: NSObject, ObservableObject, NISessionDelegate {
-    @Published var appState: AppState = .discovery
-    @Published var selectedWorkoutType: WorkoutType = .functionalStrengthTraining
+    @Published var appState: AppState = .home
+    @Published var selectedWorkoutType: WorkoutType = .running
     @Published var isChallengeMode: Bool = false
     
     @Published var heartRate: Double = 0.0
@@ -15,7 +15,7 @@ class iOSWorkoutViewModel: NSObject, ObservableObject, NISessionDelegate {
     @Published var connectivityService = iOSConnectivityService()
     
     @Published var pastWorkouts: [PastWorkout] = [
-        PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .functionalStrengthTraining, duration: 2400, avgHeartRate: 135.0),
+        PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .weightlifting, duration: 2400, avgHeartRate: 135.0),
         PastWorkout(date: Date().addingTimeInterval(-86400 * 5), type: .running, duration: 1800, avgHeartRate: 155.0)
     ]
     
@@ -41,13 +41,13 @@ class iOSWorkoutViewModel: NSObject, ObservableObject, NISessionDelegate {
             .sink { [weak self] connected in
                 guard let self = self else { return }
                 if connected {
-                    if self.appState == .discovery {
-                        self.appState = .workoutSelection
+                    if self.appState == .home || self.appState == .searching {
+                        self.appState = .workoutSetup
                         self.connectivityService.stopBrowsing()
                     }
                 } else {
-                    if self.appState == .connected || self.appState == .workoutSelection {
-                        self.appState = .discovery
+                    if self.appState == .workoutSetup || self.appState == .syncing || self.appState == .foundPartner || self.appState == .navigating {
+                        self.appState = .home
                         self.connectivityService.startBrowsing()
                     }
                 }
@@ -80,7 +80,7 @@ class iOSWorkoutViewModel: NSObject, ObservableObject, NISessionDelegate {
     }
     
     func proceedToConnected() {
-        appState = .connected
+        appState = .syncing
     }
     
     func startWorkout() {
@@ -103,7 +103,7 @@ class iOSWorkoutViewModel: NSObject, ObservableObject, NISessionDelegate {
     }
     
     func rematch() {
-        appState = .workoutSelection
+        appState = .workoutSetup
     }
     
     func addFriend() {
