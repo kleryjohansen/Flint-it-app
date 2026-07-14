@@ -73,6 +73,7 @@ public struct MultipeerMessage: Codable {
         case niTokenACK  // Acknowledgment that peer received our token
         case sendChallenge // Sending a challenge
         case acceptChallenge // Accepting a challenge
+        case endWorkout // Partner requested to end workout session
     }
     public let type: MessageType
     public let payload: Data

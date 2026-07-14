@@ -35,28 +35,69 @@ struct ContentView: View {
                 
             case .activeWorkout:
                 Group {
-                    Text("Active Workout Dashboard (Ready to Track)")
-                        .font(.title2.bold())
-                        .foregroundColor(.white)
-                    
-                    if let challenge = viewModel.selectedChallenge ?? viewModel.receivedChallenge {
-                        Text("Active Challenge: \(challenge.challengeName)")
-                            .font(.headline)
-                            .foregroundColor(.orange)
-                            .padding(.top, 8)
+                    VStack(spacing: 24) {
+                        Text("ACTIVE WORKOUT")
+                            .font(.caption.bold())
+                            .foregroundColor(.white.opacity(0.6))
+                            .tracking(2)
                         
-                        Text("Tracking: \(challenge.metricType == "distance" ? "Distance (UWB)" : "Calories Burned (Apple Watch)")")
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.top, 4)
+                        Text(viewModel.countdownText)
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .monospacedDigit()
+                        
+                        if let challenge = viewModel.selectedChallenge ?? viewModel.receivedChallenge {
+                            Text(challenge.challengeName)
+                                .font(.title3.bold())
+                                .foregroundColor(.orange)
+                            
+                            VStack(spacing: 16) {
+                                // Live heart rate from Watch
+                                HStack(spacing: 12) {
+                                    Image(systemName: "heart.fill")
+                                        .foregroundColor(.red)
+                                        .font(.title2)
+                                    Text(viewModel.heartRate > 0 ? "\(Int(viewModel.heartRate)) BPM" : "-- BPM")
+                                        .font(.title2.bold())
+                                        .foregroundColor(.white)
+                                }
+                                
+                                // Live metrics based on challenge type
+                                if challenge.metricType == "distance" {
+                                    // UWB Distance tracking
+                                    if let distance = viewModel.niManager.distance {
+                                        Text(String(format: "%.1f meters", distance))
+                                            .font(.title.bold())
+                                            .foregroundColor(.white)
+                                    } else {
+                                        Text("Searching for partner...")
+                                            .font(.headline)
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                } else {
+                                    // Calories Burned (Apple Watch)
+                                    VStack(spacing: 4) {
+                                        Text(String(format: "%.1f", viewModel.watchCalories))
+                                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                                            .foregroundColor(.orange)
+                                        Text("kcal burned")
+                                            .font(.caption)
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
+                            }
+                            .padding(20)
+                            .frame(maxWidth: .infinity)
+                            .flintGlassCard()
+                        }
+                        
+                        Button("Finish Workout") {
+                            viewModel.endWorkout()
+                        }
+                        .buttonStyle(FlintPrimaryButtonStyle(isWhite: false))
+                        .padding(.top, 20)
                     }
-                    
-                    Button("Finish Workout") {
-                        viewModel.appState = .results
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .padding(.top, 40)
+                    .padding(24)
                 }
                 .flintVibrantBackground()
                 

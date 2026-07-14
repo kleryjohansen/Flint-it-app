@@ -113,6 +113,15 @@ public final class NearbyInteractionManager: NSObject {
         let angle = atan2(Double(direction.x), Double(-direction.z))
         return angle * (180.0 / .pi)
     }
+
+    public func setSimulatedDistance(_ value: Double?) {
+        DispatchQueue.main.async {
+            self.distance = value
+            if let dist = value {
+                self.onProximityUpdate?(dist)
+            }
+        }
+    }
 }
 
 // MARK: - NISessionDelegate

@@ -26,10 +26,12 @@ struct GlassCardModifier: ViewModifier {
             .background(
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                     .fill(Color.flintGlass)
+                    #if os(iOS)
                     .background(
                         VisualEffectBlur(blurStyle: .systemUltraThinMaterialDark)
                             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                     )
+                    #endif
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
@@ -38,7 +40,10 @@ struct GlassCardModifier: ViewModifier {
     }
 }
 
-// Helper untuk efek blur Apple bawaan (Glassmorphism)
+// Helper untuk efek blur Apple bawaan (Glassmorphism) - Hanya untuk iOS karena watchOS tidak mendukung UIKit
+#if os(iOS)
+import UIKit
+
 struct VisualEffectBlur: UIViewRepresentable {
     var blurStyle: UIBlurEffect.Style
     func makeUIView(context: Context) -> UIVisualEffectView {
@@ -46,6 +51,7 @@ struct VisualEffectBlur: UIViewRepresentable {
     }
     func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
 }
+#endif
 
 // Mempermudah pemanggilan di file UI
 extension View {

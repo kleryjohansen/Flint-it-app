@@ -3,7 +3,8 @@ import HealthKit
 import WatchConnectivity
 import Combine
 
-class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDelegate, WCSessionDelegate {
+class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDelegate {
+    static let shared = WatchWorkoutService()
     
     @Published var metrics = WorkoutMetrics()
     
@@ -14,40 +15,49 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     private var timer: Timer?
     private var countdown = 0
     
-    var wcSession: WCSession?
-    
     override init() {
         super.init()
-        setupWatchConnectivity()
         requestAuthorization()
     }
     
-    private func setupWatchConnectivity() {
-        if WCSession.isSupported() {
-            wcSession = WCSession.default
-            wcSession?.delegate = self
-            wcSession?.activate()
-        }
-    }
-    
-    private func requestAuthorization() {
-        let typesToShare: Set = [HKQuantityType.workoutType()]
+    func requestAuthorization() {
+        let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
+        let calorieType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+        let distanceType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
+        
+        let typesToShare: Set = [
+            HKQuantityType.workoutType(),
+            hrType,
+            calorieType,
+            distanceType
+        ]
         let typesToRead: Set = [
-            HKQuantityType.quantityType(forIdentifier: .heartRate)!
+            hrType,
+            calorieType,
+            distanceType
         ]
         
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             if !success {
-                print("HealthKit authorization failed")
+                print("HealthKit authorization failed: \(error?.localizedDescription ?? "unknown error")")
+            } else {
+                print("HealthKit authorization succeeded")
             }
         }
     }
     
-    func startWorkout() {
+    func startWorkout(sport: String = "Weightlifting") {
         guard workoutSession == nil else { return }
         
         let configuration = HKWorkoutConfiguration()
-        configuration.activityType = .functionalStrengthTraining
+        switch sport {
+        case "Running":
+            configuration.activityType = .running
+        case "Cycling":
+            configuration.activityType = .cycling
+        default:
+            configuration.activityType = .functionalStrengthTraining
+        }
         configuration.locationType = .unknown
         
         do {
@@ -67,6 +77,8 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
             
             DispatchQueue.main.async {
                 self.metrics.isWorkoutRunning = true
+                self.metrics.isDistanceMetric = (sport == "Running" || sport == "Cycling")
+                self.metrics.distance = 0.0
             }
             startTimer()
             
@@ -76,6 +88,11 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     }
     
     func endWorkout() {
+        guard workoutSession != nil else { return }
+        
+        // Notify phone that watch is stopped
+        WatchSessionManager.shared.sendWorkoutUpdate(data: ["status": "stopped"])
+        
         workoutSession?.end()
         workoutBuilder?.endCollection(withEnd: Date(), completion: { success, error in
             self.workoutBuilder?.finishWorkout(completion: { workout, error in
@@ -97,31 +114,24 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
             self.countdown += 1
             DispatchQueue.main.async {
                 self.metrics.remainingSeconds = self.countdown
-                self.syncMetricsToPhone()
+                
+                // Keep watch UI ticking, and send data to phone every 5 seconds
+                if self.countdown % 5 == 0 {
+                    self.syncMetricsToPhone()
+                }
             }
         }
     }
     
     func syncMetricsToPhone() {
-        guard let session = wcSession, session.isReachable else { return }
-        
         if let data = try? JSONEncoder().encode(metrics) {
-            session.sendMessage(["metrics": data], replyHandler: nil, errorHandler: { error in
-                print("Error sending metrics: \(error.localizedDescription)")
-            })
-        }
-    }
-    
-    // MARK: - WCSessionDelegate
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
-    
-    func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        if let command = message["command"] as? String, command == "START_WORKOUT" {
-            DispatchQueue.main.async {
-                if !self.metrics.isWorkoutRunning {
-                    self.startWorkout()
-                }
-            }
+            let payload: [String: Any] = [
+                "heartRate": self.metrics.heartRate,
+                "distance": Double(self.metrics.distance ?? 0.0),
+                "metrics": data,
+                "status": "active"
+            ]
+            WatchSessionManager.shared.sendWorkoutUpdate(data: payload)
         }
     }
     
@@ -148,6 +158,22 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                    let heartRate = statistics.mostRecentQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: HKUnit.minute())) {
                     DispatchQueue.main.async {
                         self.metrics.heartRate = heartRate
+                        self.syncMetricsToPhone()
+                    }
+                }
+            } else if quantityType == HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) {
+                if let statistics = workoutBuilder.statistics(for: quantityType),
+                   let activeEnergy = statistics.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) {
+                    DispatchQueue.main.async {
+                        self.metrics.calories = activeEnergy
+                        self.syncMetricsToPhone()
+                    }
+                }
+            } else if quantityType == HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning) {
+                if let statistics = workoutBuilder.statistics(for: quantityType),
+                   let distanceValue = statistics.sumQuantity()?.doubleValue(for: HKUnit.meter()) {
+                    DispatchQueue.main.async {
+                        self.metrics.distance = Float(distanceValue)
                         self.syncMetricsToPhone()
                     }
                 }
