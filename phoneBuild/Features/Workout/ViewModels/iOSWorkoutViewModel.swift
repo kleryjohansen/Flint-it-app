@@ -3,151 +3,211 @@ import Combine
 import NearbyInteraction
 import MultipeerConnectivity
 
-class iOSWorkoutViewModel: NSObject, ObservableObject, NISessionDelegate {
+public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published var appState: AppState = .home
     @Published var selectedWorkoutType: WorkoutType = .running
     @Published var isChallengeMode: Bool = false
     
     @Published var heartRate: Double = 0.0
     @Published var countdownText: String = "00:00"
-    @Published var distanceToPeer: Float? = nil
     
-    @Published var connectivityService = iOSConnectivityService()
+    @Published public var multipeerManager: MultipeerManager?
+    public let niManager = NearbyInteractionManager()
+    @Published public var currentRoom: RoomSession?
     
     @Published var pastWorkouts: [PastWorkout] = [
         PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .weightlifting, duration: 2400, avgHeartRate: 135.0),
         PastWorkout(date: Date().addingTimeInterval(-86400 * 5), type: .running, duration: 1800, avgHeartRate: 155.0)
     ]
     
-    private var cancellables = Set<AnyCancellable>()
-    private var niSession: NISession?
+    // Token exchange state
+    private var hasSentOwnToken = false
+    private var pendingPeerToken: Data?
+    private var hasReceivedPeerToken = false
+    private var hasSentTokenACK = false
     
-    override init() {
+    public override init() {
         super.init()
-        
-        // Start browsing automatically on init for discovery
-        connectivityService.startBrowsing()
-        
-        connectivityService.$watchMetrics
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] metrics in
-                self?.heartRate = metrics.heartRate
-                self?.formatCountdownText(seconds: metrics.remainingSeconds)
+        setupMultipeerManager()
+    }
+    
+    public func setupMultipeerManager() {
+        let userName = UserDefaults.standard.string(forKey: "savedUsername") ?? ""
+        guard !userName.isEmpty else { return }
+
+        // Reset state
+        hasSentOwnToken = false
+        pendingPeerToken = nil
+        hasReceivedPeerToken = false
+        hasSentTokenACK = false
+
+        let manager = MultipeerManager(customDisplayName: userName)
+        self.multipeerManager = manager
+
+        manager.onDataReceived = { [weak self] type, payload, peerID in
+            guard let self = self else { return }
+            if type == .niDiscoveryToken {
+                self.handlePeerTokenReceived(payload)
+            } else if type == .niTokenACK {
+                self.handlePeerACK()
             }
-            .store(in: &cancellables)
+        }
+
+        manager.onPeerConnected = { [weak self] _ in
+            guard let self = self else { return }
+            // Reset state on new connection
+            self.hasSentOwnToken = false
+            self.pendingPeerToken = nil
+            self.hasReceivedPeerToken = false
+            self.hasSentTokenACK = false
             
-        connectivityService.$isPeerConnected
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] connected in
-                guard let self = self else { return }
-                if connected {
-                    if self.appState == .home || self.appState == .searching {
-                        self.appState = .workoutSetup
-                        self.connectivityService.stopBrowsing()
-                    }
-                } else {
-                    if self.appState == .workoutSetup || self.appState == .syncing || self.appState == .foundPartner || self.appState == .navigating {
-                        self.appState = .home
-                        self.connectivityService.startBrowsing()
-                    }
-                }
+            // Saat peer terkoneksi, ubah appState = .navigating
+            DispatchQueue.main.async {
+                self.appState = .navigating
             }
-            .store(in: &cancellables)
             
-        connectivityService.onReceivedDiscoveryToken = { [weak self] token in
-            self?.startNISession(with: token)
+            // Send our token
+            self.sendLocalNIToken()
         }
-        
-        connectivityService.onReceivedWorkoutStart = { [weak self] in
-            self?.transitionToWorkout()
+
+        niManager.onProximityUpdate = { [weak self] distance in
+            guard let self = self else { return }
+            // Saat jarak < 2.0 meter, ubah appState = .room
+            guard distance < 2.0, self.currentRoom == nil else { return }
+            let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+            
+            DispatchQueue.main.async {
+                self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
+                self.appState = .room
+            }
         }
-        
-        connectivityService.onReceivedWorkoutEnd = { [weak self] in
-            self?.endWorkout()
+
+        manager.onPeerDisconnected = { [weak self] in
+            guard let self = self else { return }
+            // Reset token exchange state
+            self.hasSentOwnToken = false
+            self.pendingPeerToken = nil
+            self.hasReceivedPeerToken = false
+            self.hasSentTokenACK = false
+            
+            DispatchQueue.main.async {
+                self.currentRoom = nil
+                self.appState = .home
+            }
         }
     }
     
+    // MARK: - Token Exchange Handshake
+
+    private func sendLocalNIToken() {
+        guard multipeerManager?.connectedPeer != nil else {
+            print("[ViewModel] Skipping token send: no connected peer")
+            return
+        }
+        guard !hasSentOwnToken else {
+            print("[ViewModel] Already sent own token")
+            return
+        }
+        guard let tokenData = niManager.localTokenData() else { return }
+
+        let envelope = MultipeerMessage(type: .niDiscoveryToken, payload: tokenData)
+        if let encoded = try? JSONEncoder().encode(envelope) {
+            multipeerManager?.sendData(encoded)
+            hasSentOwnToken = true
+            print("[ViewModel] Sent local NI token")
+        }
+
+        // Try to configure if we already have peer's token
+        tryConfigureIfReady()
+    }
+
+    private func handlePeerTokenReceived(_ data: Data) {
+        print("[ViewModel] Handling peer token")
+        pendingPeerToken = data
+        hasReceivedPeerToken = true
+
+        // Send ACK immediately so peer knows we received their token
+        sendTokenACK()
+
+        // Try to configure
+        tryConfigureIfReady()
+    }
+
+    private func sendTokenACK() {
+        guard multipeerManager?.connectedPeer != nil, !hasSentTokenACK else { return }
+        let envelope = MultipeerMessage(type: .niTokenACK, payload: Data())
+        if let encoded = try? JSONEncoder().encode(envelope) {
+            multipeerManager?.sendData(encoded)
+            hasSentTokenACK = true
+            print("[ViewModel] Sent token ACK")
+        }
+    }
+
+    private func handlePeerACK() {
+        print("[ViewModel] Peer acknowledged our token")
+        // We know peer has our token, they're ready
+        tryConfigureIfReady()
+    }
+
+    private func tryConfigureIfReady() {
+        // Configure NI session only when BOTH conditions are met:
+        // 1. We've sent our token
+        // 2. We've received peer's token
+        guard hasSentOwnToken, hasReceivedPeerToken else {
+            print("[ViewModel] Not ready to configure: sent=\(hasSentOwnToken), received=\(hasReceivedPeerToken)")
+            return
+        }
+        guard let peerTokenData = pendingPeerToken else {
+            print("[ViewModel] No peer token data")
+            return
+        }
+
+        print("[ViewModel] Both tokens exchanged, configuring NI session")
+        niManager.handleReceivedToken(peerTokenData)
+    }
+
+    /// Single entry point untuk cleanup. Dipanggil dari View.
+    /// idempotent — aman dipanggil berkali-kali.
+    public func fullCleanup() {
+        // 1. Reset NI session (ini akan invalidate dan buat session baru)
+        niManager.reset()
+
+        // 2. Disconnect Multipeer (callback onPeerDisconnected hanya clear state, tidak reset NI)
+        multipeerManager?.disconnect()
+
+        // 3. Clear room state
+        currentRoom = nil
+        appState = .home
+
+        print("[ViewModel] Full cleanup done")
+    }
+
+    // MARK: - Compatibility helpers for old view references
     func invite(peer: MCPeerID) {
-        connectivityService.invitePeer(peer)
+        multipeerManager?.invite(peer)
     }
     
     func acceptInvite() {
-        connectivityService.acceptInvite()
+        multipeerManager?.acceptInvitation()
     }
     
     func declineInvite() {
-        connectivityService.declineInvite()
-    }
-    
-    func proceedToConnected() {
-        appState = .syncing
+        multipeerManager?.declineInvitation()
     }
     
     func startWorkout() {
-        connectivityService.notifyPeerToStartWorkout()
-        transitionToWorkout()
-    }
-    
-    private func transitionToWorkout() {
         appState = .activeWorkout
-        connectivityService.notifyWatchToStartWorkout()
     }
     
     func endWorkout() {
         appState = .results
     }
     
-    func stopWorkoutFromButton() {
-        connectivityService.notifyPeerToEndWorkout()
-        endWorkout()
-    }
-    
     func rematch() {
         appState = .workoutSetup
     }
     
-    func addFriend() {
-        print("Added friend!")
-    }
-    
     func forgetWorkout(_ workout: PastWorkout) {
         pastWorkouts.removeAll { $0.id == workout.id }
-    }
-    
-    func compareWorkout(_ workout: PastWorkout) {
-        print("Comparing workout \(workout.id)")
-    }
-    
-    private func formatCountdownText(seconds: Int) {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        self.countdownText = String(format: "%02d:%02d", mins, secs)
-    }
-    
-    private func startNISession(with token: NIDiscoveryToken) {
-        niSession = NISession()
-        niSession?.delegate = self
-        
-        if let myToken = niSession?.discoveryToken {
-            connectivityService.sendToken(myToken)
-        }
-        
-        let config = NINearbyPeerConfiguration(peerToken: token)
-        niSession?.run(config)
-    }
-    
-    // MARK: - NISessionDelegate
-    func session(_ session: NISession, didUpdate nearbyObjects: [NINearbyObject]) {
-        if let peer = nearbyObjects.first {
-            DispatchQueue.main.async {
-                self.distanceToPeer = peer.distance
-            }
-        }
-    }
-    
-    func session(_ session: NISession, didRemove nearbyObjects: [NINearbyObject], reason: NINearbyObject.RemovalReason) {
-        DispatchQueue.main.async {
-            self.distanceToPeer = nil
-        }
     }
 }
