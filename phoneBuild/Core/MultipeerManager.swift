@@ -233,12 +233,8 @@ extension MultipeerManager: MCSessionDelegate {
                 if let text = String(data: message.payload, encoding: .utf8) {
                     print("[MP] Text from \(peerID.displayName): \(text)")
                 }
-            case .niDiscoveryToken:
-                print("[MP] Received NI token from \(peerID.displayName)")
-                onDataReceived?(.niDiscoveryToken, message.payload, peerID)
-            case .niTokenACK:
-                print("[MP] Received token ACK from \(peerID.displayName)")
-                onDataReceived?(.niTokenACK, message.payload, peerID)
+            default:
+                onDataReceived?(message.type, message.payload, peerID)
             }
         } else if let text = String(data: data, encoding: .utf8) {
             print("[MP] Legacy text from \(peerID.displayName): \(text)")

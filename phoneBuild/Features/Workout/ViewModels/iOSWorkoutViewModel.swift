@@ -15,6 +15,14 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     public let niManager = NearbyInteractionManager()
     @Published public var currentRoom: RoomSession?
     
+    // Challenge states
+    @Published public var selectedChallenge: WorkoutChallenge?
+    @Published public var receivedChallenge: WorkoutChallenge?
+    
+    // Simulation Countdown State
+    @Published public var searchCountdown: Int = 3
+    private var simulationTimer: AnyCancellable?
+    
     @Published var pastWorkouts: [PastWorkout] = [
         PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .weightlifting, duration: 2400, avgHeartRate: 135.0),
         PastWorkout(date: Date().addingTimeInterval(-86400 * 5), type: .running, duration: 1800, avgHeartRate: 155.0)
@@ -46,10 +54,23 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         manager.onDataReceived = { [weak self] type, payload, peerID in
             guard let self = self else { return }
-            if type == .niDiscoveryToken {
+            switch type {
+            case .niDiscoveryToken:
                 self.handlePeerTokenReceived(payload)
-            } else if type == .niTokenACK {
+            case .niTokenACK:
                 self.handlePeerACK()
+            case .sendChallenge:
+                if let challenge = try? JSONDecoder().decode(WorkoutChallenge.self, from: payload) {
+                    DispatchQueue.main.async {
+                        self.receivedChallenge = challenge
+                    }
+                }
+            case .acceptChallenge:
+                DispatchQueue.main.async {
+                    self.appState = .activeWorkout
+                }
+            default:
+                break
             }
         }
 
@@ -60,6 +81,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
+            
+            // Cancel simulation timer if a real peer connects
+            self.simulationTimer?.cancel()
             
             // Saat peer terkoneksi, ubah appState = .navigating
             DispatchQueue.main.async {
@@ -95,6 +119,37 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 self.appState = .home
             }
         }
+    }
+    
+    // MARK: - Simulation Helper
+    
+    public func startSearching() {
+        appState = .searching
+        multipeerManager?.startBrowsing()
+        
+        searchCountdown = 3
+        simulationTimer?.cancel()
+        simulationTimer = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                if self.searchCountdown > 1 {
+                    self.searchCountdown -= 1
+                } else {
+                    self.simulationTimer?.cancel()
+                    // Set up simulated partner
+                    let partnerName = "Erling Antetokounmpo"
+                    self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
+                    // Directly skip searching and go to workoutSetup!
+                    self.appState = .workoutSetup
+                }
+            }
+    }
+    
+    public func stopSearching() {
+        appState = .home
+        multipeerManager?.stopSearching()
+        simulationTimer?.cancel()
     }
     
     // MARK: - Token Exchange Handshake
@@ -177,9 +232,40 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         // 3. Clear room state
         currentRoom = nil
+        selectedChallenge = nil
+        receivedChallenge = nil
         appState = .home
+        simulationTimer?.cancel()
 
         print("[ViewModel] Full cleanup done")
+    }
+
+    // MARK: - Challenge Functions
+    
+    public func sendChallenge(_ challenge: WorkoutChallenge) {
+        if let encoded = try? JSONEncoder().encode(challenge) {
+            let message = MultipeerMessage(type: .sendChallenge, payload: encoded)
+            if let messageData = try? JSONEncoder().encode(message) {
+                multipeerManager?.sendData(messageData)
+                self.selectedChallenge = challenge
+                self.appState = .syncing // screen: "Waiting for Erling..."
+            }
+        }
+    }
+    
+    public func acceptChallenge() {
+        let message = MultipeerMessage(type: .acceptChallenge, payload: Data())
+        if let messageData = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(messageData)
+            self.appState = .activeWorkout
+            // Clear received challenge
+            self.receivedChallenge = nil
+        }
+    }
+    
+    public func declineChallenge() {
+        self.receivedChallenge = nil
+        self.appState = .workoutSetup
     }
 
     // MARK: - Compatibility helpers for old view references

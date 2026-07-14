@@ -13,7 +13,7 @@ public enum AppState {
     case room               // Workout Room Ready!
 }
 
-public enum WorkoutType: String, CaseIterable, Identifiable {
+public enum WorkoutType: String, CaseIterable, Identifiable, Codable {
     case running = "Running"
     case cycling = "Cycling"
     case weightlifting = "Weightlifting"
@@ -58,12 +58,21 @@ public struct RoomSession: Equatable {
     public let formedAt: Date
 }
 
+public struct WorkoutChallenge: Codable, Equatable {
+    public let sport: WorkoutType
+    public let goalValue: Double // e.g. 1.0 (km) or 100.0 (kcal)
+    public let challengeName: String
+    public let metricType: String // "distance" atau "calories"
+}
+
 // MARK: - Message Envelope
 public struct MultipeerMessage: Codable {
     public enum MessageType: String, Codable {
         case text
         case niDiscoveryToken
         case niTokenACK  // Acknowledgment that peer received our token
+        case sendChallenge // Sending a challenge
+        case acceptChallenge // Accepting a challenge
     }
     public let type: MessageType
     public let payload: Data

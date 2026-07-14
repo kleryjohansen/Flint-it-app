@@ -27,7 +27,7 @@ struct RoomFormedView: View {
             }
 
             Button("Start Workout") {
-                viewModel.startWorkout()
+                viewModel.appState = .workoutSetup
             }
             .buttonStyle(.borderedProminent)
             .tint(.orange)
