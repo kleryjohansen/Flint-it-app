@@ -29,150 +29,143 @@ public struct WorkoutSetupView: View {
 
     public var body: some View {
         ZStack {
-            // Main Content
-            VStack(spacing: 20) {
-                // Header Bar
+            VStack(spacing: 0) {
+                // Header Bar (Screen 6/7 style)
                 HStack {
                     Button(action: {
                         if step > 1 {
                             withAnimation { step = 1 }
                         } else {
-                            viewModel.appState = .room
+                            withAnimation { viewModel.appState = .room }
                         }
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3.bold())
                             .foregroundColor(.white)
                             .padding(10)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(Circle())
+                            .background(Circle().fill(Color.white.opacity(0.1)))
                     }
                     
                     Spacer()
                     
                     Text("Create Challenge")
-                        .font(.headline)
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                     
                     Spacer()
-                    
-                    // Empty space for balance
-                    Spacer().frame(width: 44)
+                    Spacer().frame(width: 44) // Balance back button
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 
                 Spacer()
                 
-                // Form Card
+                // Form Content Card (matches Screen 6 & 7 glassmorphic card)
                 VStack(spacing: 24) {
                     if step == 1 {
                         // STEP 1: Choose a Sport
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 20) {
                             Text("Choose a sport")
-                                .font(.title3.bold())
-                                .foregroundColor(.white)
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(.white.opacity(0.5))
+                                .tracking(1)
+                                .padding(.horizontal, 4)
                             
                             VStack(spacing: 12) {
                                 ForEach(WorkoutType.allCases) { type in
                                     Button(action: {
-                                        selectedSport = type
+                                        withAnimation { selectedSport = type }
                                     }) {
                                         HStack(spacing: 16) {
                                             ZStack {
                                                 Circle()
                                                     .fill(selectedSport == type ? Color.flintRed : Color.white.opacity(0.1))
-                                                    .frame(width: 44, height: 44)
+                                                    .frame(width: 40, height: 40)
                                                 
                                                 Image(systemName: type.iconName)
-                                                    .font(.headline)
+                                                    .font(.system(size: 16, weight: .bold))
                                                     .foregroundColor(.white)
                                             }
                                             
                                             Text(type.rawValue)
-                                                .font(.headline)
+                                                .font(.system(size: 16, weight: .bold))
                                                 .foregroundColor(.white)
                                             
                                             Spacer()
-                                            
-                                            if selectedSport == type {
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundColor(Color.flintRed)
-                                                    .font(.title3)
-                                            }
                                         }
-                                        .padding(.vertical, 12)
+                                        .padding(.vertical, 14)
                                         .padding(.horizontal, 16)
-                                        .background(selectedSport == type ? Color.white.opacity(0.1) : Color.clear)
-                                        .cornerRadius(15)
+                                        .background(Color.white.opacity(0.04))
+                                        .cornerRadius(18)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 15)
-                                                .stroke(selectedSport == type ? Color.flintRed.opacity(0.5) : Color.white.opacity(0.05), lineWidth: 1)
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .stroke(selectedSport == type ? Color.flintRed : Color.white.opacity(0.04), lineWidth: 1.5)
                                         )
                                     }
                                 }
                             }
                             
+                            // Bottom capsule button inside the layout
                             Button(action: {
                                 withAnimation { step = 2 }
                             }) {
                                 Text("Continue")
-                                    .font(.headline)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(Color.flintRed)
+                                    .clipShape(Capsule())
+                                    .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
                             }
-                            .buttonStyle(FlintPrimaryButtonStyle(isWhite: false))
                             .padding(.top, 10)
                         }
                     } else {
                         // STEP 2: Choose your Challenge
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 20) {
                             Button(action: {
                                 withAnimation { step = 1 }
                             }) {
-                                HStack(spacing: 4) {
+                                HStack(spacing: 6) {
                                     Image(systemName: "chevron.left")
                                     Text("Choose your challenge")
                                 }
-                                .font(.subheadline.bold())
+                                .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.white.opacity(0.7))
                             }
+                            .padding(.horizontal, 4)
                             
                             VStack(spacing: 12) {
                                 let activeGoals = selectedSport == .weightlifting ? weightliftingGoals : runningCyclingGoals
                                 ForEach(0..<activeGoals.count, id: \.self) { index in
                                     let goal = activeGoals[index]
                                     Button(action: {
-                                        selectedGoalIndex = index
+                                        withAnimation { selectedGoalIndex = index }
                                     }) {
                                         HStack {
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(goal.name)
-                                                    .font(.headline)
+                                                    .font(.system(size: 16, weight: .bold))
                                                     .foregroundColor(.white)
                                                 Text(goal.subtitle)
-                                                    .font(.caption)
+                                                    .font(.system(size: 12))
                                                     .foregroundColor(.white.opacity(0.5))
                                             }
                                             Spacer()
-                                            
-                                            if selectedGoalIndex == index {
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundColor(Color.flintRed)
-                                                    .font(.title3)
-                                            }
                                         }
-                                        .padding(.vertical, 14)
+                                        .padding(.vertical, 16)
                                         .padding(.horizontal, 16)
-                                        .background(selectedGoalIndex == index ? Color.white.opacity(0.1) : Color.clear)
-                                        .cornerRadius(15)
+                                        .background(Color.white.opacity(0.04))
+                                        .cornerRadius(18)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 15)
-                                                .stroke(selectedGoalIndex == index ? Color.flintRed.opacity(0.5) : Color.white.opacity(0.05), lineWidth: 1)
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .stroke(selectedGoalIndex == index ? Color.flintRed : Color.white.opacity(0.04), lineWidth: 1.5)
                                         )
                                     }
                                 }
                             }
                             
+                            // Send Challenge button
                             Button(action: {
                                 let activeGoals = selectedSport == .weightlifting ? weightliftingGoals : runningCyclingGoals
                                 let goal = activeGoals[selectedGoalIndex]
@@ -185,10 +178,14 @@ public struct WorkoutSetupView: View {
                                 viewModel.sendChallenge(challenge)
                             }) {
                                 Text("Send Challenge")
-                                    .font(.headline)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(Color.flintRed)
+                                    .clipShape(Capsule())
+                                    .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
                             }
-                            .buttonStyle(FlintPrimaryButtonStyle(isWhite: false))
                             .padding(.top, 10)
                         }
                     }
@@ -205,7 +202,8 @@ public struct WorkoutSetupView: View {
     }
 }
 
-// MARK: - Challenge Waiting View (Screen 3)
+// MARK: - Challenge Waiting View (Screen 8 style)
+
 public struct ChallengeWaitingView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var spinAnimation = false
@@ -214,63 +212,81 @@ public struct ChallengeWaitingView: View {
 
     public var body: some View {
         ZStack {
-            VStack {
-                // Header
+            VStack(spacing: 0) {
+                // Header (Screen 8 waiting state)
                 HStack {
                     Button(action: {
-                        viewModel.appState = .workoutSetup
+                        withAnimation {
+                            viewModel.appState = .workoutSetup
+                        }
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3.bold())
                             .foregroundColor(.white)
                             .padding(10)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(Circle())
+                            .background(Circle().fill(Color.white.opacity(0.1)))
                     }
                     Spacer()
-                    Text("Challenge sent")
-                        .font(.headline)
+                    
+                    Text("Challenging...")
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
+                    
                     Spacer()
-                    Spacer().frame(width: 44)
+                    Spacer().frame(width: 44) // Balance back button
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 
                 Spacer()
                 
-                // Radar / Loading Ring
-                ZStack {
-                    // Pulsing Glow
-                    Circle()
-                        .fill(Color.flintRed.opacity(0.1))
-                        .frame(width: 240, height: 240)
-                    
-                    // Rotating outer ring
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [Color.flintRed, Color.flintRed.opacity(0.1)]),
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                        )
-                        .frame(width: 140, height: 140)
-                        .rotationEffect(.degrees(spinAnimation ? 360 : 0))
-                        .onAppear {
-                            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                                spinAnimation = true
+                // Spinner & Progress visual (Screen 8 style)
+                VStack(spacing: 40) {
+                    ZStack {
+                        // Ambient red halo glow
+                        Circle()
+                            .fill(Color.flintRed.opacity(0.12))
+                            .frame(width: 220, height: 220)
+                            .blur(radius: 20)
+                        
+                        // Background track ring
+                        Circle()
+                            .stroke(Color.white.opacity(0.06), lineWidth: 6)
+                            .frame(width: 140, height: 140)
+                        
+                        // Rotating gradient indicator ring
+                        Circle()
+                            .trim(from: 0.0, to: 0.35)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.flintRed, Color.flintRed.opacity(0.1)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                            )
+                            .frame(width: 140, height: 140)
+                            .rotationEffect(.degrees(spinAnimation ? 360 : 0))
+                            .onAppear {
+                                withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) {
+                                    spinAnimation = true
+                                }
                             }
-                        }
+                    }
+                    
+                    // Spinner Status Description Text
+                    VStack(spacing: 8) {
+                        Text("Waiting for \(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")...")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                        
+                        Text("Waiting to bring workout...")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
                 }
                 
                 Spacer()
-                
-                // Text Description
-                Text("Waiting for \(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")...")
-                    .font(.title3.bold())
-                    .foregroundColor(.white)
-                    .padding(.bottom, 60)
             }
         }
         .flintVibrantBackground()
@@ -279,62 +295,86 @@ public struct ChallengeWaitingView: View {
 }
 
 // MARK: - Challenge Received Modal / Overlay
+
 public struct ChallengeReceivedView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     let challenge: WorkoutChallenge
 
     public var body: some View {
-        VStack(spacing: 32) {
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.1))
-                    .frame(width: 100, height: 100)
-                
-                Image(systemName: challenge.sport.iconName)
-                    .font(.system(size: 44))
-                    .foregroundColor(Color.flintRed)
-            }
-
-            VStack(spacing: 8) {
-                Text("\(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner") challenged you!")
-                    .font(.title2.bold())
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                
-                Text("Sport: \(challenge.sport.rawValue)")
-                    .font(.headline)
-                    .foregroundColor(.white.opacity(0.8))
-                
-                Text(challenge.challengeName)
-                    .font(.body)
-                    .foregroundColor(.white.opacity(0.6))
-                    .padding(.top, 4)
-            }
-
-            HStack(spacing: 20) {
-                Button {
-                    viewModel.declineChallenge()
-                } label: {
-                    Text("Decline")
-                        .frame(maxWidth: .infinity)
+        ZStack {
+            // Dark base background
+            Color(red: 0.05, green: 0.04, blue: 0.04)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 32) {
+                // Header Graphic
+                ZStack {
+                    Circle()
+                        .fill(Color.flintRed.opacity(0.12))
+                        .frame(width: 96, height: 96)
+                    
+                    Image(systemName: challenge.sport.iconName)
+                        .font(.system(size: 40))
+                        .foregroundColor(Color.flintRed)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .padding(.top, 16)
 
-                Button {
-                    viewModel.acceptChallenge()
-                } label: {
-                    Text("Accept & Start")
-                        .frame(maxWidth: .infinity)
+                // Info Cards
+                VStack(spacing: 12) {
+                    Text("\(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner") challenged you!")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                    
+                    VStack(spacing: 6) {
+                        Text("Sport: \(challenge.sport.rawValue)")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        Text(challenge.challengeName)
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(16)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.flintRed)
-                .controlSize(.large)
+
+                // Action Buttons
+                HStack(spacing: 16) {
+                    Button(action: {
+                        viewModel.declineChallenge()
+                    }) {
+                        Text("Decline")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+
+                    Button(action: {
+                        viewModel.acceptChallenge()
+                    }) {
+                        Text("Accept & Start")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.flintRed)
+                            .clipShape(Capsule())
+                            .shadow(color: Color.flintRed.opacity(0.3), radius: 10, y: 5)
+                    }
+                }
+                .padding(.bottom, 16)
             }
+            .padding(24)
         }
-        .padding(32)
         .preferredColorScheme(.dark)
-        .background(Color.flintBackground.ignoresSafeArea())
         .presentationDetents([.medium])
     }
 }

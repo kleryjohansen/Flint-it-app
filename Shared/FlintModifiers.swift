@@ -3,16 +3,18 @@ import SwiftUI
 struct VibrantBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         ZStack {
-            // Base dark background
-            Color.flintBackground.ignoresSafeArea()
+            // Dark base background
+            Color(red: 0.05, green: 0.04, blue: 0.04)
+                .ignoresSafeArea()
             
-            // Glowing radial red at the center/bottom
+            // Soft large radial glow centered at the bottom half to match the red glow in the screenshots
             RadialGradient(
-                gradient: Gradient(colors: [Color.flintRed.opacity(0.6), Color.clear]),
-                center: .bottom,
-                startRadius: 50,
-                endRadius: 500
+                gradient: Gradient(colors: [Color.flintRed.opacity(0.32), Color.clear]),
+                center: .center,
+                startRadius: 10,
+                endRadius: 420
             )
+            .offset(y: 80)
             .ignoresSafeArea()
             
             content
@@ -24,18 +26,18 @@ struct GlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(Color.flintGlass)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.white.opacity(0.06))
                     #if os(iOS)
                     .background(
                         VisualEffectBlur(blurStyle: .systemUltraThinMaterialDark)
-                            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     )
                     #endif
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
     }
 }

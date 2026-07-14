@@ -8,65 +8,84 @@ struct NearbyRadarView: View {
         let ni = viewModel.niManager
 
         ZStack {
-            Color.black.ignoresSafeArea()
-
-            VStack(spacing: 40) {
-
-                // Partner name
-                Text(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")
-                    .font(.title2)
-                    .foregroundColor(.orange)
-
-                // Arrow + Radar Ring
-                ZStack {
-                    Circle()
-                        .stroke(Color.orange.opacity(0.3), lineWidth: 2)
-                        .frame(width: 280, height: 280)
-
-                    Circle()
-                        .stroke(Color.orange.opacity(0.15), lineWidth: 1)
-                        .frame(width: 180, height: 180)
-
-                    radarContent(ni: ni)
+            VStack(spacing: 0) {
+                // Header (Top bar with custom styled back button)
+                HStack {
+                    Button(action: {
+                        withAnimation {
+                            viewModel.appState = .home
+                        }
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title3.bold())
+                            .foregroundColor(.white)
+                            .padding(10)
+                            .background(Circle().fill(Color.white.opacity(0.1)))
+                    }
+                    Spacer()
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                
+                Spacer()
 
-                // Distance
-                distanceDisplay(ni: ni)
+                // Radar & Arrow Visual
+                VStack(spacing: 35) {
+                    
+                    VStack(spacing: 6) {
+                        Text("Go find your mate!")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white.opacity(0.5))
+                            .tracking(2)
+                        
+                        Text(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                    }
 
-                // Room formation hint
-                if let distance = ni.distance, distance < 2.0 {
-                    Text("Close enough to start!")
-                        .font(.headline)
-                        .foregroundColor(.green)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(Color.green.opacity(0.15))
-                        .cornerRadius(20)
+                    // Rotating Arrow / Signal View
+                    ZStack {
+                        // Concentric circles background
+                        Circle()
+                            .stroke(Color.flintRed.opacity(0.2), lineWidth: 1.5)
+                            .frame(width: 250, height: 250)
+
+                        Circle()
+                            .stroke(Color.flintRed.opacity(0.1), lineWidth: 1)
+                            .frame(width: 170, height: 170)
+
+                        radarContent(ni: ni)
+                    }
+
+                    // Large Distance display: matches Screen 4 ("3m ahead")
+                    distanceDisplay(ni: ni)
                 }
 
                 Spacer()
-            }
-            .padding(.top, 60)
-        }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    // Navigasi balik — cleanup dilakukan di onDisappear
-                    viewModel.appState = .home
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.orange)
+                
+                // Bottom cancel button: matches Screen 4
+                Button(action: {
+                    withAnimation {
+                        viewModel.fullCleanup()
+                    }
+                }) {
+                    Text("Cancel")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.flintRed)
+                        .clipShape(Capsule())
+                        .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
                 }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
             }
         }
-        .onChange(of: viewModel.currentRoom) { _, newRoom in
-            if newRoom != nil {
-                print("[Radar] Room formed, staying connected")
-            }
-        }
+        .flintVibrantBackground()
+        .navigationBarBackButtonHidden(true)
         .onDisappear {
-            // Cleanup HANYA kalau tidak sedang forming room
+            // Cleanup only if not forming a room
             if viewModel.currentRoom == nil {
                 viewModel.fullCleanup()
             }
@@ -79,32 +98,32 @@ struct NearbyRadarView: View {
     private func radarContent(ni: NearbyInteractionManager) -> some View {
         if ni.isSessionActive {
             if ni.direction != nil {
-                // Arrow pointing to partner (UWB available)
+                // Large Arrow pointing to partner
                 Image(systemName: "arrow.up")
-                    .font(.system(size: 80, weight: .bold))
-                    .foregroundColor(.orange)
+                    .font(.system(size: 72, weight: .black))
+                    .foregroundColor(.white)
                     .rotationEffect(.degrees(ni.arrowAngleDegrees))
-                    .animation(.smooth(duration: 0.3), value: ni.arrowAngleDegrees)
+                    .animation(.smooth(duration: 0.25), value: ni.arrowAngleDegrees)
+                    .shadow(color: Color.flintRed.opacity(0.5), radius: 10)
             } else if ni.peerIsOutOfRange {
-                // Out of range
+                // Out of range Wifi slash icon
                 Image(systemName: "wifi.slash")
-                    .font(.system(size: 50))
-                    .foregroundColor(.orange.opacity(0.5))
+                    .font(.system(size: 54))
+                    .foregroundColor(.white.opacity(0.4))
             } else {
-                // Session active but no direction (device has no UWB chip)
+                // Directionless circle
                 Image(systemName: "location.circle")
-                    .font(.system(size: 50))
-                    .foregroundColor(.orange.opacity(0.5))
+                    .font(.system(size: 54))
+                    .foregroundColor(.white.opacity(0.4))
             }
         } else if let error = ni.errorMessage {
-            // Error — tap to retry
             VStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 40))
-                    .foregroundColor(.orange)
+                    .font(.system(size: 36))
+                    .foregroundColor(Color.flintRed)
                 Text(error)
-                    .font(.caption)
-                    .foregroundColor(.orange.opacity(0.7))
+                    .font(.system(size: 11))
+                    .foregroundColor(Color.flintRed.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
@@ -112,13 +131,12 @@ struct NearbyRadarView: View {
                 viewModel.niManager.reset()
             }
         } else {
-            // Waiting for token exchange to complete
             VStack(spacing: 12) {
                 ProgressView()
-                    .tint(.orange)
+                    .tint(.white)
                 Text("Connecting...")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.6))
             }
         }
     }
@@ -127,16 +145,22 @@ struct NearbyRadarView: View {
     private func distanceDisplay(ni: NearbyInteractionManager) -> some View {
         if ni.peerIsOutOfRange {
             Text("Partner out of range")
-                .font(.headline)
-                .foregroundColor(.orange.opacity(0.7))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.white.opacity(0.5))
         } else if let distance = ni.distance {
             VStack(spacing: 4) {
-                Text(String(format: "%.1f", distance))
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                Text("meters")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(String(format: "%.0f", distance))
+                        .font(.system(size: 80, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("m")
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                
+                Text("ahead")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white.opacity(0.5))
             }
         }
     }

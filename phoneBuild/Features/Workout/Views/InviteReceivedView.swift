@@ -6,56 +6,79 @@ struct InviteReceivedView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 32) {
-            Image(systemName: "figure.run")
-                .font(.system(size: 60))
-                .foregroundColor(.orange)
-
-            Text("\(viewModel.multipeerManager?.pendingInvitingPeer?.displayName ?? "Someone") wants to work out with you!")
-                .font(.title2.bold())
-                .multilineTextAlignment(.center)
-                .foregroundColor(.white)
-
-            VStack(spacing: 12) {
-                Text("Location Sharing")
-                    .font(.headline)
-                    .foregroundColor(.white)
-
-                Text("Accepting will share your approximate location (distance and direction) with this device in real-time during the workout session. Your location is not stored anywhere.")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-            }
-            .padding()
-            .background(Color.orange.opacity(0.1))
-            .cornerRadius(12)
-
-            HStack(spacing: 20) {
-                Button {
-                    viewModel.multipeerManager?.declineInvitation()
-                    dismiss()
-                } label: {
-                    Text("Decline")
-                        .frame(maxWidth: .infinity)
+        ZStack {
+            // Dark base background
+            Color(red: 0.05, green: 0.04, blue: 0.04)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 28) {
+                // Header Graphic
+                ZStack {
+                    Circle()
+                        .fill(Color.flintRed.opacity(0.12))
+                        .frame(width: 96, height: 96)
+                    
+                    Image(systemName: "figure.run")
+                        .font(.system(size: 44))
+                        .foregroundColor(Color.flintRed)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .padding(.top, 16)
 
-                Button {
-                    viewModel.multipeerManager?.acceptInvitation()
-                    dismiss()
-                } label: {
-                    Text("Accept")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 12) {
+                    Text("\(viewModel.multipeerManager?.pendingInvitingPeer?.displayName ?? "Someone") wants to work out with you!")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Location Sharing Required")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Text("Accepting will share your real-time distance and direction with this device during the session. Your location is never stored or uploaded.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.5))
+                            .lineSpacing(4)
+                    }
+                    .padding(16)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(18)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-                .controlSize(.large)
+
+                // Action Buttons
+                HStack(spacing: 16) {
+                    Button(action: {
+                        viewModel.multipeerManager?.declineInvitation()
+                        dismiss()
+                    }) {
+                        Text("Decline")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+
+                    Button(action: {
+                        viewModel.multipeerManager?.acceptInvitation()
+                        dismiss()
+                    }) {
+                        Text("Accept")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.flintRed)
+                            .clipShape(Capsule())
+                            .shadow(color: Color.flintRed.opacity(0.3), radius: 10, y: 5)
+                    }
+                }
+                .padding(.bottom, 16)
             }
+            .padding(24)
         }
-        .padding(32)
         .preferredColorScheme(.dark)
-        .background(Color.flintBackground.ignoresSafeArea())
         .presentationDetents([.medium])
     }
 }

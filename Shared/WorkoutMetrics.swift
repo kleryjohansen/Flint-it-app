@@ -32,6 +32,7 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
     #endif
     
     private var session: WCSession?
+    private var currentWorkoutSessionId: String = ""
     
     private override init() {
         super.init()
@@ -42,21 +43,46 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
         }
     }
 
+    // Kirim data workout — dipakai untuk sync metrics dari Watch ke iOS
     public func sendWorkoutUpdate(data: [String: Any]) {
         guard let session = session, session.activationState == .activated else { return }
-        do {
-            try session.updateApplicationContext(data)
-            
-            // Also send direct message for faster realtime delivery when reachable
-            if session.isReachable {
-                session.sendMessage(data, replyHandler: nil, errorHandler: nil)
+        
+        // Realtime via sendMessage kalau watch reachable
+        if session.isReachable {
+            session.sendMessage(data, replyHandler: nil) { _ in }
+        }
+        
+        // applicationContext sebagai fallback (tapi tidak untuk "stopped" — supaya tidak cached)
+        let status = data["status"] as? String ?? ""
+        if status != "stopped" && status != "stop_request" {
+            do {
+                try session.updateApplicationContext(data)
+            } catch {
+                print("[WatchSessionManager] context error: \(error)")
             }
-        } catch {
-            print("[WatchSessionManager] Gagal update context: \(error)")
         }
     }
+    
+    // Stop signal — HANYA via sendMessage (tidak masuk applicationContext)
+    public func sendStopSignal(sessionId: String) {
+        guard let session = session, session.activationState == .activated else { return }
+        let data: [String: Any] = ["status": "stopped", "sessionId": sessionId]
+        if session.isReachable {
+            session.sendMessage(data, replyHandler: nil, errorHandler: nil)
+        }
+    }
+    
+    public func beginNewWorkoutSession() -> String {
+        let newId = UUID().uuidString
+        self.currentWorkoutSessionId = newId
+        return newId
+    }
+    
+    public func getCurrentSessionId() -> String {
+        return currentWorkoutSessionId
+    }
 
-    // MARK: - WCSessionDelegate Methods
+    // MARK: - WCSessionDelegate
     public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         print("[WatchSessionManager] WCSession activationState: \(activationState.rawValue)")
     }
@@ -68,56 +94,55 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
     }
     #endif
 
+    // applicationContext: jangan proses "stopped" — bisa basi dari sesi lama
     public func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
-        handleReceivedData(applicationContext)
+        let status = applicationContext["status"] as? String ?? ""
+        if status != "stopped" && status != "stop_request" {
+            handleReceivedData(applicationContext, source: "context")
+        }
     }
     
+    // sendMessage: proses semua termasuk "stopped" karena ini realtime
     public func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-        handleReceivedData(message)
+        handleReceivedData(message, source: "message")
     }
     
-    private func handleReceivedData(_ data: [String: Any]) {
+    public func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
+        handleReceivedData(message, source: "message")
+        replyHandler([:])
+    }
+    
+    private func handleReceivedData(_ data: [String: Any], source: String) {
         DispatchQueue.main.async {
             self.workoutState = data
             
             #if os(iOS)
-            if let rawMetrics = data["metrics"] as? Data {
-                if let metrics = try? JSONDecoder().decode(WorkoutMetrics.self, from: rawMetrics) {
-                    self.heartRate = metrics.heartRate
-                    if let dist = metrics.distance {
-                        self.distance = Double(dist)
-                    }
-                    self.isRunning = metrics.isWorkoutRunning
-                    return
+            // Decode WorkoutMetrics struct kalau ada
+            if let rawMetrics = data["metrics"] as? Data,
+               let metrics = try? JSONDecoder().decode(WorkoutMetrics.self, from: rawMetrics) {
+                self.heartRate = metrics.heartRate
+                if let dist = metrics.distance {
+                    self.distance = Double(dist)
                 }
+                self.isRunning = metrics.isWorkoutRunning
+                return
             }
-            if let hr = data["heartRate"] as? Double {
-                self.heartRate = hr
-            }
-            if let dist = data["distance"] as? Double {
-                self.distance = dist
-            }
-            if let status = data["status"] as? String {
-                if status == "stopped" {
-                    self.isRunning = false
-                } else if status == "active" {
-                    self.isRunning = true
-                }
-            }
+            // Decode field by field
+            if let hr = data["heartRate"] as? Double { self.heartRate = hr }
+            if let dist = data["distance"] as? Double { self.distance = dist }
+            let status = data["status"] as? String ?? ""
+            if status == "stopped" { self.isRunning = false }
+            else if status == "active" { self.isRunning = true }
+            
             #else
-            // Sisi Watch (Apple Watch)
-            if let status = data["status"] as? String {
-                if status == "stop_request" {
-                    WatchWorkoutService.shared.endWorkout()
-                }
+            // Watch side: hanya proses stop — START sekarang hanya via startWatchApp/WatchAppDelegate
+            let status = data["status"] as? String ?? ""
+            if status == "stop_request" {
+                WatchWorkoutService.shared.endWorkout(notifyPhone: false)
             }
-            if let command = data["command"] as? String {
-                if command == "START_WORKOUT" {
-                    let sport = data["sport"] as? String ?? "Weightlifting"
-                    WatchWorkoutService.shared.startWorkout(sport: sport)
-                } else if command == "END_WORKOUT" {
-                    WatchWorkoutService.shared.endWorkout()
-                }
+            // Simpan sessionId yang dikirim iOS supaya Watch tahu session aktif saat ini
+            if let sessionId = data["sessionId"] as? String {
+                WatchWorkoutService.shared.updateSessionId(sessionId)
             }
             #endif
         }

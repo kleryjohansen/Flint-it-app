@@ -38,6 +38,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             }
         }
     }
+
     
     @Published var selectedWorkoutType: WorkoutType = .running
     @Published var isChallengeMode: Bool = false
@@ -56,6 +57,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // Watch Connectivity
     @Published public var watchCalories: Double = 0.0
     private var watchCancellables = Set<AnyCancellable>()
+    
+    // Session tracking — cegah stale "stopped" dari sesi sebelumnya
+    private var activeWorkoutSessionId: String = ""
+    private var workoutStartTime: Date?
     
     // HealthKit
     private let healthStore = HKHealthStore()
@@ -91,6 +96,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             .sink { [weak self] state in
                 guard let self = self else { return }
                 
+                // Guard: hanya proses data jika workout sedang aktif di iOS
+                guard self.appState == .activeWorkout else { return }
+                
+                let incomingSessionId = state["sessionId"] as? String ?? ""
+                
                 if let hr = state["heartRate"] as? Double, hr > 0 {
                     self.heartRate = hr
                     self.lastWatchMessageTime = Date()
@@ -106,13 +116,21 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                     self.lastWatchMessageTime = Date()
                 }
                 
-                if let dist = state["distance"] as? Double {
-                    self.niManager.setSimulatedDistance(dist)
-                }
-                
                 if state["status"] as? String == "stopped" {
-                    if self.appState == .activeWorkout {
+                    // Guard 1: session ID harus cocok supaya bukan sinyal dari sesi lama
+                    guard !self.activeWorkoutSessionId.isEmpty,
+                          incomingSessionId == self.activeWorkoutSessionId else {
+                        print("[iOS] Ignored stale 'stopped' from sessionId: \(incomingSessionId), current: \(self.activeWorkoutSessionId)")
+                        return
+                    }
+                    
+                    // Guard 2: workout harus sudah berjalan minimal 5 detik
+                    if let startTime = self.workoutStartTime,
+                       Date().timeIntervalSince(startTime) > 5.0 {
+                        print("[iOS] Received valid 'stopped' from Watch — ending workout")
                         self.endWorkoutNatively()
+                    } else {
+                        print("[iOS] Ignored 'stopped' — workout just started, too early")
                     }
                 }
             }
@@ -382,12 +400,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     func notifyWatchToStartWorkout() {
         let sport = selectedChallenge?.sport ?? receivedChallenge?.sport ?? selectedWorkoutType
         
-        let payload: [String: Any] = [
-            "command": "START_WORKOUT",
-            "sport": sport.rawValue,
-            "status": "active"
-        ]
-        WatchSessionManager.shared.sendWorkoutUpdate(data: payload)
+        // Buat session ID baru untuk sesi ini
+        activeWorkoutSessionId = UUID().uuidString
+        workoutStartTime = Date()
+        _ = WatchSessionManager.shared.beginNewWorkoutSession()
+        print("[iOS] Starting new workout session: \(activeWorkoutSessionId) sport: \(sport.rawValue)")
         
         guard HKHealthStore.isHealthDataAvailable() else { return }
         
@@ -395,26 +412,40 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         switch sport {
         case .running:
             configuration.activityType = .running
+            configuration.locationType = .outdoor
         case .cycling:
             configuration.activityType = .cycling
+            configuration.locationType = .outdoor
         case .weightlifting:
             configuration.activityType = .functionalStrengthTraining
+            configuration.locationType = .indoor
         }
-        configuration.locationType = .unknown
         
+        // SATU-SATUNYA trigger untuk Watch — via startWatchApp
+        // WCSession START_WORKOUT command DIHAPUS supaya Watch tidak double-start
         healthStore.startWatchApp(with: configuration) { success, error in
             if !success {
                 print("Failed to start watch app via startWatchApp: \(error?.localizedDescription ?? "unknown error")")
             } else {
+                // Kirim session ID ke Watch SETELAH app terbuka, supaya Watch tahu session ini
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    let context: [String: Any] = [
+                        "sessionId": self.activeWorkoutSessionId,
+                        "status": "active"
+                    ]
+                    WatchSessionManager.shared.sendWorkoutUpdate(data: context)
+                    print("[iOS] Sent session context to Watch: \(self.activeWorkoutSessionId)")
+                }
                 print("Direct startWatchApp request triggered successfully")
             }
         }
     }
+
     
     func notifyWatchToEndWorkout() {
         WatchSessionManager.shared.sendWorkoutUpdate(data: [
             "status": "stop_request",
-            "command": "END_WORKOUT"
+            "sessionId": activeWorkoutSessionId
         ])
     }
     

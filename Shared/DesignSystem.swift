@@ -3,11 +3,18 @@ import SwiftUI
 struct VibrantBackground: ViewModifier {
     func body(content: Content) -> some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [Color(red: 1.0, green: 0.4, blue: 0.2), Color(red: 1.0, green: 0.2, blue: 0.4)]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            // Dark base background
+            Color(red: 0.05, green: 0.04, blue: 0.04)
+                .ignoresSafeArea()
+            
+            // Soft large radial glow
+            RadialGradient(
+                gradient: Gradient(colors: [Color.flintRed.opacity(0.32), Color.clear]),
+                center: .center,
+                startRadius: 10,
+                endRadius: 420
             )
+            .offset(y: 80)
             .ignoresSafeArea()
             
             content
@@ -24,11 +31,13 @@ extension View {
 struct GlassCard: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .padding()
             .background(
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(Color.white.opacity(0.95))
-                    .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.white.opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
     }
 }
@@ -40,7 +49,7 @@ extension View {
 }
 
 struct PillButtonStyle: ButtonStyle {
-    var color: Color = Color.orange
+    var color: Color = Color.flintRed
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
