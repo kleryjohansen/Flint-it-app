@@ -65,6 +65,23 @@
 		EE9859D12FFFB530007EB100 /* watchBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMetrics.swift; sourceTree = "<group>"; };
 		EE985C0D30050D12007EB100 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		FLINT00100010001FFF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		FLINT00100010001002 /* watchpairworkoutApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = watchpairworkoutApp.swift; sourceTree = "<group>"; };
+		FLINT00100010001004 /* MultipeerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultipeerManager.swift; sourceTree = "<group>"; };
+		FLINT00100010001006 /* NearbyInteractionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyInteractionManager.swift; sourceTree = "<group>"; };
+		FLINT00100010001008 /* iOSConnectivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSConnectivityService.swift; sourceTree = "<group>"; };
+		FLINT0010001000100A /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
+		FLINT0010001000100C /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
+		FLINT0010001000100E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		FLINT00100010001010 /* WorkoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutState.swift; sourceTree = "<group>"; };
+		FLINT00100010001012 /* iOSWorkoutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSWorkoutViewModel.swift; sourceTree = "<group>"; };
+		FLINT00100010001014 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FLINT00100010001016 /* DiscoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryView.swift; sourceTree = "<group>"; };
+		FLINT00100010001018 /* InviteReceivedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteReceivedView.swift; sourceTree = "<group>"; };
+		FLINT0010001000101A /* NearbyRadarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyRadarView.swift; sourceTree = "<group>"; };
+		FLINT0010001000101C /* RoomFormedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomFormedView.swift; sourceTree = "<group>"; };
+		FLINT0010001000101E /* WorkoutFlowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFlowViews.swift; sourceTree = "<group>"; };
+		FLINT00100010001020 /* WorkoutSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSetupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -108,6 +125,7 @@
 		EE9859B32FFFB45F007EB100 = {
 			isa = PBXGroup;
 			children = (
+				FLINT00100010001FFF /* Info.plist */,
 				EE1B4B7B300621300080CC08 /* FlintItApp.entitlements */,
 				EE9859BE2FFFB45F007EB100 /* phoneBuild */,
 				EE9859D52FFFB530007EB100 /* watchBuild */,
@@ -115,6 +133,11 @@
 				EE9859E32FFFB67B007EB100 /* Shared */,
 				EE1B514E300682440080CC08 /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		EE9859BE2FFFB45F007EB100 /* phoneBuild */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = phoneBuild;
 			sourceTree = "<group>";
 		};
 		EE9859BD2FFFB45F007EB100 /* Products */ = {
@@ -283,6 +306,22 @@
 				EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */,
 				EE1B4B233006199B0080CC08 /* FlintColors.swift in Sources */,
 				EE1B4B25300619B10080CC08 /* FlintModifiers.swift in Sources */,
+				FLINT00100010001001 /* watchpairworkoutApp.swift in Sources */,
+				FLINT00100010001003 /* MultipeerManager.swift in Sources */,
+				FLINT00100010001005 /* NearbyInteractionManager.swift in Sources */,
+				FLINT00100010001007 /* iOSConnectivityService.swift in Sources */,
+				FLINT00100010001009 /* CloudKitService.swift in Sources */,
+				FLINT0010001000100B /* OnboardingViewModel.swift in Sources */,
+				FLINT0010001000100D /* OnboardingView.swift in Sources */,
+				FLINT0010001000100F /* WorkoutState.swift in Sources */,
+				FLINT00100010001011 /* iOSWorkoutViewModel.swift in Sources */,
+				FLINT00100010001013 /* ContentView.swift in Sources */,
+				FLINT00100010001015 /* DiscoveryView.swift in Sources */,
+				FLINT00100010001017 /* InviteReceivedView.swift in Sources */,
+				FLINT00100010001019 /* NearbyRadarView.swift in Sources */,
+				FLINT0010001000101B /* RoomFormedView.swift in Sources */,
+				FLINT0010001000101D /* WorkoutFlowViews.swift in Sources */,
+				FLINT0010001000101F /* WorkoutSetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -438,23 +477,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = "fetch remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -476,23 +514,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = "fetch remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -514,22 +551,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to save your workout data.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -554,22 +591,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to save your workout data.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -590,12 +627,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -608,12 +646,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;

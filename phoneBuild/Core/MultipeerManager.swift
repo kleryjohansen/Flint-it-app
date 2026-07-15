@@ -2,11 +2,32 @@ import Foundation
 import MultipeerConnectivity
 import Observation
 
+// MARK: - MultipeerPermissionState
+
+public enum MultipeerPermissionState: Equatable {
+    case unknown
+    case permitted
+    case denied
+    case restricted
+}
+
+// MARK: - MultipeerBrowserState
+
+public enum MultipeerBrowserState: Equatable {
+    case idle
+    case scanning
+    case noPeersFound
+    case permissionNeeded
+    case error(String)
+}
+
 // MARK: - MultipeerManager
 
 @Observable
 public final class MultipeerManager: NSObject {
     private let serviceType = "fit-challenge"
+    private let maxRetryAttempts = 3
+    private let retryDelayBase: TimeInterval = 1.0
 
     public let peerID: MCPeerID
     public let session: MCSession
@@ -20,7 +41,10 @@ public final class MultipeerManager: NSObject {
     public private(set) var invitedPeer: MCPeerID?
     public private(set) var isAdvertising = false
     public private(set) var isBrowsing = false
+    public private(set) var browserState: MultipeerBrowserState = .idle
+    public private(set) var permissionState: MultipeerPermissionState = .unknown
 
+    @ObservationIgnored private var currentRetryCount = 0
     @ObservationIgnored private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
 
     @ObservationIgnored public var onPeerConnected: ((MCPeerID) -> Void)?
@@ -68,12 +92,15 @@ public final class MultipeerManager: NSObject {
         guard !isBrowsing else { return }
         browser.startBrowsingForPeers()
         isBrowsing = true
+        browserState = .scanning
+        currentRetryCount = 0
         print("[MP] Started browsing")
     }
 
     public func stopBrowsing() {
         browser.stopBrowsingForPeers()
         isBrowsing = false
+        browserState = .idle
         DispatchQueue.main.async {
             self.foundPeers.removeAll()
         }
@@ -154,6 +181,7 @@ extension MultipeerManager: MCNearbyServiceBrowserDelegate {
         DispatchQueue.main.async {
             if !self.foundPeers.contains(peerInfo) {
                 self.foundPeers.append(peerInfo)
+                self.browserState = .scanning // Still scanning, but found peers
                 print("[MP] Found peer: \(peerID.displayName)")
             }
         }
@@ -163,11 +191,87 @@ extension MultipeerManager: MCNearbyServiceBrowserDelegate {
         DispatchQueue.main.async {
             self.foundPeers.removeAll { $0.id == peerID }
             print("[MP] Lost peer: \(peerID.displayName)")
+
+            // If no peers left after losing one, update state
+            if self.foundPeers.isEmpty {
+                self.browserState = .noPeersFound
+            }
         }
     }
 
     public func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
+        let nsError = error as NSError
+
         print("[MP] Browse error: \(error.localizedDescription)")
+        print("[MP] Error domain: \(nsError.domain), code: \(nsError.code)")
+
+        // Update permission state based on error
+        if nsError.code == -72008 || nsError.code == -72002 {
+            // -72008: Permission denied / Local network access denied
+            // -72002: Service unavailable
+            DispatchQueue.main.async {
+                self.permissionState = .denied
+                self.browserState = .permissionNeeded
+            }
+        } else if nsError.code == -72003 {
+            // -72003: Network is restricted
+            DispatchQueue.main.async {
+                self.permissionState = .restricted
+                self.browserState = .permissionNeeded
+            }
+        } else {
+            // Other errors - try retry with backoff
+            DispatchQueue.main.async {
+                self.handleBrowseError(error)
+            }
+        }
+    }
+
+    private func handleBrowseError(_ error: Error) {
+        guard currentRetryCount < maxRetryAttempts else {
+            browserState = .error(error.localizedDescription)
+            isBrowsing = false
+            return
+        }
+
+        currentRetryCount += 1
+        let delay = retryDelayBase * pow(2.0, Double(currentRetryCount - 1))
+
+        print("[MP] Retry attempt \(currentRetryCount)/\(maxRetryAttempts) in \(delay)s")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self, self.isBrowsing == false else { return }
+
+            print("[MP] Retrying browse...")
+            self.browser.startBrowsingForPeers()
+        }
+    }
+
+    /// Check and update permission state by attempting a probe
+    public func checkPermissionState() {
+        // Stop any existing browse to do a clean check
+        let wasBrowsing = isBrowsing
+        if isBrowsing {
+            browser.stopBrowsingForPeers()
+        }
+
+        // Attempt to start browsing briefly to trigger permission prompt
+        browser.startBrowsingForPeers()
+
+        // Stop after a short delay - we just want to trigger the permission dialog
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.browser.stopBrowsingForPeers()
+            if wasBrowsing {
+                self?.startBrowsing()
+            }
+        }
+    }
+
+    /// Reset permission state to unknown (e.g., after user returns from Settings)
+    public func resetPermissionState() {
+        permissionState = .unknown
+        browserState = .idle
+        currentRetryCount = 0
     }
 }
 
