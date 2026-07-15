@@ -26,6 +26,10 @@
     <array>
         <string>_fit-challenge._tcp</string>
     </array>
+    <key>NSNearbyInteractionUsageDescription</key>
+    <string>Flint-it uses nearby interaction to show real-time distance and direction to your workout partner.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Flint-it uses Bluetooth to discover and connect with nearby workout partners.</string>
     <key>NSHealthShareUsageDescription</key>
     <string>We need to read your heart rate and active energy burned.</string>
     <key>NSHealthUpdateUsageDescription</key>
