@@ -14,7 +14,6 @@
 		EE1B4B28300619C60080CC08 /* FlintButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */; };
 		EE1B4B29300619C60080CC08 /* FlintButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */; };
 		EE1B514F300682440080CC08 /* watchBuild.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = EE9859D12FFFB530007EB100 /* watchBuild.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		EE1B51533006824E0080CC08 /* phoneBuild.app in Resources */ = {isa = PBXBuildFile; fileRef = EE9859CC2FFFB530007EB100 /* phoneBuild.app */; };
 		EE9859D22FFFB530007EB100 /* watchBuild.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = EE9859D12FFFB530007EB100 /* watchBuild.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE9859FB30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
@@ -22,20 +21,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		EE1B51543006824E0080CC08 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = EE9859B42FFFB45F007EB100 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EE9859CB2FFFB530007EB100;
-			remoteInfo = phoneBuild;
-		};
-		EE1B51DE300684550080CC08 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = EE9859B42FFFB45F007EB100 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EE9859CB2FFFB530007EB100;
-			remoteInfo = phoneBuild;
-		};
 		EE9859D32FFFB530007EB100 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = EE9859B42FFFB45F007EB100 /* Project object */;
@@ -315,16 +300,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		EE1B51553006824E0080CC08 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EE9859CB2FFFB530007EB100 /* phoneBuild */;
-			targetProxy = EE1B51543006824E0080CC08 /* PBXContainerItemProxy */;
-		};
-		EE1B51DF300684550080CC08 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EE9859CB2FFFB530007EB100 /* phoneBuild */;
-			targetProxy = EE1B51DE300684550080CC08 /* PBXContainerItemProxy */;
-		};
 		EE9859D42FFFB530007EB100 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = EE9859D02FFFB530007EB100 /* watchBuild */;
@@ -464,7 +439,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8V4LVBCX83;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
@@ -482,6 +456,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -502,7 +477,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8V4LVBCX83;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
@@ -520,6 +494,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

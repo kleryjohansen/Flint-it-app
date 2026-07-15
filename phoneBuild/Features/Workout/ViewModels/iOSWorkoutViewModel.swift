@@ -7,29 +7,7 @@ import HealthKit
 public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published var appState: AppState = .home {
         didSet {
-            if appState == .searching {
-                // Auto-connect after 5 seconds for simulation / testing
-                Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
-                    guard let self = self else { return }
-                    if self.appState == .searching {
-                        DispatchQueue.main.async {
-                            self.currentRoom = RoomSession(partnerName: "Erling Antetokounmpo", formedAt: Date())
-                            self.appState = .room
-                        }
-                    }
-                }
-            } else if appState == .syncing {
-                // Auto-start workout after 5 seconds for simulation / testing
-                Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
-                    guard let self = self else { return }
-                    if self.appState == .syncing {
-                        DispatchQueue.main.async {
-                            self.appState = .activeWorkout
-                            self.notifyWatchToStartWorkout()
-                        }
-                    }
-                }
-            } else if appState == .activeWorkout {
+            if appState == .activeWorkout {
                 startLocalWorkoutTimer()
                 startRealTimeHealthKitQueries()
             } else if appState == .home || appState == .results {
@@ -271,6 +249,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
             
+            // Restart advertising so we can be discovered again
+            self.multipeerManager?.startAdvertising()
+            
             DispatchQueue.main.async {
                 self.currentRoom = nil
                 self.appState = .home
@@ -355,6 +336,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         // 2. Disconnect Multipeer (callback onPeerDisconnected hanya clear state, tidak reset NI)
         multipeerManager?.disconnect()
+
+        // Restart advertising so we can be discovered again
+        multipeerManager?.startAdvertising()
 
         // 3. Clear room state
         currentRoom = nil
