@@ -85,13 +85,44 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let cal = state["calories"] as? Double, cal > 0 {
                     self.watchCalories = cal
                     self.lastWatchMessageTime = Date()
+                    
+                    // Check target calories
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge,
+                       challenge.metricType == "calories" {
+                        if cal >= challenge.goalValue {
+                            print("[iOS] Target calories reached (\(cal) / \(challenge.goalValue) kcal) — auto ending workout")
+                            self.endWorkout()
+                        }
+                    }
                 }
                 
+                if let dist = state["distance"] as? Double, dist > 0 {
+                    self.lastWatchMessageTime = Date()
+                    
+                    // Check target distance
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge,
+                       challenge.metricType == "distance",
+                       !challenge.challengeName.contains("Endurance") {
+                        let targetMeters = challenge.goalValue * 1000.0
+                        if dist >= targetMeters {
+                            print("[iOS] Target distance reached (\(dist) / \(targetMeters)m) — auto ending workout")
+                            self.endWorkout()
+                        }
+                    }
+                }
 
                 if let secs = state["remainingSeconds"] as? Int, secs > 0 {
                     self.formatCountdownText(seconds: secs)
                     self.elapsedSeconds = secs
                     self.lastWatchMessageTime = Date()
+                    
+                    // Check target time (15 Min Endurance)
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge {
+                        if challenge.challengeName.contains("15 Min Endurance") && secs >= 900 {
+                            print("[iOS] Target time reached (\(secs) / 900s) — auto ending workout")
+                            self.endWorkout()
+                        }
+                    }
                 }
                 
                 if state["status"] as? String == "stopped" {
@@ -149,7 +180,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                     switch workout.workoutActivityType {
                     case .running: type = .running
                     case .cycling: type = .cycling
-                    default: type = .weightlifting
+                    case .swimming: type = .swimming
+                    default: type = .swimming
                     }
                     
                     return PastWorkout(
@@ -411,8 +443,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         case .cycling:
             configuration.activityType = .cycling
             configuration.locationType = .outdoor
-        case .weightlifting:
-            configuration.activityType = .functionalStrengthTraining
+        case .swimming:
+            configuration.activityType = .swimming
             configuration.locationType = .indoor
         }
         
@@ -542,6 +574,14 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 let isWatchActive = self.isWatchConnectedAndSendingData()
                 if !isWatchActive {
                     self.formatCountdownText(seconds: self.elapsedSeconds)
+                    
+                    // Local check for time-based challenge if watch is not connected
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge {
+                        if challenge.challengeName.contains("15 Min Endurance") && self.elapsedSeconds >= 900 {
+                            print("[iOS] Local fallback timer: Target time reached. Auto ending workout.")
+                            self.endWorkout()
+                        }
+                    }
                 }
             }
         }

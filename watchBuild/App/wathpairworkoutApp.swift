@@ -11,8 +11,10 @@ class WatchAppDelegate: NSObject, WKApplicationDelegate {
             sportName = "Running"
         case .cycling:
             sportName = "Cycling"
+        case .swimming:
+            sportName = "Swimming"
         default:
-            sportName = "Weightlifting"
+            sportName = "Swimming"
         }
         
         DispatchQueue.main.async {

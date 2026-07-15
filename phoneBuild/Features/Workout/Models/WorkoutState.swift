@@ -16,7 +16,7 @@ public enum AppState {
 public enum WorkoutType: String, CaseIterable, Identifiable, Codable {
     case running = "Running"
     case cycling = "Cycling"
-    case weightlifting = "Weightlifting"
+    case swimming = "Swimming"
     
     public var id: String { self.rawValue }
     
@@ -25,7 +25,7 @@ public enum WorkoutType: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .running: return "figure.run"
         case .cycling: return "figure.outdoor.cycle"
-        case .weightlifting: return "dumbbell.fill"
+        case .swimming: return "figure.pool.swim"
         }
     }
 }

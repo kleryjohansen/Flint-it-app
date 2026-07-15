@@ -14,15 +14,15 @@ public struct WorkoutSetupView: View {
     
     // Goals configuration
     private let runningCyclingGoals = [
-        (name: "1KM Sprint", subtitle: "Fastest to finish 1km wins", value: 1.0, metric: "distance"),
+        (name: "15M Sprint", subtitle: "Fastest to finish 15m wins", value: 0.015, metric: "distance"),
         (name: "5KM Distance", subtitle: "Fastest to finish 5km wins", value: 5.0, metric: "distance"),
         (name: "15 Min Endurance", subtitle: "Longest distance in 15 mins wins", value: 15.0, metric: "distance")
     ]
     
-    private let weightliftingGoals = [
+    private let swimmingGoals = [
+        (name: "15M Swim Sprint", subtitle: "Fastest to swim 15m wins", value: 0.015, metric: "distance"),
         (name: "100 Calories Burned", subtitle: "Fastest to burn 100 kcal wins", value: 100.0, metric: "calories"),
-        (name: "200 Calories Burned", subtitle: "Fastest to burn 200 kcal wins", value: 200.0, metric: "calories"),
-        (name: "300 Calories Burned", subtitle: "Fastest to burn 300 kcal wins", value: 300.0, metric: "calories")
+        (name: "200 Calories Burned", subtitle: "Fastest to burn 200 kcal wins", value: 200.0, metric: "calories")
     ]
     
     public init() {}
@@ -136,7 +136,7 @@ public struct WorkoutSetupView: View {
                             .padding(.horizontal, 4)
                             
                             VStack(spacing: 12) {
-                                let activeGoals = selectedSport == .weightlifting ? weightliftingGoals : runningCyclingGoals
+                                let activeGoals = selectedSport == .swimming ? swimmingGoals : runningCyclingGoals
                                 ForEach(0..<activeGoals.count, id: \.self) { index in
                                     let goal = activeGoals[index]
                                     Button(action: {
@@ -167,7 +167,7 @@ public struct WorkoutSetupView: View {
                             
                             // Send Challenge button
                             Button(action: {
-                                let activeGoals = selectedSport == .weightlifting ? weightliftingGoals : runningCyclingGoals
+                                let activeGoals = selectedSport == .swimming ? swimmingGoals : runningCyclingGoals
                                 let goal = activeGoals[selectedGoalIndex]
                                 let challenge = WorkoutChallenge(
                                     sport: selectedSport,
