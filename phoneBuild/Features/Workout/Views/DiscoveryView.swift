@@ -8,6 +8,7 @@ struct DiscoveryView: View {
     @State private var outerPulseScale: CGFloat = 1.0
     @State private var selectedDiscoveryPeer: MCPeerID? = nil
     @State private var selectedTab: String = "Tab 1" // "Tab 1" (Home/Search) or "Tab 2" (Profile/History)
+    @State private var showSearchSkip = false
     
     var body: some View {
         ZStack {
@@ -157,6 +158,25 @@ struct DiscoveryView: View {
                                     .font(.subheadline)
                                     .foregroundColor(Color("appSecondaryLabel"))
                             }
+                            
+                            if showSearchSkip && viewModel.appState == .searching {
+                                Button(action: {
+                                    withAnimation {
+                                        viewModel.skipConnectionAndGoToSetup()
+                                    }
+                                }) {
+                                    Text("Skip to Setup (Solo)")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 20)
+                                        .background(Color.orange)
+                                        .clipShape(Capsule())
+                                        .shadow(color: Color.orange.opacity(0.35), radius: 8)
+                                }
+                                .padding(.top, 8)
+                                .transition(.scale.combined(with: .opacity))
+                            }
                         }
                     }
                     
@@ -293,6 +313,20 @@ struct DiscoveryView: View {
         }
         .flintVibrantBackground()
         .navigationBarBackButtonHidden(true)
+        .onChange(of: viewModel.appState) { newState in
+            if newState == .searching {
+                showSearchSkip = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    if viewModel.appState == .searching {
+                        withAnimation {
+                            showSearchSkip = true
+                        }
+                    }
+                }
+            } else {
+                showSearchSkip = false
+            }
+        }
     }
 }
 

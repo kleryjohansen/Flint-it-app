@@ -87,8 +87,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                     self.lastWatchMessageTime = Date()
                 }
                 
+
                 if let secs = state["remainingSeconds"] as? Int, secs > 0 {
                     self.formatCountdownText(seconds: secs)
+                    self.elapsedSeconds = secs
                     self.lastWatchMessageTime = Date()
                 }
                 
@@ -628,11 +630,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
            let decoded = try? JSONDecoder().decode([PastWorkout].self, from: data) {
             self.pastWorkouts = decoded
         } else {
-            // Default premium mock workouts if empty
-            self.pastWorkouts = [
-                PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .weightlifting, duration: 2400, avgHeartRate: 135.0, calories: 350.0, partnerName: "Nathaniel John"),
-                PastWorkout(date: Date().addingTimeInterval(-86400 * 5), type: .running, duration: 1800, avgHeartRate: 155.0, calories: 280.0, partnerName: "Olivia Amanda")
-            ]
+            // Start completely blank
+            self.pastWorkouts = []
             self.savePastWorkoutsLocally()
         }
     }
@@ -645,6 +644,27 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     
     func rematch() {
         appState = .workoutSetup
+    }
+    
+    public func skipProximityAndGoToRoom() {
+        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+        DispatchQueue.main.async {
+            self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
+            self.appState = .room
+        }
+    }
+    
+    public func skipConnectionAndGoToSetup() {
+        DispatchQueue.main.async {
+            self.appState = .workoutSetup
+        }
+    }
+    
+    public func skipWaitingAndStartWorkout() {
+        DispatchQueue.main.async {
+            self.appState = .activeWorkout
+            self.notifyWatchToStartWorkout()
+        }
     }
     
     func forgetWorkout(_ workout: PastWorkout) {

@@ -3,6 +3,7 @@ import MultipeerConnectivity
 
 struct NearbyRadarView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
+    @State private var showSkipButton = false
 
     var body: some View {
         let ni = viewModel.niManager
@@ -63,20 +64,42 @@ struct NearbyRadarView: View {
 
                 Spacer()
                 
-                // Bottom cancel button: matches Screen 4
-                Button(action: {
-                    withAnimation {
-                        viewModel.fullCleanup()
+                // Action Buttons at the Bottom
+                VStack(spacing: 12) {
+                    if showSkipButton {
+                        // Skip Proximity Button (Appears after 5 seconds to bypass Nearby Interaction)
+                        Button(action: {
+                            withAnimation {
+                                viewModel.skipProximityAndGoToRoom()
+                            }
+                        }) {
+                            Text("Skip Proximity Check")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color.orange)
+                                .clipShape(Capsule())
+                                .shadow(color: Color.orange.opacity(0.35), radius: 12, y: 6)
+                        }
+                        .transition(.scale.combined(with: .opacity))
                     }
-                }) {
-                    Text("Cancel")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.flintRed)
-                        .clipShape(Capsule())
-                        .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
+                    
+                    // Cancel button
+                    Button(action: {
+                        withAnimation {
+                            viewModel.fullCleanup()
+                        }
+                    }) {
+                        Text("Cancel")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.flintRed)
+                            .clipShape(Capsule())
+                            .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
@@ -84,6 +107,14 @@ struct NearbyRadarView: View {
         }
         .flintVibrantBackground()
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            // Delay 5 seconds before showing the skip button for testing
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                withAnimation {
+                    showSkipButton = true
+                }
+            }
+        }
         .onDisappear {
             // Cleanup only if not forming a room
             if viewModel.currentRoom == nil {

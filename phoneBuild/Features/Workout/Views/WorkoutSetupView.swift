@@ -207,6 +207,7 @@ public struct WorkoutSetupView: View {
 public struct ChallengeWaitingView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var spinAnimation = false
+    @State private var showWaitingSkip = false
     
     public init() {}
 
@@ -283,6 +284,25 @@ public struct ChallengeWaitingView: View {
                         Text("Waiting to bring workout...")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.4))
+                        
+                        if showWaitingSkip {
+                            Button(action: {
+                                withAnimation {
+                                    viewModel.skipWaitingAndStartWorkout()
+                                }
+                            }) {
+                                Text("Start Workout Solo")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 14)
+                                    .padding(.horizontal, 28)
+                                    .background(Color.orange)
+                                    .clipShape(Capsule())
+                                    .shadow(color: Color.orange.opacity(0.35), radius: 10, y: 5)
+                            }
+                            .padding(.top, 24)
+                            .transition(.scale.combined(with: .opacity))
+                        }
                     }
                 }
                 
@@ -291,6 +311,14 @@ public struct ChallengeWaitingView: View {
         }
         .flintVibrantBackground()
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            // Trigger skip button helper after 5 seconds of waiting
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                withAnimation {
+                    showWaitingSkip = true
+                }
+            }
+        }
     }
 }
 
