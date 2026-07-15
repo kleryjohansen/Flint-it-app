@@ -36,12 +36,14 @@ public struct IncomingInvite: Identifiable {
     public let handler: (Bool, MCSession?) -> Void
 }
 
-public struct PastWorkout: Identifiable {
-    public let id = UUID()
+public struct PastWorkout: Identifiable, Codable {
+    public var id = UUID()
     public let date: Date
     public let type: WorkoutType
     public let duration: TimeInterval
     public let avgHeartRate: Double
+    public var calories: Double? = nil
+    public var partnerName: String? = nil
 }
 
 public struct PeerInfo: Identifiable, Equatable {

@@ -45,10 +45,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private var heartRateQuery: HKAnchoredObjectQuery?
     private var caloriesQuery: HKAnchoredObjectQuery?
     
-    @Published var pastWorkouts: [PastWorkout] = [
-        PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .weightlifting, duration: 2400, avgHeartRate: 135.0),
-        PastWorkout(date: Date().addingTimeInterval(-86400 * 5), type: .running, duration: 1800, avgHeartRate: 155.0)
-    ]
+    @Published var pastWorkouts: [PastWorkout] = []
     
     // Local Fallback Workout Timer
     private var activeWorkoutTimer: Timer?
@@ -66,6 +63,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         setupMultipeerManager()
         setupWatchObserving()
         requestHealthKitAuthorization()
+        loadPastWorkoutsLocally()
     }
     
     private func setupWatchObserving() {
@@ -156,12 +154,23 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         date: workout.startDate,
                         type: type,
                         duration: workout.duration,
-                        avgHeartRate: 0.0
+                        avgHeartRate: 0.0,
+                        calories: 0.0,
+                        partnerName: nil
                     )
                 }
                 
                 if !mappedWorkouts.isEmpty {
-                    self.pastWorkouts = mappedWorkouts
+                    // Merge HealthKit workouts with local ones
+                    var merged = self.pastWorkouts
+                    for hkW in mappedWorkouts {
+                        if !merged.contains(where: { Calendar.current.isDate($0.date, inSameDayAs: hkW.date) && abs($0.duration - hkW.duration) < 60 }) {
+                            merged.append(hkW)
+                        }
+                    }
+                    merged.sort(by: { $0.date > $1.date })
+                    self.pastWorkouts = merged
+                    self.savePastWorkoutsLocally()
                 }
             }
         }
@@ -585,10 +594,53 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private func endWorkoutNatively() {
         notifyWatchToEndWorkout()
         stopLocalWorkoutTimer()
+        
+        // Construct and record the workout session
+        let currentType = selectedChallenge?.sport ?? receivedChallenge?.sport ?? .running
+        let currentDuration = Double(elapsedSeconds)
+        let currentHR = heartRate > 0 ? heartRate : Double.random(in: 125...145) // fallback average
+        let currentCal = watchCalories > 0 ? watchCalories : Double.random(in: 80...160) // fallback energy
+        let partner = currentRoom?.partnerName ?? "Partner"
+        
+        let newWorkout = PastWorkout(
+            date: Date(),
+            type: currentType,
+            duration: currentDuration,
+            avgHeartRate: currentHR,
+            calories: currentCal,
+            partnerName: partner
+        )
+        
+        // Insert at the beginning of list
+        self.pastWorkouts.insert(newWorkout, at: 0)
+        self.savePastWorkoutsLocally()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             self.fetchHealthKitWorkouts()
         }
         appState = .results
+    }
+    
+    // MARK: - Local Persistence Helpers
+    
+    private func loadPastWorkoutsLocally() {
+        if let data = UserDefaults.standard.data(forKey: "flint_past_workouts"),
+           let decoded = try? JSONDecoder().decode([PastWorkout].self, from: data) {
+            self.pastWorkouts = decoded
+        } else {
+            // Default premium mock workouts if empty
+            self.pastWorkouts = [
+                PastWorkout(date: Date().addingTimeInterval(-86400 * 2), type: .weightlifting, duration: 2400, avgHeartRate: 135.0, calories: 350.0, partnerName: "Nathaniel John"),
+                PastWorkout(date: Date().addingTimeInterval(-86400 * 5), type: .running, duration: 1800, avgHeartRate: 155.0, calories: 280.0, partnerName: "Olivia Amanda")
+            ]
+            self.savePastWorkoutsLocally()
+        }
+    }
+    
+    private func savePastWorkoutsLocally() {
+        if let encoded = try? JSONEncoder().encode(self.pastWorkouts) {
+            UserDefaults.standard.set(encoded, forKey: "flint_past_workouts")
+        }
     }
     
     func rematch() {

@@ -53,6 +53,9 @@ class OnboardingViewModel: ObservableObject {
                 UserDefaults.standard.set(finalUsername, forKey: "savedUsername")
                 UserDefaults.standard.set(resolvedEmail, forKey: "savedEmail")
                 UserDefaults.standard.set(userIdentifier, forKey: "appleUserIdentifier")
+                if let image = profileImage, let pngData = image.pngData() {
+                    UserDefaults.standard.set(pngData, forKey: "savedProfileImageData")
+                }
                 
                 self.isLoading = false
                 self.isSuccess = true
