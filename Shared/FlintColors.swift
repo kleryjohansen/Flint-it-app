@@ -1,7 +1,10 @@
 import SwiftUI
 
 extension Color {
-    static let flintBackground = Color(red: 0.08, green: 0.08, blue: 0.08) // Latar gelap
-    static let flintRed = Color(red: 1.0, green: 0.2, blue: 0.1) // Merah neon/oranye
-    static let flintGlass = Color.white.opacity(0.1) // Warna dasar efek kaca
+    // Dynamic theme colors pointing to the Asset Catalog
+    static let flintBackground = Color("appBrandBackground")
+    static let flintRed = Color("appPrimary")
+    static let flintGlass = Color("appGlassWhite")
+    static let flintCardBorder = Color("appGlassBorder")
+    static let flintGlow = Color("appPrimaryDeep").opacity(0.4)
 }
