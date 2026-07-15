@@ -38,6 +38,8 @@ struct ContentView: View {
             case .results:
                 ResultsView()
                     .environmentObject(viewModel)
+            @unknown default:
+                EmptyView()
             }
         }
         .environmentObject(viewModel)

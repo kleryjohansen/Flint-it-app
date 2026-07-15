@@ -1,20 +1,46 @@
 import SwiftUI
 
 struct VibrantBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    
     func body(content: Content) -> some View {
         ZStack {
-            // Dark base background
-            Color(red: 0.05, green: 0.04, blue: 0.04)
+            if colorScheme == .light {
+                // Light mode: clean white blending to dynamic primary red-orange at the bottom
+                LinearGradient(
+                    colors: [
+                        Color.white,
+                        Color.white.opacity(0.9),
+                        Color("appPrimary").opacity(0.8)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
                 .ignoresSafeArea()
+            } else {
+                // Dark mode: pitch black blending to deep primary red-orange at the bottom
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        Color.black.opacity(0.85),
+                        Color("appPrimaryDeep").opacity(0.65)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
             
-            // Soft large radial glow centered at the bottom half to match the red glow in the screenshots
+            // Central radial glow around the central button matching the mockup glow
             RadialGradient(
-                gradient: Gradient(colors: [Color.flintRed.opacity(0.32), Color.clear]),
+                gradient: Gradient(colors: [
+                    Color("appPrimary").opacity(colorScheme == .light ? 0.25 : 0.35),
+                    Color.clear
+                ]),
                 center: .center,
                 startRadius: 10,
-                endRadius: 420
+                endRadius: 260
             )
-            .offset(y: 80)
             .ignoresSafeArea()
             
             content
@@ -27,17 +53,17 @@ struct GlassCardModifier: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.flintGlass)
                     #if os(iOS)
                     .background(
-                        VisualEffectBlur(blurStyle: .systemUltraThinMaterialDark)
+                        VisualEffectBlur(blurStyle: .systemUltraThinMaterial)
                             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     )
                     #endif
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.flintCardBorder, lineWidth: 1)
             )
     }
 }

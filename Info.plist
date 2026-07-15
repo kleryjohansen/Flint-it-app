@@ -25,6 +25,7 @@
     <key>NSBonjourServices</key>
     <array>
         <string>_fit-challenge._tcp</string>
+        <string>_fit-challenge._udp</string>
     </array>
     <key>NSNearbyInteractionUsageDescription</key>
     <string>Flint-it uses nearby interaction to show real-time distance and direction to your workout partner.</string>
