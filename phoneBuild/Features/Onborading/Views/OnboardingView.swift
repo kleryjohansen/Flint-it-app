@@ -38,7 +38,7 @@ struct OnboardingView: View {
                                 isAnimatingLogo = true
                             }
                         
-                        Text("FLINT")
+                        Text("Nearfit")
                             .font(.system(size: 28, weight: .black, design: .rounded))
                             .tracking(6)
                             .foregroundColor(.white)

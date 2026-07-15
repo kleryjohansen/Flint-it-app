@@ -67,7 +67,7 @@ struct ContentView: View {
                         .font(.system(size: 32))
                         .foregroundColor(.orange)
                     
-                    Text("Flint")
+                    Text("Nearfit")
                         .font(.headline.bold())
                         .foregroundColor(.white)
                     

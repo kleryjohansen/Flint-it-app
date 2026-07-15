@@ -5,11 +5,11 @@ struct ProfileView: View {
     @State private var profileImage: UIImage? = nil
     
     private var username: String {
-        UserDefaults.standard.string(forKey: "savedUsername") ?? "Flint Athlete"
+        UserDefaults.standard.string(forKey: "savedUsername") ?? "Nearfit Athlete"
     }
     
     private var email: String {
-        UserDefaults.standard.string(forKey: "savedEmail") ?? "athlete@flint.com"
+        UserDefaults.standard.string(forKey: "savedEmail") ?? "athlete@nearfit.com"
     }
     
     // Calculated statistics
