@@ -11,20 +11,20 @@ public struct WorkoutSetupView: View {
     @State private var step: Int = 1
     @State private var selectedSport: WorkoutType = .running
     @State private var selectedGoalIndex: Int = 0
-    
+
     // Goals configuration
     private let runningCyclingGoals = [
         (name: "1KM Sprint", subtitle: "Fastest to finish 1km wins", value: 1.0, metric: "distance"),
         (name: "5KM Distance", subtitle: "Fastest to finish 5km wins", value: 5.0, metric: "distance"),
         (name: "15 Min Endurance", subtitle: "Longest distance in 15 mins wins", value: 15.0, metric: "distance")
     ]
-    
+
     private let weightliftingGoals = [
         (name: "100 Calories Burned", subtitle: "Fastest to burn 100 kcal wins", value: 100.0, metric: "calories"),
         (name: "200 Calories Burned", subtitle: "Fastest to burn 200 kcal wins", value: 200.0, metric: "calories"),
         (name: "300 Calories Burned", subtitle: "Fastest to burn 300 kcal wins", value: 300.0, metric: "calories")
     ]
-    
+
     public init() {}
 
     public var body: some View {
@@ -41,36 +41,36 @@ public struct WorkoutSetupView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3.bold())
-                            .foregroundColor(.white)
+                            .foregroundColor(.white) // Intentional: di atas fixed brand background
                             .padding(10)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .background(Circle().fill(.ultraThinMaterial))
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("Create Challenge")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                    
+                        .font(.callout.bold())
+                        .foregroundColor(.white) // Intentional: di atas fixed brand background
+
                     Spacer()
                     Spacer().frame(width: 44) // Balance back button
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-                
+
                 Spacer()
-                
+
                 // Form Content Card (matches Screen 6 & 7 glassmorphic card)
                 VStack(spacing: 24) {
                     if step == 1 {
                         // STEP 1: Choose a Sport
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Choose a sport")
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(.callout.bold())
+                                .foregroundColor(Color("appSecondaryLabel"))
                                 .tracking(1)
                                 .padding(.horizontal, 4)
-                            
+
                             VStack(spacing: 12) {
                                 ForEach(WorkoutType.allCases) { type in
                                     Button(action: {
@@ -79,39 +79,39 @@ public struct WorkoutSetupView: View {
                                         HStack(spacing: 16) {
                                             ZStack {
                                                 Circle()
-                                                    .fill(selectedSport == type ? Color.flintRed : Color.white.opacity(0.1))
+                                                    .fill(selectedSport == type ? Color.flintRed : Color("appGlassWhite"))
                                                     .frame(width: 40, height: 40)
-                                                
+
                                                 Image(systemName: type.iconName)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
+                                                    .font(.callout.bold())
+                                                    .foregroundColor(.white) // Intentional: di atas circle brand/glass background
                                             }
-                                            
+
                                             Text(type.rawValue)
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(.white)
-                                            
+                                                .font(.callout.bold())
+                                                .foregroundColor(.white) // Intentional: di atas fixed brand background
+
                                             Spacer()
                                         }
                                         .padding(.vertical, 14)
                                         .padding(.horizontal, 16)
-                                        .background(Color.white.opacity(0.04))
+                                        .background(Color("appGlassWhite").opacity(0.5))
                                         .cornerRadius(18)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 18)
-                                                .stroke(selectedSport == type ? Color.flintRed : Color.white.opacity(0.04), lineWidth: 1.5)
+                                                .stroke(selectedSport == type ? Color.flintRed : Color("appGlassWhite").opacity(0.5), lineWidth: 1.5)
                                         )
                                     }
                                 }
                             }
-                            
+
                             // Bottom capsule button inside the layout
                             Button(action: {
                                 withAnimation { step = 2 }
                             }) {
                                 Text("Continue")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.callout.bold())
+                                    .foregroundColor(.white) // Intentional: di atas tombol brand Color.flintRed
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
                                     .background(Color.flintRed)
@@ -130,11 +130,11 @@ public struct WorkoutSetupView: View {
                                     Image(systemName: "chevron.left")
                                     Text("Choose your challenge")
                                 }
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(.callout.bold())
+                                .foregroundColor(Color("appSecondaryLabel"))
                             }
                             .padding(.horizontal, 4)
-                            
+
                             VStack(spacing: 12) {
                                 let activeGoals = selectedSport == .weightlifting ? weightliftingGoals : runningCyclingGoals
                                 ForEach(0..<activeGoals.count, id: \.self) { index in
@@ -145,26 +145,26 @@ public struct WorkoutSetupView: View {
                                         HStack {
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(goal.name)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
+                                                    .font(.callout.bold())
+                                                    .foregroundColor(.white) // Intentional: di atas fixed brand background
                                                 Text(goal.subtitle)
-                                                    .font(.system(size: 12))
-                                                    .foregroundColor(.white.opacity(0.5))
+                                                    .font(.caption)
+                                                    .foregroundColor(Color("appSecondaryLabel"))
                                             }
                                             Spacer()
                                         }
                                         .padding(.vertical, 16)
                                         .padding(.horizontal, 16)
-                                        .background(Color.white.opacity(0.04))
+                                        .background(Color("appGlassWhite").opacity(0.5))
                                         .cornerRadius(18)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 18)
-                                                .stroke(selectedGoalIndex == index ? Color.flintRed : Color.white.opacity(0.04), lineWidth: 1.5)
+                                                .stroke(selectedGoalIndex == index ? Color.flintRed : Color("appGlassWhite").opacity(0.5), lineWidth: 1.5)
                                         )
                                     }
                                 }
                             }
-                            
+
                             // Send Challenge button
                             Button(action: {
                                 let activeGoals = selectedSport == .weightlifting ? weightliftingGoals : runningCyclingGoals
@@ -178,8 +178,8 @@ public struct WorkoutSetupView: View {
                                 viewModel.sendChallenge(challenge)
                             }) {
                                 Text("Send Challenge")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.callout.bold())
+                                    .foregroundColor(.white) // Intentional: di atas tombol brand Color.flintRed
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
                                     .background(Color.flintRed)
@@ -193,12 +193,11 @@ public struct WorkoutSetupView: View {
                 .padding(24)
                 .flintGlassCard()
                 .padding(.horizontal, 24)
-                
+
                 Spacer()
             }
         }
         .flintVibrantBackground()
-        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -208,7 +207,7 @@ public struct ChallengeWaitingView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var spinAnimation = false
     @State private var showWaitingSkip = false
-    
+
     public init() {}
 
     public var body: some View {
@@ -223,24 +222,24 @@ public struct ChallengeWaitingView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3.bold())
-                            .foregroundColor(.white)
+                            .foregroundColor(.white) // Intentional: di atas fixed brand background
                             .padding(10)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .background(Circle().fill(.ultraThinMaterial))
                     }
                     Spacer()
-                    
+
                     Text("Challenging...")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                    
+                        .font(.callout.bold())
+                        .foregroundColor(.white) // Intentional: di atas fixed brand background
+
                     Spacer()
                     Spacer().frame(width: 44) // Balance back button
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-                
+
                 Spacer()
-                
+
                 // Spinner & Progress visual (Screen 8 style)
                 VStack(spacing: 40) {
                     ZStack {
@@ -249,12 +248,12 @@ public struct ChallengeWaitingView: View {
                             .fill(Color.flintRed.opacity(0.12))
                             .frame(width: 220, height: 220)
                             .blur(radius: 20)
-                        
+
                         // Background track ring
                         Circle()
-                            .stroke(Color.white.opacity(0.06), lineWidth: 6)
+                            .stroke(Color("appGlassWhite"), lineWidth: 6)
                             .frame(width: 140, height: 140)
-                        
+
                         // Rotating gradient indicator ring
                         Circle()
                             .trim(from: 0.0, to: 0.35)
@@ -274,17 +273,17 @@ public struct ChallengeWaitingView: View {
                                 }
                             }
                     }
-                    
+
                     // Spinner Status Description Text
                     VStack(spacing: 8) {
                         Text("Waiting for \(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")...")
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                        
+                            .font(.title3)
+                            .foregroundColor(.white) // Intentional: di atas fixed brand background
+
                         Text("Waiting to bring workout...")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.4))
-                        
+                            .font(.subheadline)
+                            .foregroundColor(Color("appSecondaryLabel"))
+
                         if showWaitingSkip {
                             Button(action: {
                                 withAnimation {
@@ -292,25 +291,24 @@ public struct ChallengeWaitingView: View {
                                 }
                             }) {
                                 Text("Start Workout Solo")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.callout.bold())
+                                    .foregroundColor(.white) // Intentional: di atas tombol brand Color("appPrimary")
                                     .padding(.vertical, 14)
                                     .padding(.horizontal, 28)
-                                    .background(Color.orange)
+                                    .background(Color("appPrimary"))
                                     .clipShape(Capsule())
-                                    .shadow(color: Color.orange.opacity(0.35), radius: 10, y: 5)
+                                    .shadow(color: Color("appPrimary").opacity(0.35), radius: 10, y: 5)
                             }
                             .padding(.top, 24)
                             .transition(.scale.combined(with: .opacity))
                         }
                     }
                 }
-                
+
                 Spacer()
             }
         }
         .flintVibrantBackground()
-        .navigationBarBackButtonHidden(true)
         .onAppear {
             // Trigger skip button helper after 5 seconds of waiting
             DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
@@ -331,18 +329,18 @@ public struct ChallengeReceivedView: View {
     public var body: some View {
         ZStack {
             // Dark base background
-            Color(red: 0.05, green: 0.04, blue: 0.04)
+            Color("appBrandBackground")
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 32) {
                 // Header Graphic
                 ZStack {
                     Circle()
                         .fill(Color.flintRed.opacity(0.12))
                         .frame(width: 96, height: 96)
-                    
+
                     Image(systemName: challenge.sport.iconName)
-                        .font(.system(size: 40))
+                        .font(.largeTitle)
                         .foregroundColor(Color.flintRed)
                 }
                 .padding(.top, 16)
@@ -350,24 +348,24 @@ public struct ChallengeReceivedView: View {
                 // Info Cards
                 VStack(spacing: 12) {
                     Text("\(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner") challenged you!")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.title3.bold())
+                        .foregroundColor(.white) // Intentional: di atas fixed Color("appBrandBackground")
                         .multilineTextAlignment(.center)
-                    
+
                     VStack(spacing: 6) {
                         Text("Sport: \(challenge.sport.rawValue)")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white.opacity(0.8))
-                        
+                            .font(.callout.bold())
+                            .foregroundColor(Color("appSecondaryLabel"))
+
                         Text(challenge.challengeName)
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.caption)
+                            .foregroundColor(Color("appSecondaryLabel"))
                             .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity)
-                    .background(Color.white.opacity(0.04))
+                    .background(Color("appGlassWhite").opacity(0.5))
                     .cornerRadius(16)
                 }
 
@@ -377,11 +375,11 @@ public struct ChallengeReceivedView: View {
                         viewModel.declineChallenge()
                     }) {
                         Text("Decline")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white.opacity(0.6))
+                            .font(.callout.bold())
+                            .foregroundColor(Color("appSecondaryLabel"))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color.white.opacity(0.08))
+                            .background(Color("appGlassWhite"))
                             .clipShape(Capsule())
                     }
 
@@ -389,8 +387,8 @@ public struct ChallengeReceivedView: View {
                         viewModel.acceptChallenge()
                     }) {
                         Text("Accept & Start")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.callout.bold())
+                            .foregroundColor(.white) // Intentional: di atas tombol brand Color.flintRed
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(Color.flintRed)
@@ -405,4 +403,9 @@ public struct ChallengeReceivedView: View {
         .preferredColorScheme(.dark)
         .presentationDetents([.medium])
     }
+}
+
+#Preview {
+    WorkoutSetupView()
+        .environmentObject(iOSWorkoutViewModel())
 }

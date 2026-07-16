@@ -3,30 +3,30 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var profileImage: UIImage? = nil
-    
+
     private var username: String {
         UserDefaults.standard.string(forKey: "savedUsername") ?? "Nearfit Athlete"
     }
-    
+
     private var email: String {
         UserDefaults.standard.string(forKey: "savedEmail") ?? "athlete@nearfit.com"
     }
-    
+
     // Calculated statistics
     private var totalChallenges: Int {
         viewModel.pastWorkouts.count
     }
-    
+
     private var averageHR: Int {
         guard !viewModel.pastWorkouts.isEmpty else { return 0 }
         let total = viewModel.pastWorkouts.reduce(0.0) { $0 + $1.avgHeartRate }
         return Int(total / Double(viewModel.pastWorkouts.count))
     }
-    
+
     private var totalCalories: Double {
         viewModel.pastWorkouts.reduce(0.0) { $0 + ($1.calories ?? 0.0) }
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Profile Header Info
@@ -44,54 +44,54 @@ struct ProfileView: View {
                         .frame(width: 90, height: 90)
                         .overlay(
                             Image(systemName: "person.fill")
-                                .font(.system(size: 40))
+                                .font(.largeTitle)
                                 .foregroundColor(Color("appSecondaryLabel").opacity(0.8))
                         )
                         .overlay(Circle().stroke(Color("appGlassBorder"), lineWidth: 2))
                 }
-                
+
                 VStack(spacing: 4) {
                     Text(username)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.title3.bold())
                         .foregroundColor(Color("appLabel"))
-                    
+
                     Text(email)
-                        .font(.system(size: 13))
+                        .font(.subheadline)
                         .foregroundColor(Color("appSecondaryLabel"))
                 }
             }
             .padding(.top, 24)
             .padding(.bottom, 20)
-            
+
             // Statistics Grid (Glass Card style)
             HStack(spacing: 16) {
-                StatItem(title: "Challenges", value: "\(totalChallenges)", icon: "trophy.fill", color: .yellow)
-                StatItem(title: "Avg HR", value: averageHR > 0 ? "\(averageHR) BPM" : "---", icon: "heart.fill", color: .red)
-                StatItem(title: "Calories", value: String(format: "%.0f kcal", totalCalories), icon: "flame.fill", color: .orange)
+                StatItem(title: "Challenges", value: "\(totalChallenges)", icon: "trophy.fill", color: Color("appYellow"))
+                StatItem(title: "Avg HR", value: averageHR > 0 ? "\(averageHR) BPM" : "---", icon: "heart.fill", color: Color("appRed"))
+                StatItem(title: "Calories", value: String(format: "%.0f kcal", totalCalories), icon: "flame.fill", color: Color("appOrange"))
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
-            
+
             // History list section
             VStack(alignment: .leading, spacing: 12) {
                 Text("Challenge History (\(totalChallenges))")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.subheadline.bold())
                     .foregroundColor(Color("appSecondaryLabel"))
                     .tracking(0.5)
                     .padding(.horizontal, 24)
-                
+
                 if viewModel.pastWorkouts.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "clock.badge.exclamationmark")
-                            .font(.system(size: 44))
+                            .font(.largeTitle)
                             .foregroundColor(Color("appSecondaryLabel").opacity(0.6))
-                        
+
                         Text("No recorded workouts yet")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.headline)
                             .foregroundColor(Color("appLabel"))
-                        
+
                         Text("Start a challenge with a nearby workout partner to record history.")
-                            .font(.system(size: 13))
+                            .font(.subheadline)
                             .foregroundColor(Color("appSecondaryLabel"))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 24)
@@ -119,14 +119,14 @@ struct ProfileView: View {
                     .background(Color.clear)
                 }
             }
-            
+
             Spacer()
         }
         .onAppear {
             loadLocalProfileImage()
         }
     }
-    
+
     private func loadLocalProfileImage() {
         if let data = UserDefaults.standard.data(forKey: "savedProfileImageData"),
            let image = UIImage(data: data) {
@@ -142,21 +142,22 @@ struct StatItem: View {
     let value: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.title3)
                 .foregroundColor(color)
-            
+
             Text(value)
-                .font(.system(size: 16, weight: .bold))
+                .font(.headline)
                 .foregroundColor(Color("appLabel"))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            
+
             Text(title)
-                .font(.system(size: 11, weight: .medium))
+                .font(.caption)
+                .fontWeight(.medium)
                 .foregroundColor(Color("appSecondaryLabel"))
         }
         .frame(maxWidth: .infinity)
@@ -167,13 +168,13 @@ struct StatItem: View {
 
 struct HistoryRow: View {
     let workout: PastWorkout
-    
+
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy, HH:mm"
         return formatter.string(from: workout.date)
     }
-    
+
     private var durationString: String {
         let minutes = Int(workout.duration) / 60
         let seconds = Int(workout.duration) % 60
@@ -183,7 +184,7 @@ struct HistoryRow: View {
             return "\(seconds)s"
         }
     }
-    
+
     var body: some View {
         HStack(spacing: 16) {
             // Icon matching workout sport type
@@ -191,57 +192,60 @@ struct HistoryRow: View {
                 Circle()
                     .fill(Color("appPrimary").opacity(0.12))
                     .frame(width: 40, height: 40)
-                
+
                 Image(systemName: workout.type.iconName)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.subheadline.bold())
                     .foregroundColor(Color("appPrimary"))
             }
-            
+
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(workout.type.rawValue)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.subheadline.bold())
                         .foregroundColor(Color("appLabel"))
-                    
+
                     if let partner = workout.partnerName {
                         Text("vs \(partner)")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(Color("appSecondaryLabel"))
                             .lineLimit(1)
                     }
                 }
-                
+
                 Text(formattedDate)
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundColor(Color("appSecondaryLabel").opacity(0.8))
             }
-            
+
             Spacer()
-            
+
             VStack(alignment: .trailing, spacing: 3) {
                 Text(durationString)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.subheadline.bold())
                     .foregroundColor(Color("appLabel"))
-                
+
                 HStack(spacing: 8) {
                     if workout.avgHeartRate > 0 {
                         HStack(spacing: 2) {
                             Image(systemName: "heart.fill")
-                                .font(.system(size: 9))
-                                .foregroundColor(.red)
+                                .font(.caption2)
+                                .foregroundColor(Color("appRed"))
                             Text("\(Int(workout.avgHeartRate))")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.caption2)
+                                .fontWeight(.semibold)
                                 .foregroundColor(Color("appSecondaryLabel"))
                         }
                     }
-                    
+
                     if let cal = workout.calories, cal > 0 {
                         HStack(spacing: 2) {
                             Image(systemName: "flame.fill")
-                                .font(.system(size: 9))
-                                .foregroundColor(.orange)
+                                .font(.caption2)
+                                .foregroundColor(Color("appOrange"))
                             Text(String(format: "%.0f", cal))
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.caption2)
+                                .fontWeight(.semibold)
                                 .foregroundColor(Color("appSecondaryLabel"))
                         }
                     }
@@ -257,4 +261,9 @@ struct HistoryRow: View {
                 .stroke(Color("appGlassBorder"), lineWidth: 1)
         )
     }
+}
+
+#Preview {
+    ProfileView()
+        .environmentObject(iOSWorkoutViewModel())
 }

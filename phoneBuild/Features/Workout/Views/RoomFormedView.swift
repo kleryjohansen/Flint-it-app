@@ -1,8 +1,15 @@
 import SwiftUI
 
+// MARK: - Badge Style
+
+enum BadgeStyle {
+    case solid
+    case outline
+}
+
 struct RoomFormedView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
-    
+
     // Mock other nearby people to populate the invite list as seen in Screen 5
     private let nearbyMates = [
         "Nathaniel John",
@@ -21,64 +28,66 @@ struct RoomFormedView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.bold())
-                        .foregroundColor(.white)
-                        .padding(10)
-                        .background(Circle().fill(Color.white.opacity(0.1)))
+                        .foregroundColor(.primary)
+                        .padding(12) // P2-01: touch target ≥ 44pt
+                        .background(Circle().fill(.ultraThinMaterial))
                 }
-                
+
                 Spacer()
-                
+
                 Text("Lobby")
                     .font(.headline)
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(.primary)
+
                 Spacer()
-                Spacer().frame(width: 44) // Balance back button
+                Color.clear.frame(width: 44, height: 44) // P2-02: balance spacer yang robust
             }
             .padding(.horizontal, 24)
             .padding(.top, 16)
-            
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    
+
                     // SECTION 1: Who's in
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Who's in (2)")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.subheadline).bold()
+                            .foregroundColor(Color("appSecondaryLabel")) // P1-01
                             .tracking(1)
                             .padding(.horizontal, 4)
-                        
+
                         VStack(spacing: 12) {
-                            // User row (Host)
+                            // User row (Host) — P1-02: badge solid, warna border agar terlihat di light mode
                             LobbyUserRow(
                                 name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
                                 isCurrentUser: true,
                                 badgeText: "Host",
-                                badgeColor: Color.white.opacity(0.12),
-                                badgeTextColor: .white
+                                badgeColor: Color("appGlassBorder"),
+                                badgeTextColor: Color("appSecondaryLabel"),
+                                badgeStyle: .solid
                             )
-                            
-                            // Partner row (Ready)
+
+                            // Partner row (Ready) — REDESIGN: outline style
                             LobbyUserRow(
                                 name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
                                 isCurrentUser: false,
                                 badgeText: "Ready",
-                                badgeColor: Color.flintRed,
-                                badgeTextColor: .white
+                                badgeColor: Color("appPrimary"),
+                                badgeTextColor: Color("appPrimary"),
+                                badgeStyle: .outline
                             )
                         }
                     }
                     .padding(.top, 20)
-                    
+
                     // SECTION 2: Invite more mates
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Invite more mates")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.subheadline).bold()
+                            .foregroundColor(Color("appSecondaryLabel")) // P1-01
                             .tracking(1)
                             .padding(.horizontal, 4)
-                        
+
                         VStack(spacing: 12) {
                             ForEach(nearbyMates, id: \.self) { name in
                                 LobbyInviteRow(name: name)
@@ -88,29 +97,23 @@ struct RoomFormedView: View {
                 }
                 .padding(.horizontal, 24)
             }
-            
+
             Spacer()
 
-            // Bottom action button: "Continue to challenge"
+            // Bottom action button: "Continue to challenge" — P2-04: pakai PillButtonStyle
             Button(action: {
                 withAnimation {
                     viewModel.appState = .workoutSetup
                 }
             }) {
                 Text("Continue to challenge")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.flintRed)
-                    .clipShape(Capsule())
-                    .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
             }
+            .buttonStyle(PillButtonStyle())
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
         .flintVibrantBackground()
-        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -122,75 +125,99 @@ struct LobbyUserRow: View {
     let badgeText: String
     let badgeColor: Color
     let badgeTextColor: Color
-    
+    var badgeStyle: BadgeStyle = .solid
+
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: "person.crop.circle.fill")
                 .resizable()
                 .frame(width: 44, height: 44)
-                .foregroundColor(.orange)
-                .background(Circle().fill(Color.black.opacity(0.2)))
-                .overlay(Circle().stroke(Color.white.opacity(0.1), lineWidth: 1))
-            
+                .foregroundColor(Color("appPrimary"))
+                .background(Circle().fill(Color("appOverlayDim")))
+                .overlay(Circle().stroke(Color("appGlassBorder"), lineWidth: 1))
+
             Text(isCurrentUser ? "\(name) (You)" : name)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-            
+                .font(.headline)
+                .foregroundColor(.primary)
+
             Spacer()
-            
-            Text(badgeText)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(badgeTextColor)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(badgeColor)
-                .clipShape(Capsule())
+
+            // Badge: solid atau outline tergantung badgeStyle
+            Group {
+                switch badgeStyle {
+                case .solid:
+                    Text(badgeText)
+                        .font(.caption).bold()
+                        .foregroundColor(badgeTextColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(badgeColor))
+
+                case .outline:
+                    Text(badgeText)
+                        .font(.caption).bold()
+                        .foregroundColor(badgeTextColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule().fill(badgeColor.opacity(0.1))
+                        )
+                        .overlay(
+                            Capsule().stroke(badgeColor, lineWidth: 1.5)
+                        )
+                }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color.white.opacity(0.04))
-        .cornerRadius(16)
+        .background(Color("appGlassWhite"))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) // P2-03
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.04), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous) // P2-03
+                .stroke(Color("appGlassBorder"), lineWidth: 1)
         )
     }
 }
 
 struct LobbyInviteRow: View {
     let name: String
-    
+
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: "person.crop.circle.fill")
                 .resizable()
                 .frame(width: 44, height: 44)
-                .foregroundColor(.gray)
+                .foregroundColor(Color("appGray"))
                 .opacity(0.6)
-            
+
             Text(name)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white.opacity(0.8))
-            
+                .font(.headline)
+                .foregroundColor(.primary) // P1-03: adaptif, kontras baik
+
             Spacer()
-            
+
+            // REDESIGN: Tombol Invite — outline style konsisten dengan badge Ready
             Button(action: {}) {
-                Text("invite")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white)
+                Text("Invite")
+                    .font(.caption).bold()
+                    .foregroundColor(Color("appPrimary"))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
-                    .background(Color.flintRed)
-                    .clipShape(Capsule())
+                    .background(
+                        Capsule().fill(Color("appPrimary").opacity(0.08))
+                    )
+                    .overlay(
+                        Capsule().stroke(Color("appPrimary"), lineWidth: 1)
+                    )
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color.white.opacity(0.02))
-        .cornerRadius(16)
+        .background(Color("appGlassWhite"))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) // P2-03
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.02), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous) // P2-03
+                .stroke(Color("appGlassBorder"), lineWidth: 1)
         )
     }
 }

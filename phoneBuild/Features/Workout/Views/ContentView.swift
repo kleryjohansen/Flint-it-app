@@ -8,33 +8,33 @@ struct IdentifiablePeer: Identifiable {
 
 struct ContentView: View {
     @StateObject private var viewModel = iOSWorkoutViewModel()
-    
+
     var body: some View {
         Group {
             switch viewModel.appState {
             case .home, .searching:
                 DiscoveryView()
-                
+
             case .navigating:
                 NearbyRadarView()
-                
+
             case .room:
                 RoomFormedView()
-                
+
             case .workoutSetup:
                 WorkoutSetupView()
-                
+
             case .syncing:
                 ChallengeWaitingView()
-                
+
             case .foundPartner:
                 Group { Text("Found Partner") }
                     .flintVibrantBackground()
-                
+
             case .activeWorkout:
                 ActiveWorkoutView()
                     .environmentObject(viewModel)
-                
+
             case .results:
                 ResultsView()
                     .environmentObject(viewModel)
@@ -75,19 +75,19 @@ struct ActiveWorkoutView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @ObservedObject private var watchSession = WatchSessionManager.shared
     @State private var heartPulse = false
-    
+
     // Challenge determines what metric to show — read from challenge directly, NOT from Watch state
     private var challenge: WorkoutChallenge? {
         viewModel.selectedChallenge ?? viewModel.receivedChallenge
     }
-    
+
     // True jika challenge adalah distance (Running/Cycling)
     private var isDistanceChallenge: Bool {
         challenge?.metricType == "distance" ||
         challenge?.sport == .running ||
         challenge?.sport == .cycling
     }
-    
+
     // Live values dari Watch via WCSession
     private var liveHR: Double {
         watchSession.workoutState["heartRate"] as? Double ?? 0.0
@@ -101,7 +101,7 @@ struct ActiveWorkoutView: View {
     private var watchConnected: Bool {
         watchSession.workoutState["status"] as? String == "active"
     }
-    
+
     // Format jarak: meter atau km
     private var distanceText: String {
         if liveDistanceMeters >= 1000 {
@@ -110,100 +110,85 @@ struct ActiveWorkoutView: View {
             return String(format: "%.0f m", liveDistanceMeters)
         }
     }
-    
+
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.05, green: 0.05, blue: 0.12),
-                    Color(red: 0.10, green: 0.04, blue: 0.20)
-                ],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
+            Color.clear
+                .flintVibrantBackground()
+
             VStack(spacing: 24) {
                 // Header
-                VStack(spacing: 4) {
+                VStack(spacing: 8) {
                     HStack {
                         // Watch connection indicator
                         Circle()
-                            .fill(watchConnected ? Color.green : Color.gray.opacity(0.5))
+                            .fill(watchConnected ? Color("appGreen") : Color("appGray").opacity(0.5))
                             .frame(width: 8, height: 8)
                         Text(watchConnected ? "Watch Connected" : "Waiting for Watch...")
-                            .font(.caption2)
-                            .foregroundColor(watchConnected ? .green : .gray)
+                            .font(.caption2.bold())
+                            .foregroundColor(watchConnected ? Color("appGreen") : Color("appGray"))
+                            .textCase(.uppercase)
                         Spacer()
                     }
                     .padding(.horizontal, 24)
-                    
+
                     if let ch = challenge {
-                        Text(ch.challengeName.uppercased())
-                            .font(.caption.bold())
-                            .foregroundColor(.orange)
-                            .tracking(2)
+                        Text(ch.challengeName)
+                            .font(.subheadline.bold())
+                            .foregroundColor(Color("appSecondaryLabel"))
                     }
-                    
+
                     // Elapsed timer
                     Text(viewModel.countdownText)
-                        .font(.system(size: 72, weight: .black, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(.largeTitle, design: .default, weight: .bold))
+                        .fontWidth(.compressed)
                         .monospacedDigit()
-                        .shadow(color: .orange.opacity(0.3), radius: 10)
+                        .foregroundColor(.primary)
+                        .shadow(color: Color.flintRed.opacity(0.4), radius: 20, y: 10)
                 }
-                
+
                 // ── Heart Rate Card ──
                 MetricCard(
                     icon: "heart.fill",
-                    iconColor: .red,
+                    iconColor: Color("appRed"),
                     value: liveHR > 0 ? "\(Int(liveHR))" : "---",
                     unit: "BPM",
-                    accentColor: .red,
+                    accentColor: Color("appRed"),
                     pulse: $heartPulse
                 )
                 .onAppear { heartPulse = true }
-                
+
                 // ── Distance or Calories Card ──
                 if isDistanceChallenge {
                     MetricCard(
                         icon: challenge?.sport == .cycling ? "figure.outdoor.cycle" : "figure.run",
-                        iconColor: .blue,
+                        iconColor: Color("appPrimary"),
                         value: distanceText,
                         unit: "Distance",
-                        accentColor: .blue,
+                        accentColor: Color("appPrimary"),
                         pulse: .constant(false)
                     )
                 } else {
                     MetricCard(
                         icon: "flame.fill",
-                        iconColor: .orange,
+                        iconColor: Color("appOrange"),
                         value: String(format: "%.1f", liveCalories),
                         unit: "kcal burned",
-                        accentColor: .orange,
+                        accentColor: Color("appOrange"),
                         pulse: .constant(false)
                     )
                 }
-                
+
                 Spacer()
-                
+
                 // Finish button
                 Button(action: { viewModel.endWorkout() }) {
                     HStack(spacing: 8) {
                         Image(systemName: "stop.fill")
                         Text("Finish Workout")
-                            .bold()
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [.red.opacity(0.85), .red],
-                            startPoint: .leading, endPoint: .trailing
-                        )
-                    )
-                    .foregroundColor(.white)
-                    .cornerRadius(16)
                 }
+                .buttonStyle(FlintPrimaryButtonStyle())
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
             }
@@ -221,37 +206,38 @@ struct MetricCard: View {
     let unit: String
     let accentColor: Color
     @Binding var pulse: Bool
-    
+
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 28))
-                .foregroundColor(iconColor)
-                .scaleEffect(pulse ? 1.2 : 1.0)
-                .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: pulse)
-            
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: icon)
+                    .font(.title3.bold())
+                    .foregroundColor(iconColor)
+                    .scaleEffect(pulse ? 1.15 : 1.0)
+                    .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: pulse)
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(.title2, design: .default).bold())
+                    .foregroundColor(.primary)
                     .contentTransition(.numericText())
-                    .animation(.easeInOut(duration: 0.3), value: value)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
                 Text(unit)
                     .font(.caption.bold())
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(Color("appSecondaryLabel"))
+                    .textCase(.uppercase)
             }
-            
+
             Spacer()
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.07))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(accentColor.opacity(0.35), lineWidth: 1)
-                )
-        )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .flintGlassCard()
         .padding(.horizontal, 24)
     }
 }
@@ -260,39 +246,35 @@ struct MetricCard: View {
 
 struct ResultsView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
-    
+
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.05, green: 0.05, blue: 0.12), Color(red: 0.10, green: 0.04, blue: 0.20)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
+            Color.clear
+                .flintVibrantBackground()
+
             VStack(spacing: 24) {
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: 72))
-                    .foregroundColor(.yellow)
-                
+                    .font(.largeTitle)
+                    .foregroundColor(Color("appYellow"))
+
                 Text("Workout Complete!")
                     .font(.largeTitle.bold())
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(.primary)
+
                 VStack(spacing: 12) {
-                    ResultRow(icon: "clock.fill", color: .orange, label: "Duration", value: viewModel.countdownText)
-                    ResultRow(icon: "heart.fill", color: .red, label: "Avg Heart Rate", value: viewModel.heartRate > 0 ? "\(Int(viewModel.heartRate)) BPM" : "---")
-                    ResultRow(icon: "flame.fill", color: .orange, label: "Calories", value: String(format: "%.1f kcal", viewModel.watchCalories))
+                    ResultRow(icon: "clock.fill", color: Color("appOrange"), label: "Duration", value: viewModel.countdownText)
+                    ResultRow(icon: "heart.fill", color: Color("appRed"), label: "Avg Heart Rate", value: viewModel.heartRate > 0 ? "\(Int(viewModel.heartRate)) BPM" : "---")
+                    ResultRow(icon: "flame.fill", color: Color("appOrange"), label: "Calories", value: String(format: "%.1f kcal", viewModel.watchCalories))
                 }
                 .padding(20)
-                .background(Color.white.opacity(0.07))
-                .cornerRadius(20)
+                .flintGlassCard()
                 .padding(.horizontal, 24)
-                
+
                 Button("Back to Home") {
                     viewModel.fullCleanup()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .buttonStyle(FlintPrimaryButtonStyle())
+                .padding(.horizontal, 24)
                 .padding(.top, 8)
             }
             .padding(.top, 40)
@@ -305,17 +287,34 @@ struct ResultRow: View {
     let color: Color
     let label: String
     let value: String
-    
+
     var body: some View {
         HStack {
-            Image(systemName: icon).foregroundColor(color)
-            Text(label).foregroundColor(.white.opacity(0.7))
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundColor(color)
+            Text(label)
+                .font(.body)
+                .foregroundColor(Color("appSecondaryLabel"))
             Spacer()
-            Text(value).foregroundColor(.white).bold()
+            Text(value)
+                .font(.body.bold())
+                .foregroundColor(.primary)
         }
+        .padding(.vertical, 4)
     }
 }
 
-#Preview {
+#Preview("ContentView") {
     ContentView()
+}
+
+#Preview("ActiveWorkoutView") {
+    ActiveWorkoutView()
+        .environmentObject(iOSWorkoutViewModel())
+}
+
+#Preview("ResultsView") {
+    ResultsView()
+        .environmentObject(iOSWorkoutViewModel())
 }

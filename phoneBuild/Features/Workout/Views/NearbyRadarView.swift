@@ -19,29 +19,29 @@ struct NearbyRadarView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3.bold())
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .padding(10)
-                            .background(Circle().fill(Color.white.opacity(0.1)))
+                            .background(Circle().fill(.ultraThinMaterial))
                     }
                     Spacer()
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-                
+
                 Spacer()
 
                 // Radar & Arrow Visual
                 VStack(spacing: 35) {
-                    
+
                     VStack(spacing: 6) {
                         Text("Go find your mate!")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.subheadline).bold()
+                            .foregroundColor(Color("appSecondaryLabel"))
                             .tracking(2)
-                        
+
                         Text(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.title3).bold()
+                            .foregroundColor(.primary)
                     }
 
                     // Rotating Arrow / Signal View
@@ -63,7 +63,7 @@ struct NearbyRadarView: View {
                 }
 
                 Spacer()
-                
+
                 // Action Buttons at the Bottom
                 VStack(spacing: 12) {
                     if showSkipButton {
@@ -74,17 +74,17 @@ struct NearbyRadarView: View {
                             }
                         }) {
                             Text("Skip Proximity Check")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.callout).bold()
+                                .foregroundColor(.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
-                                .background(Color.orange)
+                                .background(Color("appPrimary"))
                                 .clipShape(Capsule())
-                                .shadow(color: Color.orange.opacity(0.35), radius: 12, y: 6)
+                                .shadow(color: Color("appPrimary").opacity(0.35), radius: 12, y: 6)
                         }
                         .transition(.scale.combined(with: .opacity))
                     }
-                    
+
                     // Cancel button
                     Button(action: {
                         withAnimation {
@@ -92,8 +92,8 @@ struct NearbyRadarView: View {
                         }
                     }) {
                         Text("Cancel")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.callout).bold()
+                            .foregroundColor(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(Color.flintRed)
@@ -106,7 +106,6 @@ struct NearbyRadarView: View {
             }
         }
         .flintVibrantBackground()
-        .navigationBarBackButtonHidden(true)
         .onAppear {
             // Delay 5 seconds before showing the skip button for testing
             DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
@@ -131,29 +130,29 @@ struct NearbyRadarView: View {
             if ni.direction != nil {
                 // Large Arrow pointing to partner
                 Image(systemName: "arrow.up")
-                    .font(.system(size: 72, weight: .black))
-                    .foregroundColor(.white)
+                    .font(.largeTitle).fontWeight(.black)
+                    .foregroundColor(.primary)
                     .rotationEffect(.degrees(ni.arrowAngleDegrees))
                     .animation(.smooth(duration: 0.25), value: ni.arrowAngleDegrees)
                     .shadow(color: Color.flintRed.opacity(0.5), radius: 10)
             } else if ni.peerIsOutOfRange {
                 // Out of range Wifi slash icon
                 Image(systemName: "wifi.slash")
-                    .font(.system(size: 54))
-                    .foregroundColor(.white.opacity(0.4))
+                    .font(.largeTitle)
+                    .foregroundColor(Color("appGlassWhite"))
             } else {
                 // Directionless circle
                 Image(systemName: "location.circle")
-                    .font(.system(size: 54))
-                    .foregroundColor(.white.opacity(0.4))
+                    .font(.largeTitle)
+                    .foregroundColor(Color("appGlassWhite"))
             }
         } else if let error = ni.errorMessage {
             VStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 36))
+                    .font(.title)
                     .foregroundColor(Color.flintRed)
                 Text(error)
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundColor(Color.flintRed.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
@@ -166,8 +165,8 @@ struct NearbyRadarView: View {
                 ProgressView()
                     .tint(.white)
                 Text("Connecting...")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.caption)
+                    .foregroundColor(Color("appSecondaryLabel"))
             }
         }
     }
@@ -176,22 +175,22 @@ struct NearbyRadarView: View {
     private func distanceDisplay(ni: NearbyInteractionManager) -> some View {
         if ni.peerIsOutOfRange {
             Text("Partner out of range")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white.opacity(0.5))
+                .font(.callout).bold()
+                .foregroundColor(Color("appSecondaryLabel"))
         } else if let distance = ni.distance {
             VStack(spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(String(format: "%.0f", distance))
-                        .font(.system(size: 80, weight: .black, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(.largeTitle, design: .default)).fontWeight(.black).monospacedDigit()
+                        .foregroundColor(.primary)
                     Text("m")
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.title).bold()
+                        .foregroundColor(.primary)
                 }
-                
+
                 Text("ahead")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.title3).bold()
+                    .foregroundColor(Color("appSecondaryLabel"))
             }
         }
     }
