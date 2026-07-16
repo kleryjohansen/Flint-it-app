@@ -439,8 +439,7 @@
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -476,8 +475,7 @@
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -514,7 +512,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
@@ -554,7 +551,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
@@ -590,7 +586,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
@@ -609,7 +604,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";

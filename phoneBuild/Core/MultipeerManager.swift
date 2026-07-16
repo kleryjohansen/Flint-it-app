@@ -119,9 +119,20 @@ public final class MultipeerManager: NSObject {
     // MARK: - Manual Invite
 
     public func invite(_ peerID: MCPeerID) {
-        browser.invitePeer(peerID, to: session, withContext: nil, timeout: 30)
-        DispatchQueue.main.async {
-            self.invitedPeer = peerID
+        if peerID.displayName.hasPrefix("[Cloud] ") {
+            let toUsername = peerID.displayName.replacingOccurrences(of: "[Cloud] ", with: "")
+            let ownUsername = UserDefaults.standard.string(forKey: "savedUsername") ?? "Player"
+            Task {
+                await CloudKitService.shared.sendInternetInvite(from: ownUsername, to: toUsername)
+            }
+            DispatchQueue.main.async {
+                self.invitedPeer = peerID
+            }
+        } else {
+            browser.invitePeer(peerID, to: session, withContext: nil, timeout: 30)
+            DispatchQueue.main.async {
+                self.invitedPeer = peerID
+            }
         }
         print("[MP] Invite sent to: \(peerID.displayName)")
     }
@@ -129,19 +140,53 @@ public final class MultipeerManager: NSObject {
     // MARK: - Invitation Response
 
     public func acceptInvitation() {
-        guard let handler = pendingInvitationHandler else { return }
-        handler(true, session)
-        pendingInvitationHandler = nil
-        DispatchQueue.main.async { self.pendingInvitingPeer = nil }
+        if let peer = pendingInvitingPeer, peer.displayName.hasPrefix("[Cloud] ") {
+            let fromUsername = peer.displayName.replacingOccurrences(of: "[Cloud] ", with: "")
+            Task {
+                await CloudKitService.shared.acceptInternetInvite(from: fromUsername)
+            }
+            DispatchQueue.main.async {
+                self.setConnectedPeer(peer)
+            }
+        } else {
+            guard let handler = pendingInvitationHandler else { return }
+            handler(true, session)
+            pendingInvitationHandler = nil
+            DispatchQueue.main.async { self.pendingInvitingPeer = nil }
+        }
         print("[MP] Invitation accepted")
     }
 
     public func declineInvitation() {
-        guard let handler = pendingInvitationHandler else { return }
-        handler(false, nil)
-        pendingInvitationHandler = nil
-        DispatchQueue.main.async { self.pendingInvitingPeer = nil }
+        if let peer = pendingInvitingPeer, peer.displayName.hasPrefix("[Cloud] ") {
+            DispatchQueue.main.async { self.pendingInvitingPeer = nil }
+        } else {
+            guard let handler = pendingInvitationHandler else { return }
+            handler(false, nil)
+            pendingInvitationHandler = nil
+            DispatchQueue.main.async { self.pendingInvitingPeer = nil }
+        }
         print("[MP] Invitation declined")
+    }
+    
+    // MARK: - Internet Mock Peer Helpers
+    
+    public func addMockPeer(_ peer: MCPeerID) {
+        let peerInfo = PeerInfo(id: peer)
+        if !foundPeers.contains(peerInfo) {
+            foundPeers.append(peerInfo)
+        }
+    }
+    
+    public func setPendingInvite(_ peer: MCPeerID) {
+        self.pendingInvitingPeer = peer
+    }
+    
+    public func setConnectedPeer(_ peer: MCPeerID) {
+        self.connectedPeer = peer
+        self.invitedPeer = nil
+        self.stopAll()
+        self.onPeerConnected?(peer)
     }
 
     // MARK: - Data Sending
