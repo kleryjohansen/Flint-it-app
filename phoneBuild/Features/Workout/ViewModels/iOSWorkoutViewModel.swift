@@ -34,6 +34,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     
     // Watch Connectivity
     @Published public var watchCalories: Double = 0.0
+    @Published public var isHost: Bool = false
+    @Published public var partnerWatchConnected: Bool = true
     private var watchCancellables = Set<AnyCancellable>()
     
     // Session tracking — cegah stale "stopped" dari sesi sebelumnya
@@ -62,8 +64,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         super.init()
         setupMultipeerManager()
         setupWatchObserving()
-        requestHealthKitAuthorization()
         loadPastWorkoutsLocally()
+        
+        // Request all permissions sequentially at start
+        requestAllPermissions()
     }
     
     private func setupWatchObserving() {
@@ -144,10 +148,70 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 }
             }
             .store(in: &watchCancellables)
+            
+        // Observe watch connectivity status to report changes to peer
+        WatchSessionManager.shared.$isWatchPaired
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                if self.multipeerManager?.connectedPeer != nil {
+                    self.sendWatchStatusToPeer()
+                }
+            }
+            .store(in: &watchCancellables)
+            
+        // Auto-recover UWB session on dropout
+        niManager.onSessionInvalidated = { [weak self] in
+            guard let self = self else { return }
+            if self.appState == .navigating {
+                print("[ViewModel] NI session invalidated while navigating, re-exchanging tokens")
+                self.hasSentOwnToken = false
+                self.hasReceivedPeerToken = false
+                self.hasSentTokenACK = false
+                self.sendLocalNIToken()
+            }
+        }
     }
     
-    private func requestHealthKitAuthorization() {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
+    // MARK: - Sequential Permissions Request (Nearby Interaction first, then HealthKit, then Local Network)
+    
+    public func requestAllPermissions() {
+        requestNearbyInteractionPermission { [weak self] in
+            self?.requestHealthKitAuthorization {
+                self?.requestLocalNetworkPermission()
+            }
+        }
+    }
+    
+    private func requestNearbyInteractionPermission(completion: @escaping () -> Void) {
+        guard NISession.isSupported else {
+            completion()
+            return
+        }
+        
+        DispatchQueue.main.async {
+            let dummySession = NISession()
+            dummySession.delegate = DummyNISessionDelegate.shared
+            if let ownToken = dummySession.discoveryToken {
+                let config = NINearbyPeerConfiguration(peerToken: ownToken)
+                dummySession.run(config)
+                
+                // Prompt presented, now invalidate dummy session after 1.5 seconds and proceed
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    dummySession.invalidate()
+                    completion()
+                }
+            } else {
+                completion()
+            }
+        }
+    }
+    
+    private func requestHealthKitAuthorization(completion: @escaping () -> Void) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            completion()
+            return
+        }
         
         let typesToRead: Set = [
             HKObjectType.workoutType(),
@@ -158,6 +222,18 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { [weak self] success, _ in
             if success {
                 self?.fetchHealthKitWorkouts()
+            }
+            completion()
+        }
+    }
+    
+    private func requestLocalNetworkPermission() {
+        // Start multipeer browsing briefly to trigger Local Network dialog
+        multipeerManager?.startBrowsing()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            if self.appState != .searching {
+                self.multipeerManager?.stopBrowsing()
             }
         }
     }
@@ -246,6 +322,13 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 DispatchQueue.main.async {
                     self.endWorkoutNatively()
                 }
+            case .watchStatus:
+                if let payloadObj = try? JSONDecoder().decode(WatchStatusPayload.self, from: payload) {
+                    DispatchQueue.main.async {
+                        self.partnerWatchConnected = payloadObj.isWatchConnected
+                        print("[iOS] Received watch status from partner: \(payloadObj.isWatchConnected)")
+                    }
+                }
             default:
                 break
             }
@@ -260,12 +343,16 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.hasSentTokenACK = false
             
             // Saat peer terkoneksi, ubah appState = .navigating
+            // PENTING: Jangan overwrite self.isHost di sini agar penentu host tetap diatur saat invite/terima.
             DispatchQueue.main.async {
                 self.appState = .navigating
             }
             
             // Send our token
             self.sendLocalNIToken()
+            
+            // Send our watch connection status to the peer
+            self.sendWatchStatusToPeer()
         }
 
         niManager.onProximityUpdate = { [weak self] distance in
@@ -296,6 +383,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.multipeerManager?.startAdvertising()
             
             DispatchQueue.main.async {
+                self.isHost = false
+                self.partnerWatchConnected = true // Reset to true
                 self.currentRoom = nil
                 self.appState = .home
             }
@@ -419,7 +508,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     
     public func declineChallenge() {
         self.receivedChallenge = nil
-        self.appState = .workoutSetup
+        DispatchQueue.main.async {
+            self.appState = self.isHost ? .workoutSetup : .room
+        }
     }
 
     // MARK: - Watch Commands
@@ -605,10 +696,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
     // MARK: - Compatibility helpers for old view references
     func invite(peer: MCPeerID) {
+        self.isHost = true
         multipeerManager?.invite(peer)
     }
     
     func acceptInvite() {
+        self.isHost = false
         multipeerManager?.acceptInvitation()
     }
     
@@ -709,5 +802,33 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     
     func forgetWorkout(_ workout: PastWorkout) {
         pastWorkouts.removeAll { $0.id == workout.id }
+    }
+    
+    private func sendWatchStatusToPeer() {
+        let isConnected = WatchSessionManager.shared.isWatchConnected
+        let payload = WatchStatusPayload(isWatchConnected: isConnected)
+        if let payloadData = try? JSONEncoder().encode(payload) {
+            let message = MultipeerMessage(type: .watchStatus, payload: payloadData)
+            if let messageData = try? JSONEncoder().encode(message) {
+                multipeerManager?.sendData(messageData)
+                print("[iOS] Sent watch status to peer: \(isConnected)")
+            }
+        }
+    }
+}
+
+// MARK: - Watch Connectivity Status Model
+
+struct WatchStatusPayload: Codable {
+    let isWatchConnected: Bool
+}
+
+// MARK: - Dummy NI Session Delegate for early permission prompt
+
+class DummyNISessionDelegate: NSObject, NISessionDelegate {
+    static let shared = DummyNISessionDelegate()
+    private override init() {}
+    func session(_ session: NISession, didInvalidateWith error: Error) {
+        print("[NI] Dummy session invalidated (expected during pre-prompt): \(error.localizedDescription)")
     }
 }

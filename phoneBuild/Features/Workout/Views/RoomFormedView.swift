@@ -41,6 +41,30 @@ struct RoomFormedView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     
+                    // Partner Watch Warning Banner
+                    if !viewModel.partnerWatchConnected {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.applewatch")
+                                .font(.system(size: 20))
+                                .foregroundColor(.orange)
+                            
+                            Text("\(viewModel.currentRoom?.partnerName ?? "Partner") is not connected to their Apple Watch. They must pair a watch and open the Flint-it app.")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                            Spacer()
+                        }
+                        .padding(14)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+                        )
+                        .padding(.top, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
                     // SECTION 1: Who's in
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Who's in (2)")
@@ -50,23 +74,41 @@ struct RoomFormedView: View {
                             .padding(.horizontal, 4)
                         
                         VStack(spacing: 12) {
-                            // User row (Host)
-                            LobbyUserRow(
-                                name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
-                                isCurrentUser: true,
-                                badgeText: "Host",
-                                badgeColor: Color.white.opacity(0.12),
-                                badgeTextColor: .white
-                            )
-                            
-                            // Partner row (Ready)
-                            LobbyUserRow(
-                                name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
-                                isCurrentUser: false,
-                                badgeText: "Ready",
-                                badgeColor: Color.flintRed,
-                                badgeTextColor: .white
-                            )
+                            if viewModel.isHost {
+                                // Current User is Host, Partner is Guest
+                                LobbyUserRow(
+                                    name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
+                                    isCurrentUser: true,
+                                    badgeText: "Host",
+                                    badgeColor: Color.white.opacity(0.12),
+                                    badgeTextColor: .white
+                                )
+                                
+                                LobbyUserRow(
+                                    name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
+                                    isCurrentUser: false,
+                                    badgeText: "Guest",
+                                    badgeColor: Color.flintRed,
+                                    badgeTextColor: .white
+                                )
+                            } else {
+                                // Partner is Host, Current User is Guest
+                                LobbyUserRow(
+                                    name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
+                                    isCurrentUser: false,
+                                    badgeText: "Host",
+                                    badgeColor: Color.white.opacity(0.12),
+                                    badgeTextColor: .white
+                                )
+                                
+                                LobbyUserRow(
+                                    name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
+                                    isCurrentUser: true,
+                                    badgeText: "Guest",
+                                    badgeColor: Color.flintRed,
+                                    badgeTextColor: .white
+                                )
+                            }
                         }
                     }
                     .padding(.top, 20)
@@ -91,23 +133,39 @@ struct RoomFormedView: View {
             
             Spacer()
 
-            // Bottom action button: "Continue to challenge"
-            Button(action: {
-                withAnimation {
-                    viewModel.appState = .workoutSetup
+            // Bottom action button: Host vs Guest action control
+            if viewModel.isHost {
+                Button(action: {
+                    withAnimation {
+                        viewModel.appState = .workoutSetup
+                    }
+                }) {
+                    Text("Continue to challenge")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.flintRed)
+                        .clipShape(Capsule())
+                        .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
                 }
-            }) {
-                Text("Continue to challenge")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.flintRed)
-                    .clipShape(Capsule())
-                    .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+            } else {
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    Text("Waiting for Host")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.white.opacity(0.04))
+                .cornerRadius(24)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 32)
         }
         .flintVibrantBackground()
         .navigationBarBackButtonHidden(true)
