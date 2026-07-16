@@ -29,7 +29,19 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
     @Published public var heartRate: Double = 0.0
     @Published public var distance: Double = 0.0
     @Published public var isRunning: Bool = false
+    @Published public var isWatchPaired: Bool = false
+    @Published public var isWatchAppInstalled: Bool = false
     #endif
+    
+    public var isWatchConnected: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #elseif os(iOS)
+        return isWatchPaired
+        #else
+        return true
+        #endif
+    }
     
     private var session: WCSession?
     private var currentWorkoutSessionId: String = ""
@@ -40,6 +52,10 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
             session = WCSession.default
             session?.delegate = self
             session?.activate()
+            #if os(iOS)
+            self.isWatchPaired = session?.isPaired ?? false
+            self.isWatchAppInstalled = session?.isWatchAppInstalled ?? false
+            #endif
         }
     }
 
@@ -85,9 +101,24 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
     // MARK: - WCSessionDelegate
     public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         print("[WatchSessionManager] WCSession activationState: \(activationState.rawValue)")
+        #if os(iOS)
+        DispatchQueue.main.async {
+            self.isWatchPaired = session.isPaired
+            self.isWatchAppInstalled = session.isWatchAppInstalled
+            print("[WatchSessionManager] Watch status on activation: paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)")
+        }
+        #endif
     }
     
     #if os(iOS)
+    public func sessionWatchStateDidChange(_ session: WCSession) {
+        DispatchQueue.main.async {
+            self.isWatchPaired = session.isPaired
+            self.isWatchAppInstalled = session.isWatchAppInstalled
+            print("[WatchSessionManager] Watch state changed: paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)")
+        }
+    }
+    
     public func sessionDidBecomeInactive(_ session: WCSession) {}
     public func sessionDidDeactivate(_ session: WCSession) {
         WCSession.default.activate()

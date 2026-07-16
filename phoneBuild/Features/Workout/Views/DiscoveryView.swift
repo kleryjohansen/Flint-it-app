@@ -4,6 +4,7 @@ import MultipeerConnectivity
 struct DiscoveryView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @Environment(\.colorScheme) var colorScheme
+    @ObservedObject private var watchSession = WatchSessionManager.shared
     @State private var pulseScale: CGFloat = 1.0
     @State private var outerPulseScale: CGFloat = 1.0
     @State private var selectedDiscoveryPeer: MCPeerID? = nil
@@ -44,6 +45,36 @@ struct DiscoveryView: View {
                 
                 if selectedTab == "Tab 1" {
                     // ─── TAB 1: WORKOUT SEARCH / RADAR ───
+                    
+                    if !watchSession.isWatchConnected {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.applewatch")
+                                .font(.system(size: 24))
+                                .foregroundColor(.orange)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Watch Connection Required")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                                Text("Please pair an Apple Watch and open the Flint-it app on it to start searching.")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .lineLimit(2)
+                            }
+                            Spacer()
+                        }
+                        .padding(16)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(18)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 24)
+                        .padding(.top, 10)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
                     Spacer()
                     
                     VStack(spacing: 40) {
@@ -107,6 +138,7 @@ struct DiscoveryView: View {
                                                     .background(Capsule().fill(Color.black.opacity(0.6)))
                                             }
                                         }
+                                        .disabled(viewModel.multipeerManager?.pendingInvitingPeer != nil)
                                         .offset(x: xOffset, y: yOffset)
                                         .transition(.scale.combined(with: .opacity))
                                     }
@@ -127,6 +159,7 @@ struct DiscoveryView: View {
                                 }
                             }) {
                                 ZStack {
+                                    let isWatchConnected = watchSession.isWatchConnected
                                     Circle()
                                         .fill(
                                             RadialGradient(
@@ -137,13 +170,16 @@ struct DiscoveryView: View {
                                             )
                                         )
                                         .frame(width: 92, height: 92)
-                                        .shadow(color: Color.flintRed.opacity(0.65), radius: 18)
+                                        .opacity(isWatchConnected ? 1.0 : 0.4)
+                                        .shadow(color: Color.flintRed.opacity(isWatchConnected ? 0.65 : 0.0), radius: 18)
                                     
                                     Image(systemName: "flame.fill")
                                         .font(.system(size: 36))
                                         .foregroundColor(.white)
+                                        .opacity(isWatchConnected ? 1.0 : 0.4)
                                 }
                             }
+                            .disabled(!watchSession.isWatchConnected)
                         }
                         .frame(height: 300)
                         

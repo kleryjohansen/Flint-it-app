@@ -76,6 +76,7 @@ public struct MultipeerMessage: Codable {
         case sendChallenge // Sending a challenge
         case acceptChallenge // Accepting a challenge
         case endWorkout // Partner requested to end workout session
+        case watchStatus // Companion watch connection status
     }
     public let type: MessageType
     public let payload: Data
