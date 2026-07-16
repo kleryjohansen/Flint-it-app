@@ -5,28 +5,24 @@ import AuthenticationServices
 struct OnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var isAnimatingLogo = false
-    
+
     var body: some View {
         ZStack {
-            // Background
-            Color.flintBackground.ignoresSafeArea()
-            
-            // Glowing red radial light from bottom
-            RadialGradient(
-                gradient: Gradient(colors: [Color.flintRed.opacity(0.4), Color.clear]),
-                center: .bottom,
-                startRadius: 50,
-                endRadius: 600
+            // Soft white-to-coral background
+            LinearGradient(
+                colors: [Color.white, Color("appTertiary"), Color("appSecondary")],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
-            
+
             ScrollView {
                 VStack(spacing: 25) {
-                    
+
                     // Animated Logo Header
                     VStack(spacing: 12) {
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 64))
+                            .font(.largeTitle)
                             .foregroundColor(Color.flintRed)
                             .shadow(color: Color.flintRed.opacity(0.6), radius: 15)
                             .scaleEffect(isAnimatingLogo ? 1.08 : 0.95)
@@ -37,22 +33,22 @@ struct OnboardingView: View {
                             .onAppear {
                                 isAnimatingLogo = true
                             }
-                        
-                        Text("FLINT")
-                            .font(.system(size: 28, weight: .black, design: .rounded))
+
+                        Text("Nearfit")
+                            .font(.title).fontWeight(.black)
                             .tracking(6)
-                            .foregroundColor(.white)
-                        
+                            .foregroundColor(.primary)
+
                         Text("Spark Your Fitness Connection")
                             .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(Color("appSecondaryLabel"))
                     }
                     .padding(.top, 40)
                     .padding(.bottom, 10)
-                    
+
                     // Main Glassmorphic Card
                     VStack(spacing: 24) {
-                        
+
                         // Avatar Photo Picker
                         VStack(spacing: 8) {
                             PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
@@ -69,51 +65,52 @@ struct OnboardingView: View {
                                             .frame(width: 110, height: 110)
                                             .overlay(
                                                 Image(systemName: "person.fill")
-                                                    .foregroundColor(.white.opacity(0.3))
-                                                    .font(.system(size: 50))
+                                                    .foregroundColor(Color("appGlassWhite"))
+                                                    .font(.largeTitle)
                                             )
                                     }
-                                    
+
                                     // Edit/Add Camera Indicator
                                     Circle()
                                         .fill(Color.flintRed)
                                         .frame(width: 32, height: 32)
                                         .overlay(
                                             Image(systemName: "camera.fill")
-                                                .font(.system(size: 14))
+                                                .font(.caption)
+                                                // Sengaja dipertahankan: ikon kamera di atas background brand Color.flintRed (fixed color)
                                                 .foregroundColor(.white)
                                         )
                                         .shadow(radius: 4)
                                 }
-                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 2))
+                                .overlay(Circle().stroke(Color("appGlassBorder"), lineWidth: 2))
                             }
                             .onChange(of: viewModel.selectedItem) { _ in
                                 viewModel.processSelectedImage()
                             }
-                            
+
                             Text("Set Profile Photo")
                                 .font(.caption)
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(Color("appSecondaryLabel"))
                         }
-                        
+
                         // Username Field
                         VStack(alignment: .leading, spacing: 8) {
                             Text("CHOOSE USERNAME")
                                 .font(.caption2.bold())
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(Color("appSecondaryLabel"))
                                 .tracking(1)
-                            
+
                             FlintTextField(placeholder: "e.g. fit_warrior", text: $viewModel.username, icon: "person.fill")
                         }
-                        
+
                         // Apple Sign In Button Section
                         VStack(spacing: 16) {
                             Text("Sign in with Apple to create your profile securely without passwords.")
                                 .font(.caption)
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(Color("appSecondaryLabel"))
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 10)
-                            
+
                             if viewModel.isLoading {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -128,7 +125,7 @@ struct OnboardingView: View {
                                         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
                                             let userIdentifier = appleIDCredential.user
                                             let email = appleIDCredential.email
-                                            
+
                                             // Format name
                                             var nameString: String? = nil
                                             if let name = appleIDCredential.fullName {
@@ -139,7 +136,7 @@ struct OnboardingView: View {
                                                     nameString = nil
                                                 }
                                             }
-                                            
+
                                             viewModel.handleAppleSignIn(
                                                 userIdentifier: userIdentifier,
                                                 fullName: nameString,
@@ -155,7 +152,7 @@ struct OnboardingView: View {
                                 .cornerRadius(15)
                             }
                         }
-                        
+
                         // Error message
                         if !viewModel.errorMessage.isEmpty {
                             HStack(spacing: 6) {
@@ -171,7 +168,7 @@ struct OnboardingView: View {
                     .padding(24)
                     .flintGlassCard()
                     .padding(.horizontal)
-                    
+
                 }
                 .padding(.bottom, 50)
             }
@@ -188,15 +185,16 @@ struct FlintTextField: View {
     var placeholder: String
     @Binding var text: String
     var icon: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .foregroundColor(Color.flintRed)
                 .font(.headline)
                 .frame(width: 24)
-            
+
             TextField(placeholder, text: $text)
+                // Sengaja dipertahankan: teks input di atas Color.flintGlass (glass gelap fixed), preferredColorScheme(.dark) sudah di-set
                 .foregroundColor(.white)
                 .font(.body)
                 .preferredColorScheme(.dark)
@@ -206,7 +204,11 @@ struct FlintTextField: View {
         .cornerRadius(15)
         .overlay(
             RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color("appGlassBorder"), lineWidth: 1)
         )
     }
+}
+
+#Preview {
+    OnboardingView()
 }

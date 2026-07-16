@@ -3,48 +3,55 @@ import SwiftUI
 struct VibrantBackgroundModifier: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
     
+    // Warna gradient adaptif via colorScheme — .white/.black di sini adalah
+    // system background semantic (putih untuk light, hitam untuk dark) karena
+    // digunakan di dalam conditional colorScheme, bukan hardcoded statis.
+    private var gradientStart: Color {
+        colorScheme == .light ? .white : .black
+    }
+
     func body(content: Content) -> some View {
-        ZStack {
-            if colorScheme == .light {
-                // Light mode: clean white blending to dynamic primary red-orange at the bottom
-                LinearGradient(
-                    colors: [
-                        Color.white,
-                        Color.white.opacity(0.9),
-                        Color("appPrimary").opacity(0.8)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                ZStack {
+                    if colorScheme == .light {
+                        // Light mode: clean white blending to dynamic primary red-orange at the bottom
+                        LinearGradient(
+                            colors: [
+                                gradientStart,
+                                gradientStart.opacity(0.9),
+                                Color("appPrimary").opacity(0.8)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    } else {
+                        // Dark mode: pitch black blending to deep primary red-orange at the bottom
+                        LinearGradient(
+                            colors: [
+                                gradientStart,
+                                gradientStart.opacity(0.85),
+                                Color("appPrimaryDeep").opacity(0.65)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+
+                    // Central radial glow around the central button matching the mockup glow
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Color("appPrimary").opacity(colorScheme == .light ? 0.25 : 0.35),
+                            Color.clear
+                        ]),
+                        center: .center,
+                        startRadius: 10,
+                        endRadius: 260
+                    )
+                }
                 .ignoresSafeArea()
-            } else {
-                // Dark mode: pitch black blending to deep primary red-orange at the bottom
-                LinearGradient(
-                    colors: [
-                        Color.black,
-                        Color.black.opacity(0.85),
-                        Color("appPrimaryDeep").opacity(0.65)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            }
-            
-            // Central radial glow around the central button matching the mockup glow
-            RadialGradient(
-                gradient: Gradient(colors: [
-                    Color("appPrimary").opacity(colorScheme == .light ? 0.25 : 0.35),
-                    Color.clear
-                ]),
-                center: .center,
-                startRadius: 10,
-                endRadius: 260
             )
-            .ignoresSafeArea()
-            
-            content
-        }
     }
 }
 
