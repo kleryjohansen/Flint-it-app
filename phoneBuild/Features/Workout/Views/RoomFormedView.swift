@@ -47,7 +47,34 @@ struct RoomFormedView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+<<<<<<< ours
 
+                    
+                    // Partner Watch Warning Banner
+                    if !viewModel.partnerWatchConnected {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.applewatch")
+                                .font(.system(size: 20))
+                                .foregroundColor(.orange)
+                            
+                            Text("\(viewModel.currentRoom?.partnerName ?? "Partner") is not connected to their Apple Watch. They must pair a watch and open the Flint-it app.")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                            Spacer()
+                        }
+                        .padding(14)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+                        )
+                        .padding(.top, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
+>>>>>>> theirs
                     // SECTION 1: Who's in
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Who's in (2)")
@@ -57,6 +84,7 @@ struct RoomFormedView: View {
                             .padding(.horizontal, 4)
 
                         VStack(spacing: 12) {
+<<<<<<< ours
                             // User row (Host) — P1-02: badge solid, warna border agar terlihat di light mode
                             LobbyUserRow(
                                 name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
@@ -76,6 +104,46 @@ struct RoomFormedView: View {
                                 badgeTextColor: Color("appPrimary"),
                                 badgeStyle: .outline
                             )
+                            if viewModel.isHost {
+                                // Current User is Host, Partner is Guest
+                                LobbyUserRow(
+                                    name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
+                                    isCurrentUser: true,
+                                    badgeText: "Host",
+                                    badgeColor: Color("appGlassBorder"),
+                                    badgeTextColor: Color("appSecondaryLabel"),
+                                    badgeStyle: .solid
+                                )
+                                
+                                LobbyUserRow(
+                                    name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
+                                    isCurrentUser: false,
+                                    badgeText: "Ready",
+                                    badgeColor: Color("appPrimary"),
+                                    badgeTextColor: Color("appPrimary"),
+                                    badgeStyle: .outline
+                                )
+                            } else {
+                                // Partner is Host, Current User is Guest
+                                LobbyUserRow(
+                                    name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
+                                    isCurrentUser: false,
+                                    badgeText: "Host",
+                                    badgeColor: Color("appGlassBorder"),
+                                    badgeTextColor: Color("appSecondaryLabel"),
+                                    badgeStyle: .solid
+                                )
+                                
+                                LobbyUserRow(
+                                    name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
+                                    isCurrentUser: true,
+                                    badgeText: "Ready",
+                                    badgeColor: Color("appPrimary"),
+                                    badgeTextColor: Color("appPrimary"),
+                                    badgeStyle: .outline
+                                )
+                            }
+>>>>>>> theirs
                         }
                     }
                     .padding(.top, 20)
@@ -100,6 +168,7 @@ struct RoomFormedView: View {
 
             Spacer()
 
+<<<<<<< ours
             // Bottom action button: "Continue to challenge" — P2-04: pakai PillButtonStyle
             Button(action: {
                 withAnimation {
@@ -109,9 +178,40 @@ struct RoomFormedView: View {
                 Text("Continue to challenge")
                     .frame(maxWidth: .infinity)
             }
+                .buttonStyle(PillButtonStyle())
             .buttonStyle(PillButtonStyle())
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
+            // Bottom action button: Host vs Guest action control
+            if viewModel.isHost {
+                Button(action: {
+                    withAnimation {
+                        viewModel.appState = .workoutSetup
+                    }
+                }) {
+                    Text("Continue to challenge")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                }
+                .buttonStyle(PillButtonStyle())
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+            } else {
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .tint(Color.primary)
+                    Text("Waiting for Host")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.primary.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color("appGlassWhite"))
+                .cornerRadius(24)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+            }
+>>>>>>> theirs
         }
         .flintVibrantBackground()
     }

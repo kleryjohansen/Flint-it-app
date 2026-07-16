@@ -60,7 +60,7 @@
 		EE1B4B24300619AF0080CC08 /* FlintModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlintModifiers.swift; sourceTree = "<group>"; };
 		EE1B4B27300619C40080CC08 /* FlintButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlintButtonStyles.swift; sourceTree = "<group>"; };
 		EE1B4B7B300621300080CC08 /* FlintItApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlintItApp.entitlements; sourceTree = "<group>"; };
-		EE9859BC2FFFB45F007EB100 /* FlintItApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlintItApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE9859BC2FFFB45F007EB100 /* Nearfit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nearfit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859CC2FFFB530007EB100 /* phoneBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = phoneBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859D12FFFB530007EB100 /* watchBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMetrics.swift; sourceTree = "<group>"; };
@@ -122,7 +122,7 @@
 		EE9859BD2FFFB45F007EB100 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EE9859BC2FFFB45F007EB100 /* FlintItApp.app */,
+				EE9859BC2FFFB45F007EB100 /* Nearfit.app */,
 				EE9859CC2FFFB530007EB100 /* phoneBuild.app */,
 				EE9859D12FFFB530007EB100 /* watchBuild.app */,
 			);
@@ -144,9 +144,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EE9859BB2FFFB45F007EB100 /* FlintItApp */ = {
+		EE9859BB2FFFB45F007EB100 /* Nearfit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "FlintItApp" */;
+			buildConfigurationList = EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "Nearfit" */;
 			buildPhases = (
 				EE9859B82FFFB45F007EB100 /* Sources */,
 				EE9859B92FFFB45F007EB100 /* Frameworks */,
@@ -161,11 +161,11 @@
 			fileSystemSynchronizedGroups = (
 				EE9859BE2FFFB45F007EB100 /* phoneBuild */,
 			);
-			name = FlintItApp;
+			name = Nearfit;
 			packageProductDependencies = (
 			);
 			productName = watchpairworkout;
-			productReference = EE9859BC2FFFB45F007EB100 /* FlintItApp.app */;
+			productReference = EE9859BC2FFFB45F007EB100 /* Nearfit.app */;
 			productType = "com.apple.product-type.application";
 		};
 		EE9859CB2FFFB530007EB100 /* phoneBuild */ = {
@@ -230,7 +230,7 @@
 					};
 				};
 			};
-			buildConfigurationList = EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "FlintItApp" */;
+			buildConfigurationList = EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "Nearfit" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -244,7 +244,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EE9859BB2FFFB45F007EB100 /* FlintItApp */,
+				EE9859BB2FFFB45F007EB100 /* Nearfit */,
 				EE9859CB2FFFB530007EB100 /* phoneBuild */,
 				EE9859D02FFFB530007EB100 /* watchBuild */,
 			);
@@ -439,8 +439,8 @@
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -455,7 +455,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.nearfit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -476,8 +476,8 @@
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -492,7 +492,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.nearfit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -514,22 +514,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Nearfit;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Nearfit needs to read your heart rate and workout data.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Nearfit needs to save your workout sessions and health metrics.";
+				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.nearfit;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.nearfit.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -554,22 +554,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Nearfit;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Nearfit needs to read your heart rate and workout data.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Nearfit needs to save your workout sessions and health metrics.";
+				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.nearfit;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.nearfit.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -590,13 +590,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
-				INFOPLIST_KEY_CFBundleDisplayName = Nearfit;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.nearfit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -609,13 +609,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
-				INFOPLIST_KEY_CFBundleDisplayName = Nearfit;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.nearfit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -626,7 +626,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "FlintItApp" */ = {
+		EE9859B72FFFB45F007EB100 /* Build configuration list for PBXProject "Nearfit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE9859C52FFFB461007EB100 /* Debug */,
@@ -635,7 +635,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "FlintItApp" */ = {
+		EE9859C72FFFB461007EB100 /* Build configuration list for PBXNativeTarget "Nearfit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EE9859C82FFFB461007EB100 /* Debug */,

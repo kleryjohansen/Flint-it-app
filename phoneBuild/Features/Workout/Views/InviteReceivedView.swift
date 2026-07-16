@@ -47,7 +47,7 @@ struct InviteReceivedView: View {
                 // Action Buttons
                 HStack(spacing: 16) {
                     Button(action: {
-                        viewModel.multipeerManager?.declineInvitation()
+                        viewModel.declineInvite()
                         dismiss()
                     }) {
                         Text("Decline")
@@ -58,7 +58,7 @@ struct InviteReceivedView: View {
                     .colorScheme(.light) // Force light style untuk kontras di kedua mode
 
                     Button(action: {
-                        viewModel.multipeerManager?.acceptInvitation()
+                        viewModel.acceptInvite()
                         dismiss()
                     }) {
                         Text("Accept")

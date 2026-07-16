@@ -18,6 +18,7 @@ public final class NearbyInteractionManager: NSObject {
     // MARK: - Callbacks (wired by iOSWorkoutViewModel)
 
     @ObservationIgnored public var onProximityUpdate: ((Double) -> Void)?
+    @ObservationIgnored public var onSessionInvalidated: (() -> Void)?
 
     // MARK: - Private
 
@@ -184,6 +185,7 @@ extension NearbyInteractionManager: NISessionDelegate {
             self.arrowAngleDegrees = 0
             self.peerIsOutOfRange = false
             self.errorMessage = message
+            self.onSessionInvalidated?()
         }
     }
 

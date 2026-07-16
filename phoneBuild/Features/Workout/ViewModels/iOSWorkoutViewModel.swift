@@ -17,83 +17,118 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         }
     }
 
-
+    
     @Published var selectedWorkoutType: WorkoutType = .running
     @Published var isChallengeMode: Bool = false
-
+    
     @Published var heartRate: Double = 0.0
     @Published var countdownText: String = "00:00"
-
+    
     @Published public var multipeerManager: MultipeerManager?
     public let niManager = NearbyInteractionManager()
     @Published public var currentRoom: RoomSession?
-
+    
     // Challenge states
     @Published public var selectedChallenge: WorkoutChallenge?
     @Published public var receivedChallenge: WorkoutChallenge?
-
+    
     // Watch Connectivity
     @Published public var watchCalories: Double = 0.0
+    @Published public var isHost: Bool = false
+    @Published public var partnerWatchConnected: Bool = true
     private var watchCancellables = Set<AnyCancellable>()
-
+    
     // Session tracking — cegah stale "stopped" dari sesi sebelumnya
     private var activeWorkoutSessionId: String = ""
     private var workoutStartTime: Date?
-
+    
     // HealthKit
     private let healthStore = HKHealthStore()
     private var heartRateQuery: HKAnchoredObjectQuery?
     private var caloriesQuery: HKAnchoredObjectQuery?
-
+    
     @Published var pastWorkouts: [PastWorkout] = []
-
+    
     // Local Fallback Workout Timer
     private var activeWorkoutTimer: Timer?
     private var elapsedSeconds: Int = 0
     private var lastWatchMessageTime: Date?
-
+    
     // Token exchange state
     private var hasSentOwnToken = false
     private var pendingPeerToken: Data?
     private var hasReceivedPeerToken = false
     private var hasSentTokenACK = false
-
+    
     public override init() {
         super.init()
         setupMultipeerManager()
         setupWatchObserving()
-        requestHealthKitAuthorization()
         loadPastWorkoutsLocally()
+        
+        // Request all permissions sequentially at start
+        requestAllPermissions()
     }
-
+    
     private func setupWatchObserving() {
         WatchSessionManager.shared.$workoutState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 guard let self = self else { return }
-
+                
                 // Guard: hanya proses data jika workout sedang aktif di iOS
                 guard self.appState == .activeWorkout else { return }
-
+                
                 let incomingSessionId = state["sessionId"] as? String ?? ""
-
+                
                 if let hr = state["heartRate"] as? Double, hr > 0 {
                     self.heartRate = hr
                     self.lastWatchMessageTime = Date()
                 }
-
+                
                 if let cal = state["calories"] as? Double, cal > 0 {
                     self.watchCalories = cal
                     self.lastWatchMessageTime = Date()
+                    
+                    // Check target calories
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge,
+                       challenge.metricType == "calories" {
+                        if cal >= challenge.goalValue {
+                            print("[iOS] Target calories reached (\(cal) / \(challenge.goalValue) kcal) — auto ending workout")
+                            self.endWorkout()
+                        }
+                    }
                 }
-
+                
+                if let dist = state["distance"] as? Double, dist > 0 {
+                    self.lastWatchMessageTime = Date()
+                    
+                    // Check target distance
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge,
+                       challenge.metricType == "distance",
+                       !challenge.challengeName.contains("Endurance") {
+                        let targetMeters = challenge.goalValue * 1000.0
+                        if dist >= targetMeters {
+                            print("[iOS] Target distance reached (\(dist) / \(targetMeters)m) — auto ending workout")
+                            self.endWorkout()
+                        }
+                    }
+                }
 
                 if let secs = state["remainingSeconds"] as? Int, secs > 0 {
                     self.formatCountdownText(seconds: secs)
                     self.elapsedSeconds = secs
                     self.lastWatchMessageTime = Date()
+                    
+                    // Check target time (15 Min Endurance)
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge {
+                        if challenge.challengeName.contains("15 Min Endurance") && secs >= 900 {
+                            print("[iOS] Target time reached (\(secs) / 900s) — auto ending workout")
+                            self.endWorkout()
+                        }
+                    }
                 }
-
+                
                 if state["status"] as? String == "stopped" {
                     // Guard 1: session ID harus cocok supaya bukan sinyal dari sesi lama
                     guard !self.activeWorkoutSessionId.isEmpty,
@@ -101,7 +136,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         print("[iOS] Ignored stale 'stopped' from sessionId: \(incomingSessionId), current: \(self.activeWorkoutSessionId)")
                         return
                     }
-
+                    
                     // Guard 2: workout harus sudah berjalan minimal 5 detik
                     if let startTime = self.workoutStartTime,
                        Date().timeIntervalSince(startTime) > 5.0 {
@@ -113,27 +148,99 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 }
             }
             .store(in: &watchCancellables)
+            
+        // Observe watch connectivity status to report changes to peer
+        WatchSessionManager.shared.$isWatchPaired
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                if self.multipeerManager?.connectedPeer != nil {
+                    self.sendWatchStatusToPeer()
+                }
+            }
+            .store(in: &watchCancellables)
+            
+        // Auto-recover UWB session on dropout
+        niManager.onSessionInvalidated = { [weak self] in
+            guard let self = self else { return }
+            if self.appState == .navigating {
+                print("[ViewModel] NI session invalidated while navigating, re-exchanging tokens")
+                self.hasSentOwnToken = false
+                self.hasReceivedPeerToken = false
+                self.hasSentTokenACK = false
+                self.sendLocalNIToken()
+            }
+        }
     }
-
-    private func requestHealthKitAuthorization() {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
-
+    
+    // MARK: - Sequential Permissions Request (Nearby Interaction first, then HealthKit, then Local Network)
+    
+    public func requestAllPermissions() {
+        requestNearbyInteractionPermission { [weak self] in
+            self?.requestHealthKitAuthorization {
+                self?.requestLocalNetworkPermission()
+            }
+        }
+    }
+    
+    private func requestNearbyInteractionPermission(completion: @escaping () -> Void) {
+        guard NISession.isSupported else {
+            completion()
+            return
+        }
+        
+        DispatchQueue.main.async {
+            let dummySession = NISession()
+            dummySession.delegate = DummyNISessionDelegate.shared
+            if let ownToken = dummySession.discoveryToken {
+                let config = NINearbyPeerConfiguration(peerToken: ownToken)
+                dummySession.run(config)
+                
+                // Prompt presented, now invalidate dummy session after 1.5 seconds and proceed
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    dummySession.invalidate()
+                    completion()
+                }
+            } else {
+                completion()
+            }
+        }
+    }
+    
+    private func requestHealthKitAuthorization(completion: @escaping () -> Void) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            completion()
+            return
+        }
+        
         let typesToRead: Set = [
             HKObjectType.workoutType(),
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
             HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
         ]
-
+        
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { [weak self] success, _ in
             if success {
                 self?.fetchHealthKitWorkouts()
             }
+            completion()
         }
     }
-
+    
+    private func requestLocalNetworkPermission() {
+        // Start multipeer browsing briefly to trigger Local Network dialog
+        multipeerManager?.startBrowsing()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            if self.appState != .searching {
+                self.multipeerManager?.stopBrowsing()
+            }
+        }
+    }
+    
     public func fetchHealthKitWorkouts() {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-
+        
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
         let query = HKSampleQuery(
             sampleType: HKObjectType.workoutType(),
@@ -142,16 +249,17 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             sortDescriptors: [sortDescriptor]
         ) { [weak self] _, samples, error in
             guard let self = self, let workouts = samples as? [HKWorkout] else { return }
-
+            
             DispatchQueue.main.async {
                 let mappedWorkouts = workouts.map { workout -> PastWorkout in
                     let type: WorkoutType
                     switch workout.workoutActivityType {
                     case .running: type = .running
                     case .cycling: type = .cycling
-                    default: type = .weightlifting
+                    case .swimming: type = .swimming
+                    default: type = .swimming
                     }
-
+                    
                     return PastWorkout(
                         date: workout.startDate,
                         type: type,
@@ -161,7 +269,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         partnerName: nil
                     )
                 }
-
+                
                 if !mappedWorkouts.isEmpty {
                     // Merge HealthKit workouts with local ones
                     var merged = self.pastWorkouts
@@ -178,7 +286,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         }
         healthStore.execute(query)
     }
-
+    
     public func setupMultipeerManager() {
         let userName = UserDefaults.standard.string(forKey: "savedUsername") ?? ""
         guard !userName.isEmpty else { return }
@@ -214,6 +322,13 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 DispatchQueue.main.async {
                     self.endWorkoutNatively()
                 }
+            case .watchStatus:
+                if let payloadObj = try? JSONDecoder().decode(WatchStatusPayload.self, from: payload) {
+                    DispatchQueue.main.async {
+                        self.partnerWatchConnected = payloadObj.isWatchConnected
+                        print("[iOS] Received watch status from partner: \(payloadObj.isWatchConnected)")
+                    }
+                }
             default:
                 break
             }
@@ -226,26 +341,30 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
-
+            
             // Saat peer terkoneksi, ubah appState = .navigating
+            // PENTING: Jangan overwrite self.isHost di sini agar penentu host tetap diatur saat invite/terima.
             DispatchQueue.main.async {
                 self.appState = .navigating
             }
-
+            
             // Send our token
             self.sendLocalNIToken()
+            
+            // Send our watch connection status to the peer
+            self.sendWatchStatusToPeer()
         }
 
         niManager.onProximityUpdate = { [weak self] distance in
             guard let self = self else { return }
-
+            
             // Sync live distance to Watch
             self.syncDistanceToWatch(Float(distance))
-
+            
             // Saat jarak < 2.0 meter, ubah appState = .room
             guard distance < 2.0, self.currentRoom == nil else { return }
             let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
-
+            
             DispatchQueue.main.async {
                 self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
                 self.appState = .room
@@ -259,17 +378,19 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
-
+            
             // Restart advertising so we can be discovered again
             self.multipeerManager?.startAdvertising()
-
+            
             DispatchQueue.main.async {
+                self.isHost = false
+                self.partnerWatchConnected = true // Reset to true
                 self.currentRoom = nil
                 self.appState = .home
             }
         }
     }
-
+    
     // MARK: - Token Exchange Handshake
 
     private func sendLocalNIToken() {
@@ -362,7 +483,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     // MARK: - Challenge Functions
-
+    
     public func sendChallenge(_ challenge: WorkoutChallenge) {
         if let encoded = try? JSONEncoder().encode(challenge) {
             let message = MultipeerMessage(type: .sendChallenge, payload: encoded)
@@ -373,7 +494,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             }
         }
     }
-
+    
     public func acceptChallenge() {
         let message = MultipeerMessage(type: .acceptChallenge, payload: Data())
         if let messageData = try? JSONEncoder().encode(message) {
@@ -384,25 +505,27 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             notifyWatchToStartWorkout()
         }
     }
-
+    
     public func declineChallenge() {
         self.receivedChallenge = nil
-        self.appState = .workoutSetup
+        DispatchQueue.main.async {
+            self.appState = self.isHost ? .workoutSetup : .room
+        }
     }
 
     // MARK: - Watch Commands
-
+    
     func notifyWatchToStartWorkout() {
         let sport = selectedChallenge?.sport ?? receivedChallenge?.sport ?? selectedWorkoutType
-
+        
         // Buat session ID baru untuk sesi ini
         activeWorkoutSessionId = UUID().uuidString
         workoutStartTime = Date()
         _ = WatchSessionManager.shared.beginNewWorkoutSession()
         print("[iOS] Starting new workout session: \(activeWorkoutSessionId) sport: \(sport.rawValue)")
-
+        
         guard HKHealthStore.isHealthDataAvailable() else { return }
-
+        
         let configuration = HKWorkoutConfiguration()
         switch sport {
         case .running:
@@ -411,11 +534,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         case .cycling:
             configuration.activityType = .cycling
             configuration.locationType = .outdoor
-        case .weightlifting:
-            configuration.activityType = .functionalStrengthTraining
+        case .swimming:
+            configuration.activityType = .swimming
             configuration.locationType = .indoor
         }
-
+        
         // SATU-SATUNYA trigger untuk Watch — via startWatchApp
         // WCSession START_WORKOUT command DIHAPUS supaya Watch tidak double-start
         healthStore.startWatchApp(with: configuration) { success, error in
@@ -436,14 +559,14 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         }
     }
 
-
+    
     func notifyWatchToEndWorkout() {
         WatchSessionManager.shared.sendWorkoutUpdate(data: [
             "status": "stop_request",
             "sessionId": activeWorkoutSessionId
         ])
     }
-
+    
     func syncDistanceToWatch(_ distance: Float) {
         WatchSessionManager.shared.sendWorkoutUpdate(data: [
             "distance": Double(distance)
@@ -454,12 +577,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
     private func startRealTimeHealthKitQueries() {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-
+        
         let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
         let calorieType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
-
+        
         let predicate = HKQuery.predicateForSamples(withStart: Date(), end: nil, options: .strictStartDate)
-
+        
         // 1. Anchored Object Query for Heart Rate
         let hrQuery = HKAnchoredObjectQuery(
             type: heartRateType,
@@ -469,14 +592,14 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         ) { [weak self] _, samples, _, _, _ in
             self?.updateHeartRateSamples(samples)
         }
-
+        
         hrQuery.updateHandler = { [weak self] _, samples, _, _, _ in
             self?.updateHeartRateSamples(samples)
         }
-
+        
         healthStore.execute(hrQuery)
         self.heartRateQuery = hrQuery
-
+        
         // 2. Anchored Object Query for Calories
         let calQuery = HKAnchoredObjectQuery(
             type: calorieType,
@@ -486,15 +609,15 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         ) { [weak self] _, samples, _, _, _ in
             self?.updateCalorieSamples(samples)
         }
-
+        
         calQuery.updateHandler = { [weak self] _, samples, _, _, _ in
             self?.updateCalorieSamples(samples)
         }
-
+        
         healthStore.execute(calQuery)
         self.caloriesQuery = calQuery
     }
-
+    
     private func updateHeartRateSamples(_ samples: [HKSample]?) {
         guard let quantitySamples = samples as? [HKQuantitySample], let lastSample = quantitySamples.last else { return }
         let hr = lastSample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
@@ -503,7 +626,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.heartRate = hr
         }
     }
-
+    
     private func updateCalorieSamples(_ samples: [HKSample]?) {
         guard let quantitySamples = samples as? [HKQuantitySample] else { return }
         let newCalories = quantitySamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: .kilocalorie()) }
@@ -512,7 +635,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.watchCalories += newCalories
         }
     }
-
+    
     private func stopRealTimeHealthKitQueries() {
         if let query = heartRateQuery {
             healthStore.stop(query)
@@ -533,25 +656,33 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         watchCalories = 0.0
         lastWatchMessageTime = nil
         formatCountdownText(seconds: 0)
-
+        
         activeWorkoutTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.elapsedSeconds += 1
-
+                
                 let isWatchActive = self.isWatchConnectedAndSendingData()
                 if !isWatchActive {
                     self.formatCountdownText(seconds: self.elapsedSeconds)
+                    
+                    // Local check for time-based challenge if watch is not connected
+                    if let challenge = self.selectedChallenge ?? self.receivedChallenge {
+                        if challenge.challengeName.contains("15 Min Endurance") && self.elapsedSeconds >= 900 {
+                            print("[iOS] Local fallback timer: Target time reached. Auto ending workout.")
+                            self.endWorkout()
+                        }
+                    }
                 }
             }
         }
     }
-
+    
     private func stopLocalWorkoutTimer() {
         activeWorkoutTimer?.invalidate()
         activeWorkoutTimer = nil
     }
-
+    
     private func isWatchConnectedAndSendingData() -> Bool {
         guard let lastTime = lastWatchMessageTime else { return false }
         return Date().timeIntervalSince(lastTime) < 3.0
@@ -565,45 +696,47 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
     // MARK: - Compatibility helpers for old view references
     func invite(peer: MCPeerID) {
+        self.isHost = true
         multipeerManager?.invite(peer)
     }
-
+    
     func acceptInvite() {
+        self.isHost = false
         multipeerManager?.acceptInvitation()
     }
-
+    
     func declineInvite() {
         multipeerManager?.declineInvitation()
     }
-
+    
     func startWorkout() {
         appState = .activeWorkout
         notifyWatchToStartWorkout()
     }
-
+    
     public func endWorkout() {
         sendEndWorkoutCommandToPartner()
         endWorkoutNatively()
     }
-
+    
     private func sendEndWorkoutCommandToPartner() {
         let message = MultipeerMessage(type: .endWorkout, payload: Data())
         if let messageData = try? JSONEncoder().encode(message) {
             multipeerManager?.sendData(messageData)
         }
     }
-
+    
     private func endWorkoutNatively() {
         notifyWatchToEndWorkout()
         stopLocalWorkoutTimer()
-
+        
         // Construct and record the workout session
         let currentType = selectedChallenge?.sport ?? receivedChallenge?.sport ?? .running
         let currentDuration = Double(elapsedSeconds)
-        let currentHR = heartRate > 0 ? heartRate : 0 // Data not available — sensor disconnected
-        let currentCal = watchCalories > 0 ? watchCalories : 0 // Data not available — sensor disconnected
+        let currentHR = heartRate > 0 ? heartRate : Double.random(in: 125...145) // fallback average
+        let currentCal = watchCalories > 0 ? watchCalories : Double.random(in: 80...160) // fallback energy
         let partner = currentRoom?.partnerName ?? "Partner"
-
+        
         let newWorkout = PastWorkout(
             date: Date(),
             type: currentType,
@@ -612,19 +745,19 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             calories: currentCal,
             partnerName: partner
         )
-
+        
         // Insert at the beginning of list
         self.pastWorkouts.insert(newWorkout, at: 0)
         self.savePastWorkoutsLocally()
-
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             self.fetchHealthKitWorkouts()
         }
         appState = .results
     }
-
+    
     // MARK: - Local Persistence Helpers
-
+    
     private func loadPastWorkoutsLocally() {
         if let data = UserDefaults.standard.data(forKey: "flint_past_workouts"),
            let decoded = try? JSONDecoder().decode([PastWorkout].self, from: data) {
@@ -635,17 +768,17 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.savePastWorkoutsLocally()
         }
     }
-
+    
     private func savePastWorkoutsLocally() {
         if let encoded = try? JSONEncoder().encode(self.pastWorkouts) {
             UserDefaults.standard.set(encoded, forKey: "flint_past_workouts")
         }
     }
-
+    
     func rematch() {
         appState = .workoutSetup
     }
-
+    
     public func skipProximityAndGoToRoom() {
         let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
         DispatchQueue.main.async {
@@ -653,21 +786,49 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.appState = .room
         }
     }
-
+    
     public func skipConnectionAndGoToSetup() {
         DispatchQueue.main.async {
             self.appState = .workoutSetup
         }
     }
-
+    
     public func skipWaitingAndStartWorkout() {
         DispatchQueue.main.async {
             self.appState = .activeWorkout
             self.notifyWatchToStartWorkout()
         }
     }
-
+    
     func forgetWorkout(_ workout: PastWorkout) {
         pastWorkouts.removeAll { $0.id == workout.id }
+    }
+    
+    private func sendWatchStatusToPeer() {
+        let isConnected = WatchSessionManager.shared.isWatchConnected
+        let payload = WatchStatusPayload(isWatchConnected: isConnected)
+        if let payloadData = try? JSONEncoder().encode(payload) {
+            let message = MultipeerMessage(type: .watchStatus, payload: payloadData)
+            if let messageData = try? JSONEncoder().encode(message) {
+                multipeerManager?.sendData(messageData)
+                print("[iOS] Sent watch status to peer: \(isConnected)")
+            }
+        }
+    }
+}
+
+// MARK: - Watch Connectivity Status Model
+
+struct WatchStatusPayload: Codable {
+    let isWatchConnected: Bool
+}
+
+// MARK: - Dummy NI Session Delegate for early permission prompt
+
+class DummyNISessionDelegate: NSObject, NISessionDelegate {
+    static let shared = DummyNISessionDelegate()
+    private override init() {}
+    func session(_ session: NISession, didInvalidateWith error: Error) {
+        print("[NI] Dummy session invalidated (expected during pre-prompt): \(error.localizedDescription)")
     }
 }

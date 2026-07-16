@@ -22,6 +22,7 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     private let calorieType     = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
     private let runDistType     = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
     private let cycleDistType   = HKQuantityType.quantityType(forIdentifier: .distanceCycling)!
+    private let swimDistType    = HKQuantityType.quantityType(forIdentifier: .distanceSwimming)!
     
     override init() {
         super.init()
@@ -34,10 +35,10 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         let typesToShare: Set<HKSampleType> = [
             HKQuantityType.workoutType(),
-            heartRateType, calorieType, runDistType, cycleDistType
+            heartRateType, calorieType, runDistType, cycleDistType, swimDistType
         ]
         let typesToRead: Set<HKObjectType> = [
-            heartRateType, calorieType, runDistType, cycleDistType
+            heartRateType, calorieType, runDistType, cycleDistType, swimDistType
         ]
         
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
@@ -53,7 +54,7 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     // MARK: - Workout Lifecycle
     
     /// Entry point SATU-SATUNYA — dipanggil dari WatchAppDelegate.handle(_:)
-    func startWorkout(sport: String = "Weightlifting", sessionId: String = UUID().uuidString) {
+    func startWorkout(sport: String = "Swimming", sessionId: String = UUID().uuidString) {
         guard !isStartingWorkout else {
             print("[Watch] startWorkout ignored — already in progress")
             return
@@ -88,12 +89,15 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
             case "Cycling":
                 configuration.activityType = .cycling
                 configuration.locationType = .outdoor
+            case "Swimming":
+                configuration.activityType = .swimming
+                configuration.locationType = .indoor
             default:
-                configuration.activityType = .functionalStrengthTraining
+                configuration.activityType = .swimming
                 configuration.locationType = .indoor
             }
             
-            let isDistanceSport = (sport == "Running" || sport == "Cycling")
+            let isDistanceSport = (sport == "Running" || sport == "Cycling" || sport == "Swimming")
             self.currentSessionId = sessionId
             
             do {
@@ -306,6 +310,14 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                     let meters = q.doubleValue(for: .meter())
                     DispatchQueue.main.async { self.metrics.distance = Float(meters) }
                     didUpdate = true
+                }
+            } else if qt == swimDistType {
+                if let stats = workoutBuilder.statistics(for: qt),
+                   let q = stats.sumQuantity() {
+                    let meters = q.doubleValue(for: .meter())
+                    DispatchQueue.main.async { self.metrics.distance = Float(meters) }
+                    didUpdate = true
+                    print("[Watch] Distance (swim): \(String(format: "%.1f", meters)) m")
                 }
             }
         }

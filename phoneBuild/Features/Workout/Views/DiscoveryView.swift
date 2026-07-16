@@ -82,6 +82,35 @@ struct DiscoveryView: View {
                     }
                 }
                 Spacer()
+
+            if !watchSession.isWatchConnected {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.applewatch")
+                        .font(.system(size: 24))
+                        .foregroundColor(.orange)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Watch Connection Required")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Please pair an Apple Watch and open the Flint-it app on it to start searching.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.6))
+                            .lineLimit(2)
+                    }
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(18)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                )
+                .padding(.horizontal, 24)
+                .padding(.top, 10)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
             }
             .padding(.horizontal, 24)
             .padding(.top, 16)

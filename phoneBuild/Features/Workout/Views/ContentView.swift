@@ -85,7 +85,8 @@ struct ActiveWorkoutView: View {
     private var isDistanceChallenge: Bool {
         challenge?.metricType == "distance" ||
         challenge?.sport == .running ||
-        challenge?.sport == .cycling
+        challenge?.sport == .cycling ||
+        challenge?.sport == .swimming
     }
 
     // Live values dari Watch via WCSession
