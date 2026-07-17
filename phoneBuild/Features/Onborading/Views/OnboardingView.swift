@@ -1,6 +1,11 @@
 import SwiftUI
-import PhotosUI
 import AuthenticationServices
+
+struct OnboardingPage {
+    let title: String
+    let description: String
+    let imageName: String
+}
 
 struct OnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
@@ -30,8 +35,19 @@ struct OnboardingView: View {
                                 .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
                                 value: isAnimatingLogo
                             )
-                            .onAppear {
-                                isAnimatingLogo = true
+                            
+                            // Text Content (Title & Description)
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text(page.title)
+                                    .font(.system(size: 32, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.leading)
+                                
+                                Text(page.description)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .multilineTextAlignment(.leading)
+                                    .lineSpacing(4)
                             }
 
                         Text("Nearfit")
@@ -143,14 +159,21 @@ struct OnboardingView: View {
                                                 email: email
                                             )
                                         }
-                                    case .failure(let error):
-                                        viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
+                                        
+                                        viewModel.handleAppleSignIn(
+                                            userIdentifier: userIdentifier,
+                                            fullName: nameString.isEmpty ? nil : nameString,
+                                            email: email
+                                        )
                                     }
+                                case .failure(let error):
+                                    viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
                                 }
-                                .signInWithAppleButtonStyle(.white)
-                                .frame(height: 50)
-                                .cornerRadius(15)
                             }
+                            .signInWithAppleButtonStyle(.white)
+                            .frame(height: 50)
+                            .cornerRadius(25)
+                            .padding(.horizontal, 24)
                         }
 
                         // Error message
@@ -161,19 +184,17 @@ struct OnboardingView: View {
                                 Text(viewModel.errorMessage)
                                     .font(.caption.bold())
                             }
-                            .foregroundColor(Color.flintRed)
-                            .transition(.opacity)
                         }
+                        .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? geometry.safeAreaInsets.bottom : 20)
                     }
                     .padding(24)
                     .flintGlassCard()
                     .padding(.horizontal)
 
                 }
-                .padding(.bottom, 50)
             }
         }
-        // Redirect to ContentView on success
+        .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $viewModel.isSuccess) {
             ContentView()
         }
