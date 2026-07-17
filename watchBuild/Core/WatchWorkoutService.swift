@@ -2,6 +2,8 @@ import Foundation
 import HealthKit
 import WatchConnectivity
 import Combine
+import AVFoundation
+import WatchKit
 
 class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDelegate {
     static let shared = WatchWorkoutService()
@@ -23,6 +25,8 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     private let runDistType     = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
     private let cycleDistType   = HKQuantityType.quantityType(forIdentifier: .distanceCycling)!
     private let swimDistType    = HKQuantityType.quantityType(forIdentifier: .distanceSwimming)!
+    private let stepCountType   = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+    private let flightsType     = HKQuantityType.quantityType(forIdentifier: .flightsClimbed)!
     
     override init() {
         super.init()
@@ -35,10 +39,10 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         let typesToShare: Set<HKSampleType> = [
             HKQuantityType.workoutType(),
-            heartRateType, calorieType, runDistType, cycleDistType, swimDistType
+            heartRateType, calorieType, runDistType, cycleDistType, swimDistType, stepCountType, flightsType
         ]
         let typesToRead: Set<HKObjectType> = [
-            heartRateType, calorieType, runDistType, cycleDistType, swimDistType
+            heartRateType, calorieType, runDistType, cycleDistType, swimDistType, stepCountType, flightsType
         ]
         
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
@@ -136,7 +140,10 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                                 remainingSeconds: 0,
                                 isWorkoutRunning: true,
                                 calories: 0.0,
-                                isDistanceMetric: isDistanceSport
+                                isDistanceMetric: isDistanceSport,
+                                steps: 0.0,
+                                speed: 0.0,
+                                elevation: 0.0
                             )
                             self.countdown = 0
                             self.startTimer()
@@ -164,7 +171,49 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
         }
     }
     
-    func endWorkout(notifyPhone: Bool = true) {
+    private var audioPlayer: AVAudioPlayer?
+    
+    private func playWorkoutResultSound(result: String) {
+        let assetName: String
+        let hapticType: WKHapticType
+        
+        switch result {
+        case "Victory":
+            assetName = "winningSound"
+            hapticType = .success
+        case "Defeat":
+            assetName = "defeatSound"
+            hapticType = .failure
+        case "Solo":
+            assetName = "winningSound"
+            hapticType = .success
+        default:
+            return
+        }
+        
+        // 1. Play haptic
+        WKInterfaceDevice.current().play(hapticType)
+        
+        // 2. Play sound from data asset catalog
+        if let asset = NSDataAsset(name: assetName) {
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+                try AVAudioSession.sharedInstance().setActive(true)
+                
+                audioPlayer = try AVAudioPlayer(data: asset.data)
+                audioPlayer?.numberOfLoops = 0
+                audioPlayer?.volume = 1.0
+                audioPlayer?.play()
+                print("[Watch] Successfully playing result sound asset: \(assetName)")
+            } catch {
+                print("[Watch] Error playing sound asset: \(error.localizedDescription)")
+            }
+        } else {
+            print("[Watch] Sound asset not found in catalog: \(assetName)")
+        }
+    }
+    
+    func endWorkout(notifyPhone: Bool = true, result: String? = nil) {
         let sessionId = currentSessionId
         
         timer?.invalidate()
@@ -189,6 +238,9 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                     self.metrics.isWorkoutRunning = false
                     self.countdown = 0
                     print("[Watch] Workout ended and saved ✓")
+                    if let result = result {
+                        self.playWorkoutResultSound(result: result)
+                    }
                 }
             }
         }
@@ -233,21 +285,6 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
         }
     }
     
-    func syncMetricsToPhone() {
-        guard let encoded = try? JSONEncoder().encode(metrics) else { return }
-        
-        let payload: [String: Any] = [
-            "heartRate": metrics.heartRate,
-            "distance": Double(metrics.distance ?? 0.0),
-            "calories": metrics.calories,
-            "remainingSeconds": metrics.remainingSeconds,
-            "isDistanceMetric": metrics.isDistanceMetric,
-            "metrics": encoded,
-            "status": "active",
-            "sessionId": currentSessionId
-        ]
-        WatchSessionManager.shared.sendWorkoutUpdate(data: payload)
-    }
     
     // MARK: - HKWorkoutSessionDelegate
     
@@ -319,11 +356,56 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                     didUpdate = true
                     print("[Watch] Distance (swim): \(String(format: "%.1f", meters)) m")
                 }
+            } else if qt == stepCountType {
+                if let stats = workoutBuilder.statistics(for: qt),
+                   let q = stats.sumQuantity() {
+                    let steps = q.doubleValue(for: .count())
+                    DispatchQueue.main.async { self.metrics.steps = steps }
+                    didUpdate = true
+                    print("[Watch] Steps: \(Int(steps))")
+                }
+            } else if qt == flightsType {
+                if let stats = workoutBuilder.statistics(for: qt),
+                   let q = stats.sumQuantity() {
+                    let flights = q.doubleValue(for: .count())
+                    let elevationMeters = flights * 3.0 // roughly 3m per flight
+                    DispatchQueue.main.async { self.metrics.elevation = elevationMeters }
+                    didUpdate = true
+                    print("[Watch] Elevation: \(Int(elevationMeters)) m")
+                }
             }
         }
         
         if didUpdate {
             DispatchQueue.main.async { self.syncMetricsToPhone() }
         }
+    }
+    
+    func syncMetricsToPhone() {
+        // Calculate speed dynamically
+        let dist = Double(metrics.distance ?? 0.0)
+        let elapsed = Double(metrics.remainingSeconds)
+        if elapsed > 0 {
+            metrics.speed = (dist / 1000.0) / (elapsed / 3600.0)
+        } else {
+            metrics.speed = 0.0
+        }
+        
+        guard let encoded = try? JSONEncoder().encode(metrics) else { return }
+        
+        let payload: [String: Any] = [
+            "heartRate": metrics.heartRate,
+            "distance": dist,
+            "calories": metrics.calories,
+            "remainingSeconds": metrics.remainingSeconds,
+            "isDistanceMetric": metrics.isDistanceMetric,
+            "steps": metrics.steps,
+            "speed": metrics.speed,
+            "elevation": metrics.elevation,
+            "metrics": encoded,
+            "status": "active",
+            "sessionId": currentSessionId
+        ]
+        WatchSessionManager.shared.sendWorkoutUpdate(data: payload)
     }
 }
