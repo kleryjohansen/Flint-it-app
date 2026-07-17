@@ -9,6 +9,7 @@ struct DiscoveryView: View {
     @State private var selectedDiscoveryPeer: MCPeerID? = nil
     @State private var selectedTab = 0
     @State private var showSearchSkip = false
+    @ObservedObject private var watchSession = WatchSessionManager.shared
 
     var body: some View {
         ZStack {

@@ -77,6 +77,7 @@ public struct MultipeerMessage: Codable {
         case acceptChallenge // Accepting a challenge
         case endWorkout // Partner requested to end workout session
         case watchStatus // Companion watch connection status
+        case workoutProgress // Realtime progress metrics
     }
     public let type: MessageType
     public let payload: Data
@@ -85,4 +86,19 @@ public struct MultipeerMessage: Codable {
         self.type = type
         self.payload = payload
     }
+}
+
+public struct WorkoutProgressPayload: Codable {
+    public let progressValue: Double
+    public let progressRatio: Double
+    public let currentPace: Double
+    public let steps: Double
+    public let speed: Double
+    public let elevation: Double
+}
+
+public enum WorkoutResult: String, Codable {
+    case solo = "Solo"
+    case victory = "Victory"
+    case defeat = "Defeat"
 }

@@ -26,7 +26,7 @@ struct ContentView: View {
                                 .onAppear { pulseHeart = true }
                             Text(viewModel.bpmString)
                                 .font(.body.bold())
-                                .foregroundColor(.primary) // Glass card background
+                                .foregroundColor(.primary)
                         }
 
                         // Distance or calories
@@ -34,13 +34,13 @@ struct ContentView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "figure.run").foregroundColor(Color("appBlue"))
                                 Text(viewModel.distanceString)
-                                    .font(.body.bold()).foregroundColor(.primary) // Glass card background
+                                    .font(.body.bold()).foregroundColor(.primary)
                             }
                         } else {
                             HStack(spacing: 4) {
                                 Image(systemName: "flame.fill").foregroundColor(Color("appOrange"))
                                 Text(viewModel.caloriesString)
-                                    .font(.body.bold()).foregroundColor(.primary) // Glass card background
+                                    .font(.body.bold()).foregroundColor(.primary)
                             }
                         }
                     }
@@ -49,15 +49,12 @@ struct ContentView: View {
                     .background(Color("appGlassWhite"))
                     .cornerRadius(10)
 
-                    Spacer()
+                    // Average Pace Display
+                    Text("Avg Pace: \(viewModel.avgPaceString)")
+                        .font(.caption2.bold())
+                        .foregroundColor(.secondary)
 
-                    Button(action: { viewModel.stopTracking() }) {
-                        Text("End Workout")
-                            .font(.body.bold())
-                            .foregroundColor(.primary) // white-on-red button tint
-                    }
-                    .tint(Color("appRed"))
-                    .controlSize(.small)
+                    Spacer()
                 }
 
             } else {

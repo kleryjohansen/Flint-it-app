@@ -114,86 +114,186 @@ struct ActiveWorkoutView: View {
 
     var body: some View {
         ZStack {
-            Color.clear
-                .flintVibrantBackground()
+            Color.black
+                .ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 8) {
-                    HStack {
-                        // Watch connection indicator
-                        Circle()
-                            .fill(watchConnected ? Color("appGreen") : Color("appGray").opacity(0.5))
-                            .frame(width: 8, height: 8)
-                        Text(watchConnected ? "Watch Connected" : "Waiting for Watch...")
+            VStack(spacing: 20) {
+                // Watch connection indicator & floating competitive HUD
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(watchConnected ? Color("appGreen") : Color("appGray").opacity(0.5))
+                        .frame(width: 8, height: 8)
+                    
+                    Text(UserDefaults.standard.string(forKey: "savedUsername") ?? "You")
+                        .font(.caption2.bold())
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(height: 6)
+                        
+                        Capsule()
+                            .fill(Color.flintRed)
+                            .frame(width: 70 * CGFloat(viewModel.localProgress), height: 6)
+                    }
+                    .frame(width: 70)
+                    
+                    Text("VS")
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundColor(Color("appOrange"))
+                    
+                    if viewModel.multipeerManager?.connectedPeer != nil {
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.12))
+                                .frame(height: 6)
+                            
+                            Capsule()
+                                .fill(Color("appSecondaryLabel"))
+                                .frame(width: 70 * CGFloat(viewModel.partnerProgress), height: 6)
+                        }
+                        .frame(width: 70)
+                        
+                        Text(viewModel.currentRoom?.partnerName ?? "Partner")
                             .font(.caption2.bold())
-                            .foregroundColor(watchConnected ? Color("appGreen") : Color("appGray"))
-                            .textCase(.uppercase)
-                        Spacer()
+                            .foregroundColor(.white.opacity(0.8))
                     }
-                    .padding(.horizontal, 24)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(12)
+                .padding(.top, 12)
 
-                    if let ch = challenge {
-                        Text(ch.challengeName)
-                            .font(.subheadline.bold())
-                            .foregroundColor(Color("appSecondaryLabel"))
-                    }
+                if let ch = challenge {
+                    Text(ch.challengeName)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color("appOrange"))
+                        .textCase(.uppercase)
+                }
 
-                    // Elapsed timer
+                // ── Elapsed Time ──
+                VStack(spacing: 2) {
                     Text(viewModel.countdownText)
-                        .font(.system(.largeTitle, design: .default, weight: .bold))
-                        .fontWidth(.compressed)
+                        .font(.system(size: 72, weight: .medium, design: .default))
                         .monospacedDigit()
-                        .foregroundColor(.primary)
-                        .shadow(color: Color.flintRed.opacity(0.4), radius: 20, y: 10)
+                        .foregroundColor(.white)
                 }
-
-                // ── Heart Rate Card ──
-                MetricCard(
-                    icon: "heart.fill",
-                    iconColor: Color("appRed"),
-                    value: liveHR > 0 ? "\(Int(liveHR))" : "---",
-                    unit: "BPM",
-                    accentColor: Color("appRed"),
-                    pulse: $heartPulse
-                )
-                .onAppear { heartPulse = true }
-
-                // ── Distance or Calories Card ──
-                if isDistanceChallenge {
-                    MetricCard(
-                        icon: challenge?.sport == .cycling ? "figure.outdoor.cycle" : "figure.run",
-                        iconColor: Color("appPrimary"),
-                        value: distanceText,
-                        unit: "Distance",
-                        accentColor: Color("appPrimary"),
-                        pulse: .constant(false)
-                    )
-                } else {
-                    MetricCard(
-                        icon: "flame.fill",
-                        iconColor: Color("appOrange"),
-                        value: String(format: "%.1f", liveCalories),
-                        unit: "kcal burned",
-                        accentColor: Color("appOrange"),
-                        pulse: .constant(false)
-                    )
+                .padding(.top, 10)
+                
+                Divider()
+                    .background(Color.white.opacity(0.15))
+                    .padding(.horizontal, 32)
+                
+                // ── Giant Speed/Pace Center Metric (Strava Style) ──
+                VStack(spacing: 4) {
+                    Text(String(format: "%.1f", viewModel.localSpeed).replacingOccurrences(of: ".", with: ","))
+                        .font(.system(size: 96, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Speed (km/h)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
                 }
+                .padding(.vertical, 8)
+                
+                Divider()
+                    .background(Color.white.opacity(0.15))
+                    .padding(.horizontal, 32)
+                
+                // ── Sub metrics 2x2 Grid (Strava Style) ──
+                VStack(spacing: 24) {
+                    HStack {
+                        // Distance
+                        VStack(spacing: 4) {
+                            Text(String(format: "%.2f", liveDistanceMeters / 1000.0).replacingOccurrences(of: ".", with: ","))
+                                .font(.system(size: 38, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("Distance (km)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        Rectangle()
+                            .fill(Color.white.opacity(0.15))
+                            .frame(width: 1, height: 50)
+                        
+                        // Elevation Gain
+                        VStack(spacing: 4) {
+                            Text(String(format: "%.0f", viewModel.localElevation))
+                                .font(.system(size: 38, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("Elev. gain (m)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    
+                    Divider()
+                        .background(Color.white.opacity(0.15))
+                        .padding(.horizontal, 8)
+                    
+                    HStack {
+                        // Steps
+                        VStack(spacing: 4) {
+                            Text(String(format: "%.0f", viewModel.localSteps))
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("Steps")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        Rectangle()
+                            .fill(Color.white.opacity(0.15))
+                            .frame(width: 1, height: 50)
+                        
+                        // Pace
+                        VStack(spacing: 4) {
+                            Text(viewModel.avgPaceText)
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("Avg Pace")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.horizontal, 24)
 
                 Spacer()
-
-                // Finish button
-                Button(action: { viewModel.endWorkout() }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "stop.fill")
-                        Text("Finish Workout")
+                
+                // Partner live HUD (if multiplayer)
+                if viewModel.multipeerManager?.connectedPeer != nil {
+                    VStack(spacing: 6) {
+                        Text("\(viewModel.currentRoom?.partnerName ?? "Partner")'s Live Stats")
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundColor(Color("appOrange"))
+                            .textCase(.uppercase)
+                        
+                        HStack(spacing: 16) {
+                            Text(String(format: "Dist: %.2f km", viewModel.partnerDistance / 1000.0))
+                            Text("•")
+                            Text(String(format: "Steps: %.0f", viewModel.partnerSteps))
+                        }
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white.opacity(0.6))
                     }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                    .padding(.bottom, 20)
                 }
-                .buttonStyle(FlintPrimaryButtonStyle())
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
             }
-            .padding(.top, 12)
         }
     }
 }

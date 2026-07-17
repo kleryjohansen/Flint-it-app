@@ -47,7 +47,7 @@ struct RoomFormedView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-<<<<<<< ours
+
 
                     
                     // Partner Watch Warning Banner
@@ -74,7 +74,7 @@ struct RoomFormedView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
                     
->>>>>>> theirs
+
                     // SECTION 1: Who's in
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Who's in (2)")
@@ -84,26 +84,6 @@ struct RoomFormedView: View {
                             .padding(.horizontal, 4)
 
                         VStack(spacing: 12) {
-<<<<<<< ours
-                            // User row (Host) — P1-02: badge solid, warna border agar terlihat di light mode
-                            LobbyUserRow(
-                                name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
-                                isCurrentUser: true,
-                                badgeText: "Host",
-                                badgeColor: Color("appGlassBorder"),
-                                badgeTextColor: Color("appSecondaryLabel"),
-                                badgeStyle: .solid
-                            )
-
-                            // Partner row (Ready) — REDESIGN: outline style
-                            LobbyUserRow(
-                                name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
-                                isCurrentUser: false,
-                                badgeText: "Ready",
-                                badgeColor: Color("appPrimary"),
-                                badgeTextColor: Color("appPrimary"),
-                                badgeStyle: .outline
-                            )
                             if viewModel.isHost {
                                 // Current User is Host, Partner is Guest
                                 LobbyUserRow(
@@ -143,7 +123,6 @@ struct RoomFormedView: View {
                                     badgeStyle: .outline
                                 )
                             }
->>>>>>> theirs
                         }
                     }
                     .padding(.top, 20)
@@ -168,20 +147,6 @@ struct RoomFormedView: View {
 
             Spacer()
 
-<<<<<<< ours
-            // Bottom action button: "Continue to challenge" — P2-04: pakai PillButtonStyle
-            Button(action: {
-                withAnimation {
-                    viewModel.appState = .workoutSetup
-                }
-            }) {
-                Text("Continue to challenge")
-                    .frame(maxWidth: .infinity)
-            }
-                .buttonStyle(PillButtonStyle())
-            .buttonStyle(PillButtonStyle())
-            .padding(.horizontal, 24)
-            .padding(.bottom, 32)
             // Bottom action button: Host vs Guest action control
             if viewModel.isHost {
                 Button(action: {
@@ -211,7 +176,7 @@ struct RoomFormedView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
             }
->>>>>>> theirs
+
         }
         .flintVibrantBackground()
     }

@@ -8,6 +8,7 @@ class WatchWorkoutViewModel: ObservableObject {
     @Published var caloriesString: String = "0.0 kcal"
     @Published var isDistanceMetric: Bool = false
     @Published var distanceString: String = "0.0 m"
+    @Published var avgPaceString: String = "--:--"
     
     private let workoutService = WatchWorkoutService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -24,8 +25,22 @@ class WatchWorkoutViewModel: ObservableObject {
                 self.isDistanceMetric = metrics.isDistanceMetric
                 if let dist = metrics.distance {
                     self.distanceString = String(format: "%.1f m", dist)
+                    if dist > 5 {
+                        let distanceKm = Double(dist) / 1000.0
+                        let paceSecondsPerKm = Double(metrics.remainingSeconds) / distanceKm
+                        let minutes = Int(paceSecondsPerKm) / 60
+                        let seconds = Int(paceSecondsPerKm) % 60
+                        if minutes < 100 {
+                            self.avgPaceString = String(format: "%d:%02d /km", minutes, seconds)
+                        } else {
+                            self.avgPaceString = "--:--"
+                        }
+                    } else {
+                        self.avgPaceString = "--:--"
+                    }
                 } else {
                     self.distanceString = "0.0 m"
+                    self.avgPaceString = "--:--"
                 }
             }
             .store(in: &cancellables)
