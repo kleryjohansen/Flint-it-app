@@ -28,8 +28,7 @@ struct ContentView: View {
                 ChallengeWaitingView()
                 
             case .foundPartner:
-                Group { Text("Found Partner") }
-                    .flintVibrantBackground()
+                MatchConfirmationView()
                 
             case .activeWorkout:
                 ActiveWorkoutView()
