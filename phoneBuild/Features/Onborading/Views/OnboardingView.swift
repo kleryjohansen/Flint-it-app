@@ -1,5 +1,8 @@
 import SwiftUI
 import AuthenticationServices
+import PhotosUI
+
+// MARK: - Data Model
 
 struct OnboardingPage {
     let title: String
@@ -7,228 +10,341 @@ struct OnboardingPage {
     let imageName: String
 }
 
+// MARK: - Onboarding Carousel View
+
 struct OnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
-    @State private var isAnimatingLogo = false
+    @State private var currentPage = 0
+
+    let pages = [
+        OnboardingPage(
+            title: "Ride Without Limits",
+            description: "Discover cycling partners within your range. Challenge nearby friends and track every route you take. It's time to go further with Nearfit.",
+            imageName: "cycling"
+        ),
+        OnboardingPage(
+            title: "Never Run Alone",
+            description: "Find local runners for friendly matches. Track your distance and pace in real-time while creating a fresh and exciting experience with Nearfit.",
+            imageName: "run"
+        ),
+        OnboardingPage(
+            title: "Dive In Together",
+            description: "Find swimming partners at your local pool. Challenge nearby swimmers to friendly matches and track every lap you swim with Nearfit.",
+            imageName: "swim"
+        )
+    ]
+
+    var isLastPage: Bool { currentPage == pages.count - 1 }
 
     var body: some View {
-        ZStack {
-            // Soft white-to-coral background
-            LinearGradient(
-                colors: [Color.white, Color("appTertiary"), Color("appSecondary")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                // Swipeable slide backgrounds
+                TabView(selection: $currentPage) {
+                    ForEach(0..<pages.count, id: \.self) { index in
+                        let page = pages[index]
+                        ZStack(alignment: .bottomLeading) {
+                            Image(page.imageName)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .clipped()
 
-            ScrollView {
-                VStack(spacing: 25) {
-
-                    // Animated Logo Header
-                    VStack(spacing: 12) {
-                        Image(systemName: "flame.fill")
-                            .font(.largeTitle)
-                            .foregroundColor(Color.flintRed)
-                            .shadow(color: Color.flintRed.opacity(0.6), radius: 15)
-                            .scaleEffect(isAnimatingLogo ? 1.08 : 0.95)
-                            .animation(
-                                .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
-                                value: isAnimatingLogo
+                            LinearGradient(
+                                colors: [.clear, .black.opacity(0.3), .black.opacity(0.88)],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
-                            
-                            // Text Content (Title & Description)
-                            VStack(alignment: .leading, spacing: 16) {
+
+                            VStack(alignment: .leading, spacing: 12) {
                                 Text(page.title)
                                     .font(.system(size: 32, weight: .bold))
                                     .foregroundColor(.white)
-                                    .multilineTextAlignment(.leading)
-                                
+
                                 Text(page.description)
                                     .font(.system(size: 15))
                                     .foregroundColor(.white.opacity(0.8))
-                                    .multilineTextAlignment(.leading)
                                     .lineSpacing(4)
                             }
-
-                        Text("Nearfit")
-                            .font(.title).fontWeight(.black)
-                            .tracking(6)
-                            .foregroundColor(.primary)
-
-                        Text("Spark Your Fitness Connection")
-                            .font(.subheadline)
-                            .foregroundColor(Color("appSecondaryLabel"))
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 200)
+                        }
+                        .tag(index)
                     }
-                    .padding(.top, 40)
-                    .padding(.bottom, 10)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .ignoresSafeArea()
 
-                    // Main Glassmorphic Card
-                    VStack(spacing: 24) {
+                // Static overlay
+                VStack {
+                    Text("NEARFIT")
+                        .font(.system(size: 32, weight: .black))
+                        .tracking(8)
+                        .foregroundColor(.white)
+                        .padding(.top, geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 20)
 
-                        // Avatar Photo Picker
-                        VStack(spacing: 8) {
-                            PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
-                                ZStack(alignment: .bottomTrailing) {
-                                    if let image = viewModel.profileImage {
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 110, height: 110)
-                                            .clipShape(Circle())
-                                    } else {
-                                        Circle()
-                                            .fill(Color.flintGlass)
-                                            .frame(width: 110, height: 110)
-                                            .overlay(
-                                                Image(systemName: "person.fill")
-                                                    .foregroundColor(Color("appGlassWhite"))
-                                                    .font(.largeTitle)
-                                            )
-                                    }
+                    Spacer()
 
-                                    // Edit/Add Camera Indicator
-                                    Circle()
-                                        .fill(Color.flintRed)
-                                        .frame(width: 32, height: 32)
-                                        .overlay(
-                                            Image(systemName: "camera.fill")
-                                                .font(.caption)
-                                                // Sengaja dipertahankan: ikon kamera di atas background brand Color.flintRed (fixed color)
-                                                .foregroundColor(.white)
-                                        )
-                                        .shadow(radius: 4)
+                    VStack(spacing: 16) {
+                        // Page indicator dots
+                        HStack(spacing: 8) {
+                            ForEach(0..<pages.count, id: \.self) { index in
+                                Capsule()
+                                    .fill(index == currentPage ? Color.white : Color.white.opacity(0.35))
+                                    .frame(width: index == currentPage ? 22 : 8, height: 8)
+                                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+                            }
+                        }
+
+                        // Non-last pages: Continue button
+                        if !isLastPage {
+                            Button {
+                                withAnimation { currentPage += 1 }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text("Continue")
+                                    Image(systemName: "chevron.right")
                                 }
-                                .overlay(Circle().stroke(Color("appGlassBorder"), lineWidth: 2))
                             }
-                            .onChange(of: viewModel.selectedItem) { _ in
-                                viewModel.processSelectedImage()
-                            }
-
-                            Text("Set Profile Photo")
-                                .font(.caption)
-                                .foregroundColor(Color("appSecondaryLabel"))
-                        }
-
-                        // Username Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("CHOOSE USERNAME")
-                                .font(.caption2.bold())
-                                .foregroundColor(Color("appSecondaryLabel"))
-                                .tracking(1)
-
-                            FlintTextField(placeholder: "e.g. fit_warrior", text: $viewModel.username, icon: "person.fill")
-                        }
-
-                        // Apple Sign In Button Section
-                        VStack(spacing: 16) {
-                            Text("Sign in with Apple to create your profile securely without passwords.")
-                                .font(.caption)
-                                .foregroundColor(Color("appSecondaryLabel"))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 10)
-
+                            .buttonStyle(FlintPrimaryButtonStyle())
+                            .padding(.horizontal, 24)
+                        } else {
+                            // Last page: native Apple Sign In
                             if viewModel.isLoading {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .scaleEffect(1.2)
-                                    .frame(height: 50)
+                                    .frame(height: 54)
                             } else {
-                                SignInWithAppleButton(.signUp) { request in
-                                    request.requestedScopes = [.fullName, .email]
+                                SignInWithAppleButton(.signIn) { request in
+                                    request.requestedScopes = [.fullName]
                                 } onCompletion: { result in
-                                    switch result {
-                                    case .success(let authorization):
-                                        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-                                            let userIdentifier = appleIDCredential.user
-                                            let email = appleIDCredential.email
-
-                                            // Format name
-                                            var nameString: String? = nil
-                                            if let name = appleIDCredential.fullName {
-                                                let given = name.givenName ?? ""
-                                                let family = name.familyName ?? ""
-                                                nameString = "\(given) \(family)".trimmingCharacters(in: .whitespacesAndNewlines)
-                                                if nameString?.isEmpty == true {
-                                                    nameString = nil
-                                                }
-                                            }
-
-                                            viewModel.handleAppleSignIn(
-                                                userIdentifier: userIdentifier,
-                                                fullName: nameString,
-                                                email: email
-                                            )
-                                        }
-                                        
-                                        viewModel.handleAppleSignIn(
-                                            userIdentifier: userIdentifier,
-                                            fullName: nameString.isEmpty ? nil : nameString,
-                                            email: email
-                                        )
-                                    }
-                                case .failure(let error):
-                                    viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
+                                    handleAppleResult(result)
                                 }
+                                .signInWithAppleButtonStyle(.white)
+                                .frame(height: 54)
+                                .cornerRadius(27)
+                                .padding(.horizontal, 24)
                             }
-                            .signInWithAppleButtonStyle(.white)
-                            .frame(height: 50)
-                            .cornerRadius(25)
-                            .padding(.horizontal, 24)
+
+                            if !viewModel.errorMessage.isEmpty {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.caption)
+                                    Text(viewModel.errorMessage)
+                                        .font(.caption.bold())
+                                }
+                                .foregroundColor(Color.flintRed)
+                                .padding(.horizontal, 24)
+                            }
                         }
 
-                        // Error message
-                        if !viewModel.errorMessage.isEmpty {
-                            HStack(spacing: 6) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.caption)
-                                Text(viewModel.errorMessage)
-                                    .font(.caption.bold())
-                            }
-                        }
-                        .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? geometry.safeAreaInsets.bottom : 20)
+                        // Terms
+                        Text("By continuing, you agree to our \(Text("Terms of Service").foregroundColor(Color.flintRed)) and \(Text("Privacy Policy").foregroundColor(Color.flintRed)).")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
                     }
-                    .padding(24)
-                    .flintGlassCard()
-                    .padding(.horizontal)
-
+                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? geometry.safeAreaInsets.bottom + 8 : 28)
                 }
             }
         }
         .preferredColorScheme(.dark)
+        // Step 1 done → go to Profile Setup
+        .fullScreenCover(isPresented: $viewModel.isSignedIn) {
+            ProfileSetupView(viewModel: viewModel)
+        }
+        // Step 2 done → go to main app
+        .fullScreenCover(isPresented: $viewModel.isSuccess) {
+            ContentView()
+        }
+    }
+
+    // MARK: - Apple Sign-In Handler
+
+    private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
+
+            var fullNameString = ""
+            if let name = credential.fullName {
+                let given = name.givenName ?? ""
+                let family = name.familyName ?? ""
+                fullNameString = "\(given) \(family)".trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+
+            viewModel.signInWithApple(
+                userIdentifier: credential.user,
+                fullName: fullNameString.isEmpty ? nil : fullNameString
+            )
+
+        case .failure(let error):
+            viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Profile Setup Screen (shown after Apple Sign-In)
+
+struct ProfileSetupView: View {
+    @ObservedObject var viewModel: OnboardingViewModel
+
+    var body: some View {
+        ZStack {
+            // Black base, matches app dark screens
+            Color.black.ignoresSafeArea()
+
+            // Subtle red glow from bottom
+            VStack {
+                Spacer()
+                RadialGradient(
+                    gradient: Gradient(colors: [Color.flintRed.opacity(0.22), .clear]),
+                    center: .center,
+                    startRadius: 10,
+                    endRadius: 280
+                )
+                .frame(height: 300)
+            }
+            .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 28) {
+
+                    // ── Header ──────────────────────────────────
+                    VStack(spacing: 8) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(Color.flintRed)
+                            .shadow(color: Color.flintRed.opacity(0.55), radius: 14)
+
+                        Text("One last step")
+                            .font(.title2.bold())
+                            .foregroundColor(Color("appLabel"))
+
+                        Text("Set your name and photo so partners can recognise you.")
+                            .font(.subheadline)
+                            .foregroundColor(Color("appSecondaryLabel"))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    .padding(.top, 60)
+
+                    // ── Photo Picker ─────────────────────────────
+                    PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
+                        ZStack(alignment: .bottomTrailing) {
+                            Group {
+                                if let image = viewModel.profileImage {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                } else {
+                                    ZStack {
+                                        Color("appGlassWhite")
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 44))
+                                            .foregroundColor(Color("appSecondaryLabel"))
+                                    }
+                                }
+                            }
+                            .frame(width: 110, height: 110)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle().stroke(
+                                    LinearGradient(
+                                        colors: [Color.flintRed, Color.flintRed.opacity(0.4)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    ), lineWidth: 2.5
+                                )
+                            )
+
+                            // Camera badge
+                            ZStack {
+                                Circle().fill(Color.flintRed)
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(width: 32, height: 32)
+                            .shadow(color: Color.flintRed.opacity(0.45), radius: 6)
+                        }
+                    }
+                    .onChange(of: viewModel.selectedItem) { _, _ in
+                        viewModel.processSelectedImage()
+                    }
+
+                    // ── Name Field ───────────────────────────────
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("YOUR NAME", systemImage: "person.text.rectangle")
+                            .font(.caption.bold())
+                            .foregroundColor(Color("appSecondaryLabel"))
+                            .tracking(0.8)
+
+                        TextField("e.g. Klery Johansen", text: $viewModel.username)
+                            .font(.body)
+                            .foregroundColor(Color("appLabel"))
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.words)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color("appGlassWhite"))
+                            .cornerRadius(14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color("appGlassBorder"), lineWidth: 1)
+                            )
+                    }
+                    .padding(.horizontal, 24)
+
+                    // ── Error ────────────────────────────────────
+                    if !viewModel.errorMessage.isEmpty {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill").font(.caption)
+                            Text(viewModel.errorMessage).font(.caption.bold())
+                        }
+                        .foregroundColor(Color.flintRed)
+                        .padding(.horizontal, 24)
+                    }
+
+                    // ── Continue Button ──────────────────────────
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.2)
+                            .frame(height: 54)
+                    } else {
+                        Button {
+                            viewModel.completeProfile()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Continue")
+                                Image(systemName: "arrow.right.circle.fill")
+                            }
+                        }
+                        .buttonStyle(FlintPrimaryButtonStyle())
+                        .padding(.horizontal, 24)
+                    }
+
+                    Text("Your data stays private. We never share your information.")
+                        .font(.caption)
+                        .foregroundColor(Color("appSecondaryLabel").opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+
+                    Spacer(minLength: 40)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        // When profile saved → go to main app
         .fullScreenCover(isPresented: $viewModel.isSuccess) {
             ContentView()
         }
     }
 }
 
-// MARK: - Custom Glass TextFields
-struct FlintTextField: View {
-    var placeholder: String
-    @Binding var text: String
-    var icon: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(Color.flintRed)
-                .font(.headline)
-                .frame(width: 24)
-
-            TextField(placeholder, text: $text)
-                // Sengaja dipertahankan: teks input di atas Color.flintGlass (glass gelap fixed), preferredColorScheme(.dark) sudah di-set
-                .foregroundColor(.white)
-                .font(.body)
-                .preferredColorScheme(.dark)
-        }
-        .padding(16)
-        .background(Color.flintGlass)
-        .cornerRadius(15)
-        .overlay(
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(Color("appGlassBorder"), lineWidth: 1)
-        )
-    }
-}
+// MARK: - Preview
 
 #Preview {
     OnboardingView()
