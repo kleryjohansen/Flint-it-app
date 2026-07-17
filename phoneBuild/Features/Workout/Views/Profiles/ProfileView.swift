@@ -104,12 +104,6 @@ struct ProfileView: View {
 
             }
 
-            // Bottom Navigation
-            VStack {
-                Spacer()
-                BottomNavigation()
-            }
-
         }
         .ignoresSafeArea()
         .navigationBarHidden(true)
