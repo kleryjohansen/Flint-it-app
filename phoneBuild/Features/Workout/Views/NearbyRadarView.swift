@@ -7,23 +7,33 @@ struct NearbyRadarView: View {
     @State private var pulseScale: CGFloat = 1.0
     @State private var rotationAngle: Double = 0.0
 
+    private var showArrow: Bool {
+        let ni = viewModel.niManager
+        let currentDistance = ni.distance ?? .infinity
+        return ni.direction != nil && currentDistance <= 10.0
+    }
+
     private var directionalGuidance: String {
         let ni = viewModel.niManager
-        guard ni.isSessionActive && ni.direction != nil else { return "Finding direction..." }
-        
-        let angle = ni.arrowAngleDegrees
-        if angle < -18 {
-            return "Turn Left ↺"
-        } else if angle > 18 {
-            return "Turn Right ↻"
+        guard ni.isSessionActive else { return "Connecting..." }
+
+        if showArrow {
+            let angle = ni.arrowAngleDegrees
+            if angle < -18 {
+                return "Turn Left ↺"
+            } else if angle > 18 {
+                return "Turn Right ↻"
+            } else {
+                return "Ahead 🎯"
+            }
         } else {
-            return "Ahead 🎯"
+            return "Walk around slowly"
         }
     }
     
     private var isOnTarget: Bool {
         let ni = viewModel.niManager
-        guard ni.isSessionActive && ni.direction != nil else { return false }
+        guard ni.isSessionActive && showArrow else { return false }
         return abs(ni.arrowAngleDegrees) <= 18
     }
 
@@ -71,7 +81,7 @@ struct NearbyRadarView: View {
                         // Pulsing outer halo when on target
                         if isOnTarget {
                             Circle()
-                                .fill(Color.green.opacity(0.12))
+                                .fill(Color("appPrimary").opacity(0.12))
                                 .frame(width: 290, height: 290)
                                 .scaleEffect(pulseScale)
                                 .onAppear {
@@ -87,11 +97,11 @@ struct NearbyRadarView: View {
 
                         // Concentric circles background
                         Circle()
-                            .stroke(isOnTarget ? Color.green.opacity(0.3) : Color("appGlassBorder"), lineWidth: 2)
+                            .stroke(isOnTarget ? Color("appPrimary").opacity(0.3) : Color("appGlassBorder"), lineWidth: 2)
                             .frame(width: 260, height: 260)
 
                         Circle()
-                            .stroke(isOnTarget ? Color.green.opacity(0.15) : Color("appGlassBorder").opacity(0.5), lineWidth: 1.5)
+                            .stroke(isOnTarget ? Color("appPrimary").opacity(0.15) : Color("appGlassBorder").opacity(0.5), lineWidth: 1.5)
                             .frame(width: 180, height: 180)
 
                         // Central navigation card
@@ -108,12 +118,12 @@ struct NearbyRadarView: View {
                     // Text Guidance: "Turn Left", "Turn Right", "Ahead"
                     Text(directionalGuidance)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(isOnTarget ? .green : Color("appLabel"))
+                        .foregroundColor(isOnTarget ? Color("appPrimary") : Color("appLabel"))
                         .padding(.horizontal, 24)
                         .padding(.vertical, 8)
                         .background(
                             Capsule()
-                                .fill(isOnTarget ? Color.green.opacity(0.12) : Color.clear)
+                                .fill(isOnTarget ? Color("appPrimary").opacity(0.12) : Color.clear)
                         )
                         .animation(.easeInOut(duration: 0.2), value: directionalGuidance)
 
@@ -125,24 +135,6 @@ struct NearbyRadarView: View {
                 
                 // Action Buttons at the Bottom
                 VStack(spacing: 12) {
-                    if showSkipButton {
-                        Button(action: {
-                            withAnimation {
-                                viewModel.skipProximityAndGoToRoom()
-                            }
-                        }) {
-                            Text("Skip Proximity Check")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(Color.orange)
-                                .clipShape(Capsule())
-                                .shadow(color: Color.orange.opacity(0.35), radius: 12, y: 6)
-                        }
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                    
                     Button(action: {
                         withAnimation {
                             viewModel.fullCleanup()
@@ -184,22 +176,18 @@ struct NearbyRadarView: View {
     @ViewBuilder
     private func radarContent(ni: NearbyInteractionManager) -> some View {
         if ni.isSessionActive {
-            if ni.direction != nil {
-                // Find My Apple Compass Pointer Arrow
-                Image(systemName: "location.north.fill")
-                    .font(.system(size: 64, weight: .black))
-                    .foregroundColor(isOnTarget ? .green : Color("appLabel"))
-                    .shadow(color: (isOnTarget ? Color.green : Color("appPrimary")).opacity(0.4), radius: 10)
-                    .rotationEffect(.degrees(ni.arrowAngleDegrees))
-                    .animation(.smooth(duration: 0.2), value: ni.arrowAngleDegrees)
+            if showArrow {
+                // Custom directional arrow (lebih besar & jelas dari SF Symbol)
+                DirectionalArrowView(
+                    angleDegrees: ni.arrowAngleDegrees,
+                    isOnTarget: isOnTarget
+                )
             } else if ni.peerIsOutOfRange {
                 Image(systemName: "wifi.slash")
                     .font(.system(size: 48))
                     .foregroundColor(Color("appSecondaryLabel").opacity(0.6))
             } else {
-                Image(systemName: "location.circle")
-                    .font(.system(size: 48))
-                    .foregroundColor(Color("appSecondaryLabel").opacity(0.6))
+                ParticleRingView(distance: ni.distance)
             }
         } else if let error = ni.errorMessage {
             VStack(spacing: 8) {

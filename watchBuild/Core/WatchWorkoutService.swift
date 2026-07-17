@@ -30,8 +30,14 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     
     override init() {
         super.init()
-        // Minta izin di awal supaya saat startWorkout dipanggil sudah siap
-        requestAuthorization { _ in }
+        let hasPresented = UserDefaults.standard.bool(forKey: "hasPresentedWatchPermissions")
+        if !hasPresented {
+            requestAuthorization { granted in
+                if granted {
+                    UserDefaults.standard.set(true, forKey: "hasPresentedWatchPermissions")
+                }
+            }
+        }
     }
     
     // MARK: - Authorization

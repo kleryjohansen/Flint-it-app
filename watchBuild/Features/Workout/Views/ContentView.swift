@@ -1,88 +1,29 @@
 import SwiftUI
 import HealthKit
 
+// MARK: - Root Content View
+
 struct ContentView: View {
     @StateObject private var viewModel = WatchWorkoutViewModel()
-    @State private var pulseHeart = false
-    @State private var authStatus = "Checking..."
 
     var body: some View {
-        VStack(spacing: 8) {
+        Group {
             if viewModel.isWorkoutRunning {
-                // ACTIVE WORKOUT UI
-                VStack(spacing: 10) {
-                    Text(viewModel.timerString)
-                        .font(.title).bold()
-                        .foregroundColor(Color("appYellow"))
-                        .monospacedDigit()
-
-                    HStack(spacing: 8) {
-                        // Heart rate
-                        HStack(spacing: 4) {
-                            Image(systemName: "heart.fill")
-                                .foregroundColor(Color("appRed"))
-                                .scaleEffect(pulseHeart ? 1.2 : 1.0)
-                                .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: pulseHeart)
-                                .onAppear { pulseHeart = true }
-                            Text(viewModel.bpmString)
-                                .font(.body.bold())
-                                .foregroundColor(.primary)
-                        }
-
-                        // Distance or calories
-                        if viewModel.isDistanceMetric {
-                            HStack(spacing: 4) {
-                                Image(systemName: "figure.run").foregroundColor(Color("appBlue"))
-                                Text(viewModel.distanceString)
-                                    .font(.body.bold()).foregroundColor(.primary)
-                            }
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "flame.fill").foregroundColor(Color("appOrange"))
-                                Text(viewModel.caloriesString)
-                                    .font(.body.bold()).foregroundColor(.primary)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color("appGlassWhite"))
-                    .cornerRadius(10)
-
-                    // Average Pace Display
-                    Text("Avg Pace: \(viewModel.avgPaceString)")
-                        .font(.caption2.bold())
-                        .foregroundColor(.secondary)
-
-                    Spacer()
-                }
-
+                WatchWorkoutView(viewModel: viewModel)
             } else {
-                // WAITING FOR iOS
-                VStack(spacing: 12) {
-                    Image(systemName: "iphone")
-                        .font(.title2)
-                        .foregroundColor(Color("appOrange"))
-
-                    Text("Nearfit")
-                        .font(.headline.bold())
-                        .foregroundColor(.primary)
-
-                    Text("Start workout\nfrom iPhone")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
+                WatchIdleView()
             }
         }
-        .padding(8)
         .onAppear {
-            // Request izin HealthKit saat Watch app dibuka supaya
-            // saat iOS trigger startWatchApp, izin sudah siap
-            WatchWorkoutService.shared.requestAuthorization { granted in
-                DispatchQueue.main.async {
-                    authStatus = granted ? "Ready" : "Health access needed"
-                    if !granted {
+            // Reset any previous ghost workout state from previous closed launch
+            WatchWorkoutService.shared.endWorkout(notifyPhone: false)
+            
+            let hasPresented = UserDefaults.standard.bool(forKey: "hasPresentedWatchPermissions")
+            if !hasPresented {
+                WatchWorkoutService.shared.requestAuthorization { granted in
+                    if granted {
+                        UserDefaults.standard.set(true, forKey: "hasPresentedWatchPermissions")
+                    } else {
                         print("[Watch] HealthKit permission not yet granted — will show dialog")
                     }
                 }
@@ -90,6 +31,146 @@ struct ContentView: View {
         }
     }
 }
+
+// MARK: - Active Workout View (Time, Distance & Pace ONLY)
+
+struct WatchWorkoutView: View {
+    @ObservedObject var viewModel: WatchWorkoutViewModel
+
+    var body: some View {
+        ZStack {
+            VStack(spacing: 4) {
+                // Top Bar
+                topBar
+                
+                Spacer(minLength: 0)
+                
+                // Time / Duration Label (HH:MM:SS)
+                Text(viewModel.timerString)
+                    .font(.system(size: 26, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                Spacer(minLength: 0)
+                
+                // Distance Pill
+                HStack(spacing: 6) {
+                    Image(systemName: "figure.run")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color("appPrimary"))
+                    Text(viewModel.distanceString)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(Color(white: 0.14))
+                .clipShape(Capsule())
+                
+                Spacer(minLength: 0)
+                
+                // Avg Pace Pill
+                HStack(spacing: 6) {
+                    Image(systemName: "gauge.with.dots.needle.67percent")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color("appPrimary"))
+                    Text(viewModel.avgPaceString)
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .background(Color(white: 0.14))
+                .clipShape(Capsule())
+                
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6)
+            .padding(.top, 2)
+            .padding(.bottom, 4)
+
+            // Countdown Overlay
+            if viewModel.countdownSeconds >= 0 {
+                ZStack {
+                    Color.black.ignoresSafeArea()
+
+                    VStack(spacing: 4) {
+                        Text(viewModel.countdownSeconds == 0 ? "GO!" : "\(viewModel.countdownSeconds)")
+                            .font(.system(size: viewModel.countdownSeconds == 0 ? 44 : 52, weight: .black, design: .rounded))
+                            .foregroundColor(Color("appPrimary"))
+                            .transition(.scale.combined(with: .opacity))
+                            .id(viewModel.countdownSeconds)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.65), value: viewModel.countdownSeconds)
+
+                        Text("RIVALRY START")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                }
+            }
+        }
+        .background(Color.black.ignoresSafeArea())
+    }
+
+    // MARK: Top bar — workout icon + live clock
+    private var topBar: some View {
+        HStack {
+            ZStack {
+                Circle()
+                    .fill(Color("appPrimary").opacity(0.18))
+                    .frame(width: 30, height: 30)
+                Image(systemName: "figure.run")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color("appPrimary"))
+            }
+
+            Spacer()
+
+            Text(Date(), style: .time)
+                .font(.system(size: 14, weight: .regular, design: .rounded))
+                .foregroundColor(.white.opacity(0.9))
+        }
+    }
+}
+
+// MARK: - Idle / Waiting View
+
+struct WatchIdleView: View {
+    @State private var pulse = false
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color("appPrimary").opacity(0.12))
+                    .frame(width: 54, height: 54)
+                    .scaleEffect(pulse ? 1.15 : 1.0)
+                    .animation(
+                        .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
+                        value: pulse
+                    )
+                Image(systemName: "iphone")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(Color("appPrimary"))
+            }
+            .onAppear { pulse = true }
+
+            Text("Nearfit")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+
+            Text("Start workout\nfrom iPhone")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.55))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea())
+    }
+}
+
+// MARK: - Preview
 
 #Preview {
     ContentView()

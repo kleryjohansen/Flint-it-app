@@ -124,6 +124,22 @@ struct OnboardingView: View {
                                 .signInWithAppleButtonStyle(.white)
                                 .frame(height: 54)
                                 .cornerRadius(27)
+                                .overlay(
+                                    // Custom Red Button matching FlintPrimaryButtonStyle style
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "apple.logo")
+                                            .font(.system(size: 18, weight: .bold))
+                                        Text("Sign in with Apple")
+                                            .font(.system(size: 16, weight: .bold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(maxHeight: .infinity)
+                                    .background(Color.flintRed)
+                                    .cornerRadius(27)
+                                    .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
+                                    .allowsHitTesting(false) // Passes taps through to the Apple button underneath
+                                )
                                 .padding(.horizontal, 24)
                             }
 
@@ -188,9 +204,12 @@ struct OnboardingView: View {
 
 // MARK: - Profile Setup Screen (shown after Apple Sign-In)
 
+@MainActor
 struct ProfileSetupView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
+    // Extracted so @MainActor isolation is satisfied without crossing closure boundaries
+    private var avatarImage: UIImage? { viewModel.profileImage }
     var body: some View {
         ZStack {
             // Black base, matches app dark screens
@@ -232,10 +251,11 @@ struct ProfileSetupView: View {
                     .padding(.top, 60)
 
                     // ── Photo Picker ─────────────────────────────
+                    let snapshot = avatarImage
                     PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
                         ZStack(alignment: .bottomTrailing) {
                             Group {
-                                if let image = viewModel.profileImage {
+                                if let image = snapshot {
                                     Image(uiImage: image)
                                         .resizable()
                                         .scaledToFill()

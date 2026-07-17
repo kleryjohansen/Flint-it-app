@@ -44,7 +44,7 @@ struct DiscoveryView: View {
             // Bottom slide-up card when a peer is selected
             peerOverlayCard
         }
-        .onChange(of: viewModel.appState) { newState in
+        .onChange(of: viewModel.appState) { _, newState in
             if newState == .searching {
                 showSearchSkip = false
                 pulseScale = 1.0
@@ -66,9 +66,8 @@ struct DiscoveryView: View {
 
     private var discoverTab: some View {
         VStack {
-            // Header
             HStack {
-                if viewModel.appState == .searching {
+                if viewModel.appState == .searching && watchSession.isWatchConnected {
                     Button(action: {
                         withAnimation {
                             viewModel.appState = .home
@@ -84,34 +83,29 @@ struct DiscoveryView: View {
                 }
                 Spacer()
 
-            if !watchSession.isWatchConnected {
-                HStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.applewatch")
-                        .font(.system(size: 24))
-                        .foregroundColor(.orange)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Watch Connection Required")
+                if !watchSession.isWatchConnected {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.applewatch")
+                            .font(.system(size: 24))
+                            .foregroundColor(.orange)
+                        
+                        Text("Please connect to Apple Watch")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
-                        Text("Please pair an Apple Watch and open the Flint-it app on it to start searching.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.6))
-                            .lineLimit(2)
+                        
+                        Spacer()
                     }
-                    Spacer()
+                    .padding(16)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(18)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 24)
+                    .padding(.top, 10)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
-                .padding(16)
-                .background(Color.white.opacity(0.06))
-                .cornerRadius(18)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                )
-                .padding(.horizontal, 24)
-                .padding(.top, 10)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
             }
             .padding(.horizontal, 24)
             .padding(.top, 16)
@@ -228,24 +222,7 @@ struct DiscoveryView: View {
                             .foregroundColor(Color("appSecondaryLabel"))
                     }
 
-                    if showSearchSkip && viewModel.appState == .searching {
-                        Button(action: {
-                            withAnimation {
-                                viewModel.skipConnectionAndGoToSetup()
-                            }
-                        }) {
-                            Text("Skip to Setup (Solo)")
-                                .font(.callout).bold()
-                                .foregroundColor(.white)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 20)
-                                .background(Color("appPrimary"))
-                                .clipShape(Capsule())
-                                .shadow(color: Color("appPrimary").opacity(0.35), radius: 8)
-                        }
-                        .padding(.top, 8)
-                        .transition(.scale.combined(with: .opacity))
-                    }
+
                 }
             }
 

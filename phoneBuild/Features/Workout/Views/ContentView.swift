@@ -54,17 +54,36 @@ struct ContentView: View {
         )) { _ in
             InviteReceivedView().environmentObject(viewModel)
         }
-        .sheet(item: Binding<IdentifiableChallenge?>(
-            get: {
-                if let challenge = viewModel.receivedChallenge {
-                    return IdentifiableChallenge(challenge: challenge)
-                }
-                return nil
-            },
-            set: { _ in }
-        )) { challengeObj in
-            ChallengeReceivedView(challenge: challengeObj.challenge)
-                .environmentObject(viewModel)
+        .alert(item: $viewModel.activeAlert) { alertType in
+            switch alertType {
+            case .distanceDisconnect:
+                return Alert(
+                    title: Text("Koneksi Terputus"),
+                    message: Text("ur left the match because off disconected from nearby"),
+                    dismissButton: .default(Text("OK")) {
+                        viewModel.activeAlert = nil
+                    }
+                )
+            case .rivalLeft:
+                return Alert(
+                    title: Text("Match Cancelled"),
+                    message: Text("your rival has leave the room"),
+                    dismissButton: .default(Text("OK")) {
+                        viewModel.activeAlert = nil
+                    }
+                )
+            case .leaveConfirmation:
+                return Alert(
+                    title: Text("Leave Lobby"),
+                    message: Text("Are you sure you want to leave the room?"),
+                    primaryButton: .destructive(Text("Leave")) {
+                        withAnimation {
+                            viewModel.leaveLobby()
+                        }
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
         }
     }
 }
@@ -186,84 +205,51 @@ struct ActiveWorkoutView: View {
                     .background(Color.white.opacity(0.15))
                     .padding(.horizontal, 32)
                 
-                // ── Giant Speed/Pace Center Metric (Strava Style) ──
+                // ── Giant Pace Center Metric (Strava Style) ──
                 VStack(spacing: 4) {
-                    Text(String(format: "%.1f", viewModel.localSpeed).replacingOccurrences(of: ".", with: ","))
-                        .font(.system(size: 96, weight: .bold))
+                    Text(viewModel.avgPaceText)
+                        .font(.system(size: 72, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
-                    Text("Speed (km/h)")
+                    Text("Average Pace (/km)")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.gray)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 16)
                 
                 Divider()
                     .background(Color.white.opacity(0.15))
                     .padding(.horizontal, 32)
                 
-                // ── Sub metrics 2x2 Grid (Strava Style) ──
-                VStack(spacing: 24) {
-                    HStack {
-                        // Distance
-                        VStack(spacing: 4) {
-                            Text(String(format: "%.2f", liveDistanceMeters / 1000.0).replacingOccurrences(of: ".", with: ","))
-                                .font(.system(size: 38, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Distance (km)")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        Rectangle()
-                            .fill(Color.white.opacity(0.15))
-                            .frame(width: 1, height: 50)
-                        
-                        // Elevation Gain
-                        VStack(spacing: 4) {
-                            Text(String(format: "%.0f", viewModel.localElevation))
-                                .font(.system(size: 38, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Elev. gain (m)")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
+                // ── Sub metrics (Distance & Steps) ──
+                HStack(spacing: 0) {
+                    // Distance
+                    VStack(spacing: 4) {
+                        Text(String(format: "%.2f", liveDistanceMeters / 1000.0).replacingOccurrences(of: ".", with: ","))
+                            .font(.system(size: 38, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Distance (km)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.gray)
                     }
+                    .frame(maxWidth: .infinity)
                     
-                    Divider()
-                        .background(Color.white.opacity(0.15))
-                        .padding(.horizontal, 8)
+                    Rectangle()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(width: 1, height: 50)
                     
-                    HStack {
-                        // Steps
-                        VStack(spacing: 4) {
-                            Text(String(format: "%.0f", viewModel.localSteps))
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Steps")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        Rectangle()
-                            .fill(Color.white.opacity(0.15))
-                            .frame(width: 1, height: 50)
-                        
-                        // Pace
-                        VStack(spacing: 4) {
-                            Text(viewModel.avgPaceText)
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("Avg Pace")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity)
+                    // Steps
+                    VStack(spacing: 4) {
+                        Text(String(format: "%.0f", viewModel.localSteps))
+                            .font(.system(size: 38, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Steps")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.gray)
                     }
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, 24)
+                .padding(.vertical, 16)
 
                 Spacer()
                 
@@ -293,6 +279,50 @@ struct ActiveWorkoutView: View {
                     )
                     .padding(.bottom, 20)
                 }
+            }
+            
+            // Countdown Overlay
+            if viewModel.countdownSeconds >= 0 {
+                ZStack {
+                    Color.black.opacity(0.92)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 16) {
+                        Text(viewModel.countdownSeconds == 0 ? "GO!" : "\(viewModel.countdownSeconds)")
+                            .font(.system(size: viewModel.countdownSeconds == 0 ? 110 : 130, weight: .black, design: .rounded))
+                            .foregroundColor(Color.flintRed)
+                            .transition(.scale.combined(with: .opacity))
+                            .id(viewModel.countdownSeconds)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.6), value: viewModel.countdownSeconds)
+                        
+                        Text(viewModel.countdownSeconds == 0 ? "START RIVALRY" : "GET READY")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .tracking(2)
+                    }
+                }
+            }
+            
+            // Distance Warning Banner (3-8m)
+            if viewModel.showDistanceWarning {
+                VStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.white)
+                        Text("oops jangan jauh2 dari rival kamu")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
+                    .background(Color.orange)
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.3), radius: 6)
+                    .padding(.top, 70)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut, value: viewModel.showDistanceWarning)
             }
         }
     }
