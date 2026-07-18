@@ -36,7 +36,11 @@ public struct WorkoutSetupView: View {
                         if step > 1 {
                             withAnimation { step = 1 }
                         } else {
-                            withAnimation { viewModel.appState = .room }
+                            if viewModel.multipeerManager?.connectedPeer != nil {
+                                viewModel.activeAlert = .leaveConfirmation
+                            } else {
+                                withAnimation { viewModel.appState = .home }
+                            }
                         }
                     }) {
                         Image(systemName: "chevron.left")
@@ -280,29 +284,6 @@ public struct ChallengeWaitingView: View {
                         Text("Waiting for \(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")...")
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
-                        
-                        Text("Waiting to bring workout...")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.4))
-                        
-                        if showWaitingSkip {
-                            Button(action: {
-                                withAnimation {
-                                    viewModel.skipWaitingAndStartWorkout()
-                                }
-                            }) {
-                                Text("Start Workout Solo")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .padding(.vertical, 14)
-                                    .padding(.horizontal, 28)
-                                    .background(Color.orange)
-                                    .clipShape(Capsule())
-                                    .shadow(color: Color.orange.opacity(0.35), radius: 10, y: 5)
-                            }
-                            .padding(.top, 24)
-                            .transition(.scale.combined(with: .opacity))
-                        }
                     }
                 }
                 
