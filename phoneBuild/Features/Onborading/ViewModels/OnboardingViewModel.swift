@@ -52,7 +52,7 @@ class OnboardingViewModel: ObservableObject {
     func completeProfile() {
         let finalName = username.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !finalName.isEmpty else {
-            errorMessage = "Please enter your name to continue."
+            errorMessage = "Please enter your nickname to continue."
             return
         }
 
