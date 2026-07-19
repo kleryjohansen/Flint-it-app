@@ -61,13 +61,13 @@ struct DiscoveryView: View {
             // MARK: - Foreground content
             VStack(spacing: 0) {
                 topBar
-                    .padding(.top, 16)
+                    .padding(.top, 32)
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 80)
 
                 centerHero
-
-                Spacer(minLength: 24)
+                
+                Spacer(minLength: 80)
 
                 bottomSection
                     .padding(.horizontal, 24)
@@ -147,13 +147,13 @@ struct DiscoveryView: View {
     // MARK: - Center Hero (Title + Radar)
 
     private var centerHero: some View {
-        VStack(spacing: 24) {
+        VStack() {
             Text(viewModel.appState == .home ? "Tap to find rival" : "Finding people nearby...")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .font(.system(size: 32, weight: .bold))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 32)
 
             ZStack {
                 let pulseStroke = Color.flintRed
@@ -181,6 +181,7 @@ struct DiscoveryView: View {
                             }
                         }
                 }
+
 
                 // Static glass radar
                 Circle()
@@ -238,10 +239,10 @@ struct DiscoveryView: View {
                         }
                     }
                 }) {
-                    Image("logoflamemiddle")
+                    Image("nearbybutton")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 70, height: 70)
+                        .frame(width: 90, height: 90)
                 }
                 .buttonStyle(FlameGlassButtonStyle())
             }
