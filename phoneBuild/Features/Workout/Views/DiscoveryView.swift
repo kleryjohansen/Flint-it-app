@@ -61,13 +61,13 @@ struct DiscoveryView: View {
             // MARK: - Foreground content
             VStack(spacing: 0) {
                 topBar
-                    .padding(.top, 16)
+                    .padding(.top, 60)
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 16)
 
                 centerHero
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 16)
 
                 bottomSection
                     .padding(.horizontal, 24)
