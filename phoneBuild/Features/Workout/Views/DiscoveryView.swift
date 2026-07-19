@@ -14,12 +14,9 @@ struct DiscoveryView: View {
     var body: some View {
         ZStack {
             // Soft white-to-coral background
-            LinearGradient(
-                colors: [Color.white, Color("appTertiary"), Color("appSecondary")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            Image("bgifhome")
+                .resizable()
+                .ignoresSafeArea()
 
             TabView(selection: $selectedTab) {
                 // ─── TAB 1: DISCOVER ───
@@ -204,12 +201,12 @@ struct DiscoveryView: View {
                             }
                         }
                     }) {
-                        Image("logoflamemiddle")
+                        Image("nearbybutton")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 70, height: 70)
                     }
-                    
+
                     .buttonStyle(FlameGlassButtonStyle())
                 }
                 .frame(height: 320)

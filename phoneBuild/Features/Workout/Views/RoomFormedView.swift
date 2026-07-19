@@ -2,7 +2,6 @@ import SwiftUI
 import MultipeerConnectivity
 
 // MARK: - Badge Style
-
 enum BadgeStyle {
     case solid
     case outline
@@ -10,181 +9,239 @@ enum BadgeStyle {
 
 struct RoomFormedView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
+    @State private var isLoading = false
 
-    // Mock other nearby people to populate the invite list as seen in Screen 5
+    // Mock other nearby people to populate the invite list
     private let nearbyMates = [
         "Nathaniel John",
-        "Jasper Heinrich",
-        "Olivia Amanda"
+        "Jasper Komrade",
+        "Christie Almanda"
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header (Lobby Title with Chevron Left back button to exit)
-            HStack {
-                Button(action: {
-                    viewModel.activeAlert = .leaveConfirmation
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title3.bold())
-                        .foregroundColor(.primary)
-                        .padding(12) // P2-01: touch target ≥ 44pt
-                        .background(Circle().fill(.ultraThinMaterial))
+        ZStack(alignment: .top) {
+            // Force strict black background behind everything ignoring system theme
+            Color.black.ignoresSafeArea()
+            
+            // Top background image
+            Image("bgifrun") 
+                .resizable()
+                .scaledToFill()
+                .frame(width: UIScreen.main.bounds.width, height: 350)
+                .clipped()
+                .mask(LinearGradient(gradient: Gradient(colors: [.black, .black.opacity(0)]), startPoint: .top, endPoint: .bottom))
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Header Nav
+                HStack {
+                    Button(action: {
+                        viewModel.activeAlert = .leaveConfirmation
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.title3.bold())
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .background(Circle().fill(Color.white.opacity(0.15)))
+                    }
+                    Spacer()
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                
+                // Title Area
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Create the challenge")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Discuss with your rivals to create the challenge")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.top, 60)
+                .padding(.bottom, 24)
 
-                Spacer()
-
-                Text("Lobby")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
-                Spacer()
-                Color.clear.frame(width: 44, height: 44) // P2-02: balance spacer yang robust
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-
-
-                    
-                    // Live Proximity Range Banner
-                    let dist = viewModel.currentNearbyDistance
-                    if dist > 0 {
-                        HStack(spacing: 12) {
-                            Image(systemName: dist < 2.0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(dist < 2.0 ? Color.green : Color.orange)
+                // Scrollable Content Area with Dark Card Background behind it
+                ZStack(alignment: .top) {
+                    // Dark backing card hugging the entire lists section
+                    Color(white: 0.05) 
+                        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                        .ignoresSafeArea(edges: .bottom)
+                        
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
                             
-                            Text(dist < 2.0 ? "Rivals in Range (< 2m)" : "oops jangan jauh2 dari rival kamu")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            Spacer()
-                            
-                            Text(String(format: "%.1fm", dist))
-                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                        .padding(14)
-                        .background(dist < 2.0 ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(dist < 2.0 ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
-                        )
-                        .padding(.top, 16)
-                        .transition(.slide.combined(with: .opacity))
-                    }
+                            let dist = viewModel.currentNearbyDistance
+                            if dist > 0 {
+                                HStack(spacing: 12) {
+                                    Image(systemName: dist < 2.0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(dist < 2.0 ? Color.green : Color.orange)
+                                    Text(dist < 2.0 ? "Rivals in Range (< 2m)" : "oops jangan jauh2 dari rival kamu")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                    Text(String(format: "%.1fm", dist))
+                                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                .padding(14)
+                                .background(dist < 2.0 ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                                .cornerRadius(16)
+                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(dist < 2.0 ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1))
+                                .padding(.top, 24)
+                            }
 
-                    // Partner Watch Warning Banner
-                    if !viewModel.partnerWatchConnected {
-                        HStack(spacing: 12) {
-                            Image(systemName: "exclamationmark.applewatch")
-                                .font(.system(size: 20))
-                                .foregroundColor(.orange)
+                            if !viewModel.partnerWatchConnected {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "exclamationmark.applewatch")
+                                        .foregroundColor(.orange)
+                                    Text("\(viewModel.currentRoom?.partnerName ?? "Partner") is not connected to their Apple Watch.")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                .padding(14)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(16)
+                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.orange.opacity(0.35), lineWidth: 1))
+                                .padding(.top, 8)
+                            }
                             
-                            Text("\(viewModel.currentRoom?.partnerName ?? "Partner") is not connected to their Apple Watch. They must pair a watch and open the Flint-it app.")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white)
-                                .lineLimit(2)
-                            Spacer()
-                        }
-                        .padding(14)
-                        .background(Color.white.opacity(0.06))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
-                        )
-                        .padding(.top, 8)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                    
+                            // GUEST BANNER: Waiting for Host
+                            if !viewModel.isHost {
+                                HStack(spacing: 16) {
+                                    // Custom red loading spinner with dark background track
+                                    ZStack {
+                                        Circle()
+                                            .stroke(Color("appRed").opacity(0.2), lineWidth: 3.5)
+                                        
+                                        Circle()
+                                            .trim(from: 0, to: 0.75)
+                                            .stroke(Color("appRed"), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                                            .rotationEffect(Angle(degrees: isLoading ? 360 : 0))
+                                            .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isLoading)
+                                            .onAppear { isLoading = true }
+                                    }
+                                    .frame(width: 24, height: 24)
+                       
+                                    Text("Host picking a sport & challenge...")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.9))
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 24)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        // A very dark, subtle red fill as seen in the mockup
+                                        .fill(Color("appRed").opacity(0.08))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                        .stroke(Color("appRed"), lineWidth: 1)
+                                )
+                                .padding(.top, dist > 0 || !viewModel.partnerWatchConnected ? 0 : 24)
+                            }
 
-                    // SECTION 1: Who's in (Dynamic Lobby - Supports up to 8 peers maximum)
-                    let connectedPeers = viewModel.multipeerManager?.session.connectedPeers ?? []
-                    let totalCount = min(connectedPeers.count + 1, 8)
-                    
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Who's in (\(totalCount)/8)")
-                            .font(.subheadline).bold()
-                            .foregroundColor(Color("appSecondaryLabel"))
-                            .tracking(1)
-                            .padding(.horizontal, 4)
-
-                        VStack(spacing: 12) {
-                            // Host
-                            LobbyUserRow(
-                                name: viewModel.isHost ? (UserDefaults.standard.string(forKey: "savedUsername") ?? "Host") : (viewModel.currentRoom?.partnerName ?? "Host"),
-                                isCurrentUser: viewModel.isHost,
-                                badgeText: "Host",
-                                badgeColor: Color("appGlassBorder"),
-                                badgeTextColor: Color("appSecondaryLabel"),
-                                badgeStyle: .solid
-                            )
+                            // SECTION 1: Who's in
+                            let connectedPeers = viewModel.multipeerManager?.session.connectedPeers ?? []
+                            let totalCount = min(connectedPeers.count + 1, 8)
                             
-                            // Connected Guest/Rival peers (max 7 guests + 1 host = 8 total)
-                            ForEach(connectedPeers.prefix(7), id: \.self) { peer in
-                                let isMe = peer == viewModel.multipeerManager?.peerID
-                                if !isMe {
+                            VStack(alignment: .leading, spacing: 14) {
+                                Text("Who's in (\(totalCount))")
+                                    .font(.subheadline)
+                                    .foregroundColor(Color(white: 0.8))
+                                    .padding(.horizontal, 4)
+
+                                VStack(spacing: 12) {
                                     LobbyUserRow(
-                                        name: peer.displayName,
-                                        isCurrentUser: false,
-                                        badgeText: "Rival",
-                                        badgeColor: Color("appPrimary"),
-                                        badgeTextColor: Color("appPrimary"),
-                                        badgeStyle: .outline
+                                        name: viewModel.isHost ? (UserDefaults.standard.string(forKey: "savedUsername") ?? "King Messi") : (viewModel.currentRoom?.partnerName ?? "Host"),
+                                        isCurrentUser: viewModel.isHost,
+                                        badgeText: "Host",
+                                        badgeColor: Color(white: 0.25),
+                                        badgeTextColor: .white,
+                                        badgeStyle: .solid
                                     )
+                                    
+                                    ForEach(connectedPeers.prefix(7), id: \.self) { peer in
+                                        if peer != viewModel.multipeerManager?.peerID {
+                                            LobbyUserRow(
+                                                name: peer.displayName,
+                                                isCurrentUser: false,
+                                                badgeText: "Ready",
+                                                badgeColor: Color("appRed"),
+                                                badgeTextColor: Color("appRed"),
+                                                badgeStyle: .outline
+                                            )
+                                        }
+                                    }
                                 }
                             }
+                            .padding(.top, (dist > 0 || !viewModel.isHost) ? 12 : 24)
+                            
+                            // SECTION 2: Invite more nearby (ONLY FOR HOST)
+                            if viewModel.isHost {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    Text("Invite more nearby")
+                                        .font(.subheadline)
+                                        .foregroundColor(Color(white: 0.8))
+                                        .padding(.horizontal, 4)
+                                    
+                                    VStack(spacing: 12) {
+                                        ForEach(nearbyMates, id: \.self) { mate in
+                                            LobbyInviteRow(name: mate)
+                                        }
+                                    }
+                                    
+                                    Text("*You can add up to 8 people.")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(Color(white: 0.6))
+                                        .padding(.horizontal, 4)
+                                        .padding(.top, 6)
+                                }
+                                .padding(.top, 12)
+                            }
+                            
+                            Spacer().frame(height: 120) // Bottom padding for fixed CTA button
                         }
+                        .padding(.horizontal, 24)
                     }
-                    .padding(.top, 12)
                 }
-                .padding(.horizontal, 24)
-            }
-
-            Spacer()
-
-            // Bottom action button: Host vs Guest action control
-            if viewModel.isHost {
-                Button(action: {
-                    withAnimation {
-                        viewModel.appState = .workoutSetup
+            } // End main Vertical
+            
+            // Floating CTA Button at the absolute bottom
+            VStack {
+                Spacer()
+                
+                // Bottom action button: Only Host sees the Create Button
+                if viewModel.isHost {
+                    Button(action: {
+                        withAnimation {
+                            viewModel.appState = .workoutSetup
+                        }
+                    }) {
+                        Text("Create the challenge")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color("appRed"))
+                            .clipShape(Capsule())
                     }
-                }) {
-                    Text("Continue to challenge")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
                 }
-                .buttonStyle(PillButtonStyle())
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
-            } else {
-                HStack(spacing: 12) {
-                    ProgressView()
-                        .tint(Color.primary)
-                    Text("Waiting for Host")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.primary.opacity(0.7))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color("appGlassWhite"))
-                .cornerRadius(24)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
             }
-
+            .ignoresSafeArea(.keyboard)
         }
-        .flintVibrantBackground()
+        .preferredColorScheme(.dark)
     }
 }
 
 // MARK: - Row Components
-
 struct LobbyUserRow: View {
     let name: String
     let isCurrentUser: Bool
@@ -200,48 +257,38 @@ struct LobbyUserRow: View {
                 .frame(width: 44, height: 44)
                 .foregroundColor(Color("appPrimary"))
                 .background(Circle().fill(Color("appOverlayDim")))
-                .overlay(Circle().stroke(Color("appGlassBorder"), lineWidth: 1))
-
+                
             Text(isCurrentUser ? "\(name) (You)" : name)
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(.white)
 
             Spacer()
 
-            // Badge: solid atau outline tergantung badgeStyle
             Group {
                 switch badgeStyle {
                 case .solid:
                     Text(badgeText)
-                        .font(.caption).bold()
+                        .font(.subheadline)
                         .foregroundColor(badgeTextColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
                         .background(Capsule().fill(badgeColor))
 
                 case .outline:
                     Text(badgeText)
-                        .font(.caption).bold()
+                        .font(.subheadline)
                         .foregroundColor(badgeTextColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule().fill(badgeColor.opacity(0.1))
-                        )
-                        .overlay(
-                            Capsule().stroke(badgeColor, lineWidth: 1.5)
-                        )
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(Color.clear))
+                        .overlay(Capsule().stroke(badgeColor, lineWidth: 1))
                 }
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color("appGlassWhite"))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) // P2-03
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous) // P2-03
-                .stroke(Color("appGlassBorder"), lineWidth: 1)
-        )
+        .background(Color(white: 0.12)) // Inner Card Color
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -253,42 +300,48 @@ struct LobbyInviteRow: View {
             Image(systemName: "person.crop.circle.fill")
                 .resizable()
                 .frame(width: 44, height: 44)
-                .foregroundColor(Color("appGray"))
-                .opacity(0.6)
+                .foregroundColor(Color(white: 0.4))
+                .opacity(0.8)
 
             Text(name)
                 .font(.headline)
-                .foregroundColor(.primary) // P1-03: adaptif, kontras baik
+                .foregroundColor(.white)
 
             Spacer()
 
-            // REDESIGN: Tombol Invite — outline style konsisten dengan badge Ready
             Button(action: {}) {
                 Text("Invite")
-                    .font(.caption).bold()
-                    .foregroundColor(Color("appPrimary"))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule().fill(Color("appPrimary").opacity(0.08))
-                    )
-                    .overlay(
-                        Capsule().stroke(Color("appPrimary"), lineWidth: 1)
-                    )
+                    .font(.subheadline).bold()
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(Color("appRed"))
+                    .clipShape(Capsule())
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color("appGlassWhite"))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)) // P2-03
+        .background(Color.clear) // Outline Row Logic
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous) // P2-03
-                .stroke(Color("appGlassBorder"), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color(white: 0.25), lineWidth: 1)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
-#Preview {
-    RoomFormedView()
-        .environmentObject(iOSWorkoutViewModel())
+#Preview("Host View") {
+    let mockHostVM = iOSWorkoutViewModel()
+    // Make sure we simulate Host state by default
+    mockHostVM.isHost = true 
+    return RoomFormedView()
+        .environmentObject(mockHostVM)
+}
+
+#Preview("Guest View") {
+    let mockGuestVM = iOSWorkoutViewModel()
+    // Force it to falsely act like a guest to reveal the guest elements
+    mockGuestVM.isHost = false
+    return RoomFormedView()
+        .environmentObject(mockGuestVM)
 }

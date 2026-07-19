@@ -10,84 +10,85 @@ struct ContentView: View {
     @StateObject private var viewModel = iOSWorkoutViewModel()
 
     var body: some View {
-        Group {
-            switch viewModel.appState {
-            case .home, .searching:
-                DiscoveryView()
+        ZStack { // I add it back
+            Group {
+                switch viewModel.appState {
+                case .home, .searching:
+                    DiscoveryView()
 
-            case .navigating:
-                NearbyRadarView()
+                case .navigating:
+                    NearbyRadarView()
 
-            case .room:
-                RoomFormedView()
+                case .room:
+                    RoomFormedView()
 
-            case .workoutSetup:
-                WorkoutSetupView()
+                case .workoutSetup:
+                    WorkoutSetupView()
 
-            case .syncing:
-                ChallengeWaitingView()
+                case .syncing:
+                    ChallengeWaitingView()
 
-            case .foundPartner:
-                Group { Text("Found Partner") }
-                    .flintVibrantBackground()
+                case .foundPartner:
+                    Group { Text("Found Partner") }
+                        .flintVibrantBackground()
 
-            case .activeWorkout:
-                ActiveWorkoutView()
-                    .environmentObject(viewModel)
+                case .activeWorkout:
+                    ActiveWorkoutView()
+                        .environmentObject(viewModel)
 
-            case .results:
-                ResultsView()
-                    .environmentObject(viewModel)
-            @unknown default:
-                EmptyView()
-            }
-        }
-        .environmentObject(viewModel)
-        .sheet(item: Binding<IdentifiablePeer?>(
-            get: {
-                if let peer = viewModel.multipeerManager?.pendingInvitingPeer {
-                    return IdentifiablePeer(peerID: peer)
+                case .results:
+                    ResultsView()
+                        .environmentObject(viewModel)
+                @unknown default:
+                    EmptyView()
                 }
-                return nil
-            },
-            set: { _ in }
-        )) { _ in
-            InviteReceivedView().environmentObject(viewModel)
-        }
-        .alert(item: $viewModel.activeAlert) { alertType in
-            switch alertType {
-            case .distanceDisconnect:
-                return Alert(
-                    title: Text("Koneksi Terputus"),
-                    message: Text("ur left the match because off disconected from nearby"),
-                    dismissButton: .default(Text("OK")) {
-                        viewModel.activeAlert = nil
+            }
+            .environmentObject(viewModel)
+            .sheet(item: Binding<IdentifiablePeer?>(
+                get: {
+                    if let peer = viewModel.multipeerManager?.pendingInvitingPeer {
+                        return IdentifiablePeer(peerID: peer)
                     }
-                )
-            case .rivalLeft:
-                return Alert(
-                    title: Text("Match Cancelled"),
-                    message: Text("your rival has leave the room"),
-                    dismissButton: .default(Text("OK")) {
-                        viewModel.activeAlert = nil
-                    }
-                )
-            case .leaveConfirmation:
-                return Alert(
-                    title: Text("Leave Lobby"),
-                    message: Text("Are you sure you want to leave the room?"),
-                    primaryButton: .destructive(Text("Leave")) {
-                        withAnimation {
-                            viewModel.leaveLobby()
+                    return nil
+                },
+                set: { _ in }
+            )) { _ in
+                InviteReceivedView().environmentObject(viewModel)
+            }
+            .alert(item: $viewModel.activeAlert) { alertType in
+                switch alertType {
+                case .distanceDisconnect:
+                    return Alert(
+                        title: Text("Koneksi Terputus"),
+                        message: Text("ur left the match because off disconected from nearby"),
+                        dismissButton: .default(Text("OK")) {
+                            viewModel.activeAlert = nil
                         }
-                    },
-                    secondaryButton: .cancel()
-                )
+                    )
+                case .rivalLeft:
+                    return Alert(
+                        title: Text("Match Cancelled"),
+                        message: Text("your rival has leave the room"),
+                        dismissButton: .default(Text("OK")) {
+                            viewModel.activeAlert = nil
+                        }
+                    )
+                case .leaveConfirmation:
+                    return Alert(
+                        title: Text("Leave Lobby"),
+                        message: Text("Are you sure you want to leave the room?"),
+                        primaryButton: .destructive(Text("Leave")) {
+                            withAnimation {
+                                viewModel.leaveLobby()
+                            }
+                        },
+                        secondaryButton: .cancel()
+                    )
+                }
             }
         }
     }
 }
-
 // MARK: - Active Workout View
 
 struct ActiveWorkoutView: View {
