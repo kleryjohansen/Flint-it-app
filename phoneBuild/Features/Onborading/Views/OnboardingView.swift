@@ -37,165 +37,145 @@ struct OnboardingView: View {
     var isLastPage: Bool { currentPage == pages.count - 1 }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Swipeable slide backgrounds
-                TabView(selection: $currentPage) {
-                    ForEach(0..<pages.count, id: \.self) { index in
-                        let page = pages[index]
-                        ZStack(alignment: .bottomLeading) {
+        ZStack {
+            TabView(selection: $currentPage) {
+                ForEach(0..<pages.count, id: \.self) { index in
+                    let page = pages[index]
+                    GeometryReader { geometry in
+                        ZStack(alignment: .bottom) {
+                            // Background Image
                             Image(page.imageName)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: geometry.size.width, height: geometry.size.height)
                                 .clipped()
-
+                                
+                            // Gradient
                             LinearGradient(
-                                colors: [.clear, .black.opacity(0.3), .black.opacity(0.88)],
-                                startPoint: .top,
+                                colors: [.clear, .black.opacity(0.4), .black.opacity(0.95), .black],
+                                startPoint: .center,
                                 endPoint: .bottom
                             )
-
+                            
+                            // Text Container
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(page.title)
                                     .font(.system(size: 32, weight: .bold))
                                     .foregroundColor(.white)
-
+                                    .minimumScaleFactor(0.8)
+                                
                                 Text(page.description)
                                     .font(.system(size: 15))
                                     .foregroundColor(.white.opacity(0.8))
                                     .lineSpacing(4)
+                                    // Fix: let wrapping work naturally without fixedSize horizontal forces
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 24)
                             .padding(.bottom, 200)
                         }
-                        .tag(index)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
                     }
+                    .ignoresSafeArea()
+                    .tag(index)
                 }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .ignoresSafeArea()
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .ignoresSafeArea()
 
-                // Static overlay
-                VStack {
-                    Text("NEARFIT")
-                        .font(.system(size: 32, weight: .black))
-                        .tracking(8)
-                        .foregroundColor(.white)
-                        .padding(.top, geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 20)
+            VStack {
+                Image("Logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 32)
+                    .padding(.top, 20)
 
-                    Spacer()
+                Spacer()
+                VStack(spacing: 16) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<pages.count, id: \.self) { index in
+                            Capsule()
+                                .fill(index == currentPage ? Color.white : Color.white.opacity(0.35))
+                                .frame(width: index == currentPage ? 22 : 8, height: 8)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+                        }
+                    }
 
-                    VStack(spacing: 16) {
-                        // Page indicator dots
-                        HStack(spacing: 8) {
-                            ForEach(0..<pages.count, id: \.self) { index in
-                                Capsule()
-                                    .fill(index == currentPage ? Color.white : Color.white.opacity(0.35))
-                                    .frame(width: index == currentPage ? 22 : 8, height: 8)
-                                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+                    if !isLastPage {
+                        Button {
+                            withAnimation { currentPage += 1 }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Continue")
                             }
                         }
-
-                        // Non-last pages: Continue button
-                        if !isLastPage {
-                            Button {
-                                withAnimation { currentPage += 1 }
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Text("Continue")
-                                    Image(systemName: "chevron.right")
-                                }
-                            }
-                            .buttonStyle(FlintPrimaryButtonStyle())
-                            .padding(.horizontal, 24)
+                        .padding(.horizontal, 24)
+                        .buttonStyle(FlintPrimaryButtonStyle())
+                        
+                    } else {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.2)
+                                .frame(height: 50)
                         } else {
-                            // Last page: native Apple Sign In
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(1.2)
-                                    .frame(height: 54)
-                            } else {
-                                SignInWithAppleButton(.signIn) { request in
-                                    request.requestedScopes = [.fullName]
-                                } onCompletion: { result in
-                                    handleAppleResult(result)
-                                }
-                                .signInWithAppleButtonStyle(.white)
-                                .frame(height: 54)
-                                .cornerRadius(27)
-                                .overlay(
-                                    // Custom Red Button matching FlintPrimaryButtonStyle style
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "apple.logo")
-                                            .font(.system(size: 18, weight: .bold))
-                                        Text("Sign in with Apple")
-                                            .font(.system(size: 16, weight: .bold))
-                                    }
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(maxHeight: .infinity)
-                                    .background(Color.flintRed)
-                                    .cornerRadius(27)
-                                    .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
-                                    .allowsHitTesting(false) // Passes taps through to the Apple button underneath
-                                )
-                                .padding(.horizontal, 24)
+                            SignInWithAppleButton(.signIn) { request in
+                                request.requestedScopes = [.fullName]
+                            } onCompletion: { result in
+                                handleAppleResult(result)
                             }
-
-                            if !viewModel.errorMessage.isEmpty {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .font(.caption)
-                                    Text(viewModel.errorMessage)
-                                        .font(.caption.bold())
-                                }
-                                .foregroundColor(Color.flintRed)
-                                .padding(.horizontal, 24)
-                            }
+                            .cornerRadius(72)
+                            .signInWithAppleButtonStyle(.white)
+                            .frame(height: 50)
+                            .padding(.horizontal, 24)
+                            
                         }
 
-                        // Terms
-                        Text("By continuing, you agree to our \(Text("Terms of Service").foregroundColor(Color.flintRed)) and \(Text("Privacy Policy").foregroundColor(Color.flintRed)).")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                        if !viewModel.errorMessage.isEmpty {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                Text(viewModel.errorMessage)
+                                    .font(.caption.bold())
+                            }
+                            .foregroundColor(Color.flintRed)
+                            
+                        }
                     }
-                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? geometry.safeAreaInsets.bottom + 8 : 28)
+
+                    Text("By continuing, you agree to our \(Text("Terms of Service").foregroundColor(Color.flintRed)) and \(Text("Privacy Policy").foregroundColor(Color.flintRed)).")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
                 }
+                .padding(.bottom, 28)
             }
         }
         .preferredColorScheme(.dark)
-        // Step 1 done → go to Profile Setup
         .fullScreenCover(isPresented: $viewModel.isSignedIn) {
             ProfileSetupView(viewModel: viewModel)
         }
-        // Step 2 done → go to main app
         .fullScreenCover(isPresented: $viewModel.isSuccess) {
             ContentView()
         }
     }
 
-    // MARK: - Apple Sign-In Handler
-
     private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
         switch result {
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
-
             var fullNameString = ""
             if let name = credential.fullName {
                 let given = name.givenName ?? ""
                 let family = name.familyName ?? ""
                 fullNameString = "\(given) \(family)".trimmingCharacters(in: .whitespacesAndNewlines)
             }
-
             viewModel.signInWithApple(
                 userIdentifier: credential.user,
                 fullName: fullNameString.isEmpty ? nil : fullNameString
             )
-
         case .failure(let error):
             viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
         }
@@ -208,49 +188,76 @@ struct OnboardingView: View {
 struct ProfileSetupView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
-    // Extracted so @MainActor isolation is satisfied without crossing closure boundaries
     private var avatarImage: UIImage? { viewModel.profileImage }
+
     var body: some View {
         ZStack {
-            // Black base, matches app dark screens
-            Color.black.ignoresSafeArea()
+            // Background image
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
 
-            // Subtle red glow from bottom
-            VStack {
-                Spacer()
-                RadialGradient(
-                    gradient: Gradient(colors: [Color.flintRed.opacity(0.22), .clear]),
-                    center: .center,
-                    startRadius: 10,
-                    endRadius: 280
+            // Dark overlay (full screen) — locks color regardless of light/dark
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+
+            // Top + bottom vertical gradient for text readability
+            VStack(spacing: 0) {
+                LinearGradient(
+                    colors: [.black.opacity(0.65), .black.opacity(0)],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-                .frame(height: 300)
+                .frame(height: 220)
+
+                Spacer()
+
+                LinearGradient(
+                    colors: [.black.opacity(0), .black.opacity(0.7)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 220)
             }
             .ignoresSafeArea()
+            .allowsHitTesting(false)
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 28) {
+            // Decorative radial gradient (centered, behind content)
+            RadialGradient(
+                gradient: Gradient(colors: [
+                    Color.flintRed.opacity(0.18),
+                    Color.black.opacity(0)
+                ]),
+                center: .center,
+                startRadius: 10,
+                endRadius: 320
+            )
+            .ignoresSafeArea()
+            .blendMode(.normal)
 
-                    // ── Header ──────────────────────────────────
-                    VStack(spacing: 8) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(Color.flintRed)
-                            .shadow(color: Color.flintRed.opacity(0.55), radius: 14)
+            VStack(spacing: 0) {
+                // MARK: Header
+                VStack(spacing: 8) {
+                    Text("One last step")
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
 
-                        Text("One last step")
-                            .font(.title2.bold())
-                            .foregroundColor(Color("appLabel"))
+                    Text("Set your name and photo so partners can recognise you.")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 72)
+                .padding(.horizontal, 24)
 
-                        Text("Set your name and photo so partners can recognise you.")
-                            .font(.subheadline)
-                            .foregroundColor(Color("appSecondaryLabel"))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                    }
-                    .padding(.top, 60)
+                Spacer(minLength: 16)
 
-                    // ── Photo Picker ─────────────────────────────
+                // MARK: Centered group (Avatar + Name) — together
+                VStack(spacing: 24) {
                     let snapshot = avatarImage
                     PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
                         ZStack(alignment: .bottomTrailing) {
@@ -261,10 +268,10 @@ struct ProfileSetupView: View {
                                         .scaledToFill()
                                 } else {
                                     ZStack {
-                                        Color("appGlassWhite")
+                                        Color.white.opacity(0.12)
                                         Image(systemName: "person.fill")
                                             .font(.system(size: 44))
-                                            .foregroundColor(Color("appSecondaryLabel"))
+                                            .foregroundStyle(.white.opacity(0.6))
                                     }
                                 }
                             }
@@ -279,12 +286,11 @@ struct ProfileSetupView: View {
                                 )
                             )
 
-                            // Camera badge
                             ZStack {
                                 Circle().fill(Color.flintRed)
                                 Image(systemName: "camera.fill")
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                             }
                             .frame(width: 32, height: 32)
                             .shadow(color: Color.flintRed.opacity(0.45), radius: 6)
@@ -294,78 +300,87 @@ struct ProfileSetupView: View {
                         viewModel.processSelectedImage()
                     }
 
-                    // ── Name Field ───────────────────────────────
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("YOUR NAME", systemImage: "person.text.rectangle")
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Nickname")
                             .font(.caption.bold())
-                            .foregroundColor(Color("appSecondaryLabel"))
-                            .tracking(0.8)
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                        TextField("e.g. Klery Johansen", text: $viewModel.username)
+                        TextField("Type here...", text: $viewModel.username)
                             .font(.body)
-                            .foregroundColor(Color("appLabel"))
+                            .foregroundStyle(.white)
+                            .tint(.white)
+                            .accentColor(.white)
+                            .colorScheme(.dark)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.words)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
-                            .background(Color("appGlassWhite"))
-                            .cornerRadius(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(.rect(cornerRadius: 14))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color("appGlassBorder"), lineWidth: 1)
+                                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
                             )
                     }
-                    .padding(.horizontal, 24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 24)
 
-                    // ── Error ────────────────────────────────────
+                Spacer(minLength: 24)
+
+                // MARK: Action (bottom anchored)
+                VStack(spacing: 16) {
                     if !viewModel.errorMessage.isEmpty {
                         HStack(spacing: 8) {
                             Image(systemName: "exclamationmark.triangle.fill").font(.caption)
                             Text(viewModel.errorMessage).font(.caption.bold())
                         }
                         .foregroundColor(Color.flintRed)
-                        .padding(.horizontal, 24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    // ── Continue Button ──────────────────────────
                     if viewModel.isLoading {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .scaleEffect(1.2)
+                            .frame(maxWidth: .infinity)
                             .frame(height: 54)
                     } else {
                         Button {
                             viewModel.completeProfile()
                         } label: {
-                            HStack(spacing: 8) {
-                                Text("Continue")
-                                Image(systemName: "arrow.right.circle.fill")
-                            }
+                            Text("Continue")
+                                .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(FlintPrimaryButtonStyle())
-                        .padding(.horizontal, 24)
                     }
 
                     Text("Your data stays private. We never share your information.")
                         .font(.caption)
-                        .foregroundColor(Color("appSecondaryLabel").opacity(0.7))
+                        .foregroundColor(.white.opacity(0.55))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-
-                    Spacer(minLength: 40)
+                        .frame(maxWidth: .infinity)
                 }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 64)
             }
         }
         .preferredColorScheme(.dark)
-        // When profile saved → go to main app
+        .environment(\.colorScheme, .dark)
         .fullScreenCover(isPresented: $viewModel.isSuccess) {
             ContentView()
         }
     }
 }
-
 // MARK: - Preview
 
 #Preview {
     OnboardingView()
+}
+
+#Preview("Profile Setup") {
+    ProfileSetupView(viewModel: OnboardingViewModel())
 }
