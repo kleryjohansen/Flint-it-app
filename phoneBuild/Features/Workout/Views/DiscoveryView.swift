@@ -221,9 +221,24 @@ struct DiscoveryView: View {
                             .font(.subheadline)
                             .foregroundColor(Color("appSecondaryLabel"))
                     }
-
-
-                }
+                    if showSearchSkip && viewModel.appState == .searching {
+                        Button(action: {
+                            withAnimation {
+                                viewModel.skipConnectionAndGoToSetup()
+                            }
+                        }) {
+                            Text("Skip to Setup (Solo)")
+                                .font(.callout).bold()
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .background(Color("appPrimary"))
+                                .clipShape(Capsule())
+                                .shadow(color: Color("appPrimary").opacity(0.35), radius: 8)
+                        }
+                        .padding(.top, 8)
+                        .transition(.scale.combined(with: .opacity))
+                    }                }
             }
 
             Spacer()
