@@ -436,6 +436,127 @@ struct ResultRow: View {
     }
 }
 
+// MARK: - History Detail View
+
+struct HistoryDetailView: View {
+    @EnvironmentObject var viewModel: iOSWorkoutViewModel
+    @Environment(\.dismiss) private var dismiss
+    let workout: PastWorkout
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, d MMM yyyy · HH:mm"
+        return formatter.string(from: workout.date)
+    }
+
+    private var durationString: String {
+        let minutes = Int(workout.duration) / 60
+        let seconds = Int(workout.duration) % 60
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        } else {
+            return "\(seconds)s"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    HStack {
+                        Spacer()
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+
+                    ZStack {
+                        Circle()
+                            .fill(Color.flintRed.opacity(0.18))
+                            .frame(width: 120, height: 120)
+
+                        Image(systemName: workout.type.iconName)
+                            .font(.system(size: 56))
+                            .foregroundColor(.flintRed)
+                    }
+                    .padding(.top, 16)
+
+                    VStack(spacing: 6) {
+                        Text(workout.type.rawValue)
+                            .font(.largeTitle.bold())
+                            .foregroundColor(.white)
+
+                        if let partner = workout.partnerName {
+                            Text("vs \(partner)")
+                                .font(.title3)
+                                .foregroundColor(.white.opacity(0.7))
+                        } else {
+                            Text("Solo workout")
+                                .font(.title3)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+
+                    VStack(spacing: 0) {
+                        HistoryDetailRow(label: "Date", value: formattedDate)
+                        Divider().background(Color.white.opacity(0.1))
+                        HistoryDetailRow(label: "Duration", value: durationString)
+                        if workout.avgHeartRate > 0 {
+                            Divider().background(Color.white.opacity(0.1))
+                            HistoryDetailRow(label: "Avg Heart Rate", value: "\(Int(workout.avgHeartRate)) BPM")
+                        }
+                        if let cal = workout.calories, cal > 0 {
+                            Divider().background(Color.white.opacity(0.1))
+                            HistoryDetailRow(label: "Calories", value: String(format: "%.0f kcal", cal))
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.white.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 24)
+
+                    Spacer(minLength: 24)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .environment(\.colorScheme, .dark)
+    }
+}
+
+struct HistoryDetailRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+            Spacer()
+            Text(value)
+                .font(.subheadline.bold())
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+}
+
 #Preview("ContentView") {
     ContentView()
 }
@@ -447,5 +568,18 @@ struct ResultRow: View {
 
 #Preview("ResultsView") {
     ResultsView()
+        .environmentObject(iOSWorkoutViewModel())
+}
+
+#Preview("HistoryDetailView") {
+    let sample = PastWorkout(
+        date: Date(),
+        type: .running,
+        duration: 1850,
+        avgHeartRate: 142,
+        calories: 230,
+        partnerName: "Zennul"
+    )
+    return HistoryDetailView(workout: sample)
         .environmentObject(iOSWorkoutViewModel())
 }
