@@ -19,29 +19,31 @@ struct DiscoveryView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            Color.black.opacity(0.55)
+            // Dark overlay + top/bottom gradient — HANYA saat .home
+            if viewModel.appState == .home {
+                Color.black.opacity(0.55)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [.black.opacity(0.65), .black.opacity(0)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 220)
+
+                    Spacer()
+
+                    LinearGradient(
+                        colors: [.black.opacity(0), .black.opacity(0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 280)
+                }
                 .ignoresSafeArea()
-
-            // Top + bottom gradient for readability
-            VStack(spacing: 0) {
-                LinearGradient(
-                    colors: [.black.opacity(0.65), .black.opacity(0)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 220)
-
-                Spacer()
-
-                LinearGradient(
-                    colors: [.black.opacity(0), .black.opacity(0.7)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 280)
+                .allowsHitTesting(false)
             }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
 
             // Decorative red radial glow
             RadialGradient(
