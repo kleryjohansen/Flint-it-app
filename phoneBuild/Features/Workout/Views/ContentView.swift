@@ -13,7 +13,7 @@ struct ContentView: View {
         Group {
             switch viewModel.appState {
             case .home, .searching:
-                DiscoveryView()
+                HomeTabView()
 
             case .navigating:
                 NearbyRadarView()
