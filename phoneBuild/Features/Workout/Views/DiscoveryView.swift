@@ -61,6 +61,7 @@ struct DiscoveryView: View {
             // MARK: - Foreground content
             VStack(spacing: 0) {
                 topBar
+<<<<<<< HEAD
                     .padding(.top, 32)
 
                 Spacer(minLength: 80)
@@ -68,6 +69,15 @@ struct DiscoveryView: View {
                 centerHero
                 
                 Spacer(minLength: 80)
+=======
+                    .padding(.top, 60)
+
+                Spacer(minLength: 16)
+
+                centerHero
+
+                Spacer(minLength: 16)
+>>>>>>> 20c4c56 (fix(discovery): topBar below dynamic island, tighter hero spacing)
 
                 bottomSection
                     .padding(.horizontal, 24)
