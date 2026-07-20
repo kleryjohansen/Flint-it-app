@@ -168,76 +168,78 @@ struct WatchWorkoutResultView: View {
             Color.black.opacity(0.6)
                 .ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 8) {
-                    // Central Trophy / Clapping badge with rays
+            VStack(spacing: 8) {
+                Spacer()
+                
+                // Central Trophy / Clapping badge with rays
+                ZStack {
+                    Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 110, height: 110)
+                        .opacity(0.85)
+                    
                     ZStack {
-                        Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 100, height: 100)
-                            .opacity(0.85)
+                        Circle()
+                            .fill(Color("appPrimary"))
+                            .frame(width: 54, height: 54)
+                            .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
                         
-                        ZStack {
-                            Circle()
-                                .fill(Color("appPrimary"))
-                                .frame(width: 50, height: 50)
-                                .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
-                            
-                            if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
-                                Image(systemName: "trophy.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.white)
-                            } else {
-                                Image(systemName: "hands.clap.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                    }
-                    .frame(height: 100)
-                    
-                    VStack(spacing: 2) {
                         if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
-                            Text("Congratulations!")
-                                .font(.system(size: 14, weight: .bold))
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 26))
                                 .foregroundColor(.white)
-                            Text("You've just won")
-                                .font(.system(size: 10))
-                                .foregroundColor(.white.opacity(0.6))
                         } else {
-                            Text("Try again buddy!")
-                                .font(.system(size: 14, weight: .bold))
+                            Image(systemName: "hands.clap.fill")
+                                .font(.system(size: 26))
                                 .foregroundColor(.white)
-                            Text("Nice try on")
-                                .font(.system(size: 10))
-                                .foregroundColor(.white.opacity(0.6))
                         }
-                        
-                        Text("1km sprint • \(viewModel.activeSport)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color("appPrimary"))
-                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(height: 110)
+                
+                VStack(spacing: 2) {
+                    if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
+                        Text("Congratulations!")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("You've just won")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.6))
+                    } else {
+                        Text("Try again buddy!")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Nice try on")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.6))
                     }
                     
-                    Button(action: {
-                        withAnimation {
-                            viewModel.workoutResult = nil
-                            WatchWorkoutService.shared.workoutResult = nil
-                        }
-                    }) {
-                        Text("Done")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    .frame(height: 32)
-                    .background(Color.white.opacity(0.12))
-                    .clipShape(Capsule())
-                    .padding(.top, 4)
+                    Text("1km sprint • \(viewModel.activeSport)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color("appPrimary"))
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 6)
-                .padding(.bottom, 8)
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.workoutResult = nil
+                        WatchWorkoutService.shared.workoutResult = nil
+                    }
+                }) {
+                    Text("Done")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .frame(height: 32)
+                .background(Color.white.opacity(0.12))
+                .clipShape(Capsule())
+                .padding(.top, 4)
+                
+                Spacer()
             }
+            .padding(.horizontal, 6)
+            .padding(.bottom, 8)
         }
     }
 }
