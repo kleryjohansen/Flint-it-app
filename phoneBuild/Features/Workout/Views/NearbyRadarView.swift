@@ -154,7 +154,12 @@ struct NearbyRadarView: View {
                 .padding(.bottom, 32)
             }
         }
-        .flintVibrantBackground()
+        .background(
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
         .navigationBarBackButtonHidden(true)
         .onAppear {
             // Delay 5 seconds before showing the skip button for testing

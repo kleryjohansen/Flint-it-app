@@ -8,7 +8,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.academy.klery.watchpairworkout</string>
+		<string>group.com.academy.zain.watchpairworkout</string>
 	</array>
 </dict>
 </plist>
