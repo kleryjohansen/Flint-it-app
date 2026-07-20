@@ -10,38 +10,33 @@ struct ContentView: View {
     @StateObject private var viewModel = iOSWorkoutViewModel()
 
     var body: some View {
-        ZStack { // I add it back
-            Group {
-                switch viewModel.appState {
-                case .home, .searching:
-                    DiscoveryView()
-
-                case .navigating:
-                    NearbyRadarView()
-
-                case .room:
-                    RoomFormedView()
-
-                case .workoutSetup:
-                    WorkoutSetupView()
-
-                case .syncing:
-                    ChallengeWaitingView()
-
-                case .foundPartner:
-                    Group { Text("Found Partner") }
-                        .flintVibrantBackground()
-
-                case .activeWorkout:
-                    ActiveWorkoutView()
-                        .environmentObject(viewModel)
-
-                case .results:
-                    ResultsView()
-                        .environmentObject(viewModel)
-                @unknown default:
-                    EmptyView()
-                }
+        Group {
+            switch viewModel.appState {
+            case .home, .searching:
+                DiscoveryView()
+                
+            case .navigating:
+                NearbyRadarView()
+                
+            case .room:
+                RoomFormedView()
+                
+            case .workoutSetup:
+                WorkoutSetupView()
+                
+            case .syncing:
+                ChallengeWaitingView()
+                
+            case .foundPartner:
+                MatchConfirmationView()
+                
+            case .activeWorkout:
+                ActiveWorkoutView()
+                    .environmentObject(viewModel)
+                
+            case .results:
+                ResultsView()
+                    .environmentObject(viewModel)
             }
             .environmentObject(viewModel)
             .sheet(item: Binding<IdentifiablePeer?>(
