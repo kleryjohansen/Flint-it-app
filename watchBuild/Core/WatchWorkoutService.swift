@@ -189,13 +189,13 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
         
         switch result {
         case "Victory":
-            assetName = "winSound"
+            assetName = "winningSound"
             hapticType = .success
         case "Defeat":
             assetName = "defeatSound"
             hapticType = .failure
         case "Solo":
-            assetName = "winSound"
+            assetName = "winningSound"
             hapticType = .success
         default:
             return
