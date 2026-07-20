@@ -60,190 +60,201 @@ struct DiscoveryView: View {
     }
 
     // MARK: - Tab 1: Discover / Radar
-
     private var discoverTab: some View {
-        VStack {
-            HStack {
-                if viewModel.appState == .searching && watchSession.isWatchConnected {
-                    Button(action: {
-                        withAnimation {
-                            viewModel.appState = .home
-                            viewModel.multipeerManager?.stopSearching()
-                        }
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.title3.bold())
-                            .foregroundColor(Color("appLabel").opacity(0.8))
-                            .padding(10)
-                            .background(Circle().fill(.ultraThinMaterial))
-                    }
-                }
-                Spacer()
+        ZStack {
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
 
-                if !watchSession.isWatchConnected {
-                    HStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.applewatch")
-                            .font(.system(size: 24))
-                            .foregroundColor(.orange)
-                        
-                        Text("Please connect to Apple Watch")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                    }
-                    .padding(16)
-                    .background(Color.white.opacity(0.06))
-                    .cornerRadius(18)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 24)
-                    .padding(.top, 10)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-
-            Spacer()
-
-            VStack(spacing: 16) {
-                // Label di atas tombol flame
-                Text(viewModel.appState == .home ? "Tap to find rival" : "Finding people nearby...")
-                    .font(.title).bold()
-                    .foregroundColor(Color("appLabel"))
-                    .multilineTextAlignment(.center)
-
-                ZStack {
-                    let pulseStroke = (colorScheme == .light ? Color.flintRed : Color("appFlameHighlight"))
-
-                    if viewModel.appState == .searching {
-                        // Pulsing radar circles (stroke only — material breaks scaleAnimation)
-                        Circle()
-                            .stroke(pulseStroke.opacity(0.3), lineWidth: 1.5)
-                            .frame(width: 280, height: 280)
-                            .scaleEffect(pulseScale)
-                            .opacity(Double(2.0 - pulseScale))
-                            .onAppear {
-                                withAnimation(.easeOut(duration: 2.0).repeatForever(autoreverses: false)) {
-                                    pulseScale = 2.0
-                                }
-                            }
-
-                        Circle()
-                            .stroke(pulseStroke.opacity(0.15), lineWidth: 1)
-                            .frame(width: 180, height: 180)
-                            .scaleEffect(outerPulseScale)
-                            .opacity(Double(2.0 - outerPulseScale))
-                            .onAppear {
-                                withAnimation(.easeOut(duration: 2.0).delay(0.5).repeatForever(autoreverses: false)) {
-                                    outerPulseScale = 2.0
-                                }
-                            }
-
-                        // Concentric rings (static style) with liquid glass
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.flintRed.opacity(0.08), lineWidth: 1)
-                            )
-                            .frame(width: 230, height: 230)
-
-                        // Found peers on radar
-                        if let peers = viewModel.multipeerManager?.foundPeers {
-                            ForEach(Array(peers.enumerated()), id: \.element.id) { index, peer in
-                                let radius = CGFloat(140 + (index % 2) * 60)
-                                let angle = Double(index) * 75.0 + 45.0
-                                let xOffset = radius * CGFloat(cos(angle * .pi / 180.0))
-                                let yOffset = radius * CGFloat(sin(angle * .pi / 180.0))
-
-                                Button(action: {
-                                    withAnimation {
-                                        selectedDiscoveryPeer = peer.id
-                                    }
-                                }) {
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "person.crop.circle.fill")
-                                            .resizable()
-                                            .frame(width: 46, height: 46)
-                                            .foregroundColor(Color("appPrimary"))
-                                            .background(Circle().fill(Color("appBrandBackground")))
-                                            .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
-                                            .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
-
-                                        Text(peer.displayName)
-                                            .font(.caption2).bold()
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Capsule().fill(Color("appOverlayDim")))
-                                    }
-                                }
-                                .offset(x: xOffset, y: yOffset)
-                                .transition(.scale.combined(with: .opacity))
-                            }
-                        }
-                    }
-
-                    // Central glowing flame button
-                    Button(action: {
-                        withAnimation {
-                            if viewModel.appState == .home {
-                                viewModel.appState = .searching
-                                viewModel.multipeerManager?.startBrowsing()
-                            } else {
+            VStack {
+                HStack {
+                    if viewModel.appState == .searching && watchSession.isWatchConnected {
+                        Button(action: {
+                            withAnimation {
                                 viewModel.appState = .home
                                 viewModel.multipeerManager?.stopSearching()
-                                selectedDiscoveryPeer = nil
+                            }
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.title3.bold())
+                                .foregroundColor(Color("appLabel").opacity(0.8))
+                                .padding(10)
+                                .background(Circle().fill(.ultraThinMaterial))
+                        }
+                    }
+                    Spacer()
+
+                    if !watchSession.isWatchConnected {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.applewatch")
+                                .font(.system(size: 24))
+                                .foregroundColor(.orange)
+                            
+                            Text("Please connect to Apple Watch")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                        }
+                        .padding(16)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(18)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 24)
+                        .padding(.top, 10)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                Spacer()
+
+                VStack(spacing: 16) {
+                    // Label di atas tombol flame
+                    Text(viewModel.appState == .home ? "Tap to find rival" : "Finding people nearby...")
+                        .font(.title).bold()
+                        .foregroundColor(Color("appLabel"))
+                        .multilineTextAlignment(.center)
+
+                    ZStack {
+                        let pulseStroke = (colorScheme == .light ? Color.flintRed : Color("appFlameHighlight"))
+
+                        if viewModel.appState == .searching {
+                            // Pulsing radar circles (stroke only — material breaks scaleAnimation)
+                            Circle()
+                                .stroke(pulseStroke.opacity(0.3), lineWidth: 1.5)
+                                .frame(width: 280, height: 280)
+                                .scaleEffect(pulseScale)
+                                .opacity(Double(2.0 - pulseScale))
+                                .onAppear {
+                                    withAnimation(.easeOut(duration: 2.0).repeatForever(autoreverses: false)) {
+                                        pulseScale = 2.0
+                                    }
+                                }
+
+                            Circle()
+                                .stroke(pulseStroke.opacity(0.15), lineWidth: 1)
+                                .frame(width: 180, height: 180)
+                                .scaleEffect(outerPulseScale)
+                                .opacity(Double(2.0 - outerPulseScale))
+                                .onAppear {
+                                    withAnimation(.easeOut(duration: 2.0).delay(0.5).repeatForever(autoreverses: false)) {
+                                        outerPulseScale = 2.0
+                                    }
+                                }
+
+                            // Concentric rings (static style) with liquid glass
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.flintRed.opacity(0.08), lineWidth: 1)
+                                )
+                                .frame(width: 230, height: 230)
+
+                            // Found peers on radar
+                            if let peers = viewModel.multipeerManager?.foundPeers {
+                                ForEach(Array(peers.enumerated()), id: \.element.id) { index, peer in
+                                    let radius = CGFloat(140 + (index % 2) * 60)
+                                    let angle = Double(index) * 75.0 + 45.0
+                                    let xOffset = radius * CGFloat(cos(angle * .pi / 180.0))
+                                    let yOffset = radius * CGFloat(sin(angle * .pi / 180.0))
+
+                                    Button(action: {
+                                        withAnimation {
+                                            selectedDiscoveryPeer = peer.id
+                                        }
+                                    }) {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "person.crop.circle.fill")
+                                                .resizable()
+                                                .frame(width: 46, height: 46)
+                                                .foregroundColor(Color("appPrimary"))
+                                                .background(Circle().fill(Color("appBrandBackground")))
+                                                .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
+                                                .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
+
+                                            Text(peer.displayName)
+                                                .font(.caption2).bold()
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Capsule().fill(Color("appOverlayDim")))
+                                        }
+                                    }
+                                    .offset(x: xOffset, y: yOffset)
+                                    .transition(.scale.combined(with: .opacity))
+                                }
                             }
                         }
-                    }) {
-                        Image("nearbybutton")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 70, height: 70)
+
+                        // Central glowing flame button
+                        Button(action: {
+                            withAnimation {
+                                if viewModel.appState == .home {
+                                    viewModel.appState = .searching
+                                    viewModel.multipeerManager?.startBrowsing()
+                                } else {
+                                    viewModel.appState = .home
+                                    viewModel.multipeerManager?.stopSearching()
+                                    selectedDiscoveryPeer = nil
+                                }
+                            }
+                        }) {
+                            Image("nearbybutton")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 70, height: 70)
+                        }
+
+                        .buttonStyle(FlameGlassButtonStyle())
                     }
+                    .frame(height: 320)
 
-                    .buttonStyle(FlameGlassButtonStyle())
-                }
-                .frame(height: 320)
-
-                // Secondary info label
-                VStack(spacing: 8) {
-                    if let count = viewModel.multipeerManager?.foundPeers.count, count > 0 {
-                        Text("\(count) peer(s) nearby")
-                            .font(.subheadline)
-                            .foregroundColor(Color("appSecondaryLabel"))
+                    // Secondary info label
+                    VStack(spacing: 8) {
+                        if let count = viewModel.multipeerManager?.foundPeers.count, count > 0 {
+                            Text("\(count) peer(s) nearby")
+                                .font(.subheadline)
+                                .foregroundColor(Color("appSecondaryLabel"))
+                        }
                     }
-
-
                 }
+
+                Spacer()
             }
-
-            Spacer()
         }
     }
 
     // MARK: - Tab 2: Profile
 
     private var profileTab: some View {
-        VStack {
-            // Header
-            HStack {
-                Text("Profile & History")
-                    .font(.title3).bold()
-                    .foregroundColor(Color("appLabel"))
-                    .padding(.top, 8)
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
+        ZStack {
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
 
-            ProfileView()
-                .environmentObject(viewModel)
+            VStack {
+                // Header
+                HStack {
+                    Text("Profile & History")
+                        .font(.title3).bold()
+                        .foregroundColor(Color("appLabel"))
+                        .padding(.top, 8)
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
+                ProfileView()
+                    .environmentObject(viewModel)
+            }
         }
     }
 
