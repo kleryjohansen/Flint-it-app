@@ -15,8 +15,7 @@ struct ProfileView: View {
     }
 
     private var wonChallenges: Int {
-        guard totalChallenges > 0 else { return 0 }
-        return viewModel.workoutResult == .victory ? 1 : 0
+        viewModel.pastWorkouts.filter { $0.isVictory == true }.count
     }
 
     private var winRatio: Int {

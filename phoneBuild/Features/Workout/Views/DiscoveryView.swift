@@ -101,38 +101,36 @@ struct DiscoveryView: View {
                             }
 
                         // Found peers on radar
-                        if let peers = viewModel.multipeerManager?.foundPeers {
-                            ForEach(Array(peers.enumerated()), id: \.element.id) { index, peer in
-                                let radius = CGFloat(140 + (index % 2) * 60)
-                                let angle = Double(index) * 75.0 + 45.0
-                                let xOffset = radius * CGFloat(cos(angle * .pi / 180.0))
-                                let yOffset = radius * CGFloat(sin(angle * .pi / 180.0))
+                        ForEach(Array(viewModel.foundPeers.enumerated()), id: \.element.id) { index, peer in
+                            let radius = CGFloat(140 + (index % 2) * 60)
+                            let angle = Double(index) * 75.0 + 45.0
+                            let xOffset = radius * CGFloat(cos(angle * .pi / 180.0))
+                            let yOffset = radius * CGFloat(sin(angle * .pi / 180.0))
 
-                                Button(action: {
-                                    withAnimation {
-                                        selectedDiscoveryPeer = peer.id
-                                    }
-                                }) {
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "person.crop.circle.fill")
-                                            .resizable()
-                                            .frame(width: 46, height: 46)
-                                            .foregroundColor(Color.flintRed)
-                                            .background(Circle().fill(Color.black))
-                                            .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
-                                            .shadow(color: Color.flintRed.opacity(0.4), radius: 6)
-
-                                        Text(peer.displayName)
-                                            .font(.caption2).bold()
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 3)
-                                            .background(Capsule().fill(.ultraThinMaterial))
-                                    }
+                            Button(action: {
+                                withAnimation {
+                                    selectedDiscoveryPeer = peer.id
                                 }
-                                .offset(x: xOffset, y: yOffset)
-                                .transition(.scale.combined(with: .opacity))
+                            }) {
+                                VStack(spacing: 4) {
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .resizable()
+                                        .frame(width: 46, height: 46)
+                                        .foregroundColor(Color.flintRed)
+                                        .background(Circle().fill(Color.black))
+                                        .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
+                                        .shadow(color: Color.flintRed.opacity(0.4), radius: 6)
+
+                                    Text(peer.displayName)
+                                        .font(.caption2).bold()
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Capsule().fill(.ultraThinMaterial))
+                                }
                             }
+                            .offset(x: xOffset, y: yOffset)
+                            .transition(.scale.combined(with: .opacity))
                         }
                     }
 
@@ -177,12 +175,12 @@ struct DiscoveryView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
-                .frame(height: 220)
+                .frame(height: 320)
 
                 // Secondary info label & Solo skip
                 VStack(spacing: 8) {
-                    if let count = viewModel.multipeerManager?.foundPeers.count, count > 0 {
-                        Text("\(count) peer(s) nearby")
+                    if viewModel.foundPeers.count > 0 {
+                        Text("\(viewModel.foundPeers.count) peer(s) nearby")
                             .font(.subheadline.bold())
                             .foregroundColor(.white.opacity(0.8))
                     }

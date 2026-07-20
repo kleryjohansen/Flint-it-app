@@ -44,6 +44,7 @@ public struct PastWorkout: Identifiable, Codable {
     public let avgHeartRate: Double
     public var calories: Double? = nil
     public var partnerName: String? = nil
+    public var isVictory: Bool? = false
 }
 
 public struct PeerInfo: Identifiable, Equatable {

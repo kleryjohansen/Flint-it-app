@@ -144,6 +144,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private var caloriesQuery: HKAnchoredObjectQuery?
     
     @Published var pastWorkouts: [PastWorkout] = []
+    @Published public var foundPeers: [PeerInfo] = []
     
     // Local Fallback Workout Timer
     private var activeWorkoutTimer: Timer?
@@ -426,8 +427,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     public func setupMultipeerManager() {
-        let userName = UserDefaults.standard.string(forKey: "savedUsername") ?? ""
-        guard !userName.isEmpty else { return }
+        var userName = UserDefaults.standard.string(forKey: "savedUsername") ?? ""
+        if userName.isEmpty {
+            userName = "Athlete"
+        }
 
         // Reset state
         hasSentOwnToken = false
@@ -437,6 +440,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         let manager = MultipeerManager(customDisplayName: userName)
         self.multipeerManager = manager
+
+        manager.onFoundPeersChanged = { [weak self] peers in
+            DispatchQueue.main.async {
+                self?.foundPeers = peers
+            }
+        }
 
         manager.onDataReceived = { [weak self] type, payload, peerID in
             guard let self = self else { return }
@@ -1055,7 +1064,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             duration: currentDuration,
             avgHeartRate: currentHR,
             calories: currentCal,
-            partnerName: partner
+            partnerName: partner,
+            isVictory: self.workoutResult == .victory || self.workoutResult == .solo
         )
         
         // Insert at the beginning of list
