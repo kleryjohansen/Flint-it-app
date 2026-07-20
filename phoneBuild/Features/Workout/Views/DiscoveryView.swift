@@ -14,9 +14,12 @@ struct DiscoveryView: View {
     var body: some View {
         ZStack {
             // Soft white-to-coral background
-            Image("bgifhome")
-                .resizable()
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [Color.white, Color("appTertiary"), Color("appSecondary")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             TabView(selection: $selectedTab) {
                 // ─── TAB 1: DISCOVER ───
@@ -201,12 +204,12 @@ struct DiscoveryView: View {
                             }
                         }
                     }) {
-                        Image("nearbybutton")
+                        Image("logoflamemiddle")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 70, height: 70)
                     }
-
+                    
                     .buttonStyle(FlameGlassButtonStyle())
                 }
                 .frame(height: 320)
@@ -218,9 +221,24 @@ struct DiscoveryView: View {
                             .font(.subheadline)
                             .foregroundColor(Color("appSecondaryLabel"))
                     }
-
-
-                }
+                    if showSearchSkip && viewModel.appState == .searching {
+                        Button(action: {
+                            withAnimation {
+                                viewModel.skipConnectionAndGoToSetup()
+                            }
+                        }) {
+                            Text("Skip to Setup (Solo)")
+                                .font(.callout).bold()
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .background(Color("appPrimary"))
+                                .clipShape(Capsule())
+                                .shadow(color: Color("appPrimary").opacity(0.35), radius: 8)
+                        }
+                        .padding(.top, 8)
+                        .transition(.scale.combined(with: .opacity))
+                    }                }
             }
 
             Spacer()

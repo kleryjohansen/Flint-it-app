@@ -3,15 +3,16 @@ import Combine
 import WatchKit
 
 class WatchWorkoutViewModel: ObservableObject {
-    @Published var bpmString: String    = "-- BPM"
+    @Published var bpmString: String    = "-- /Bpm"
     @Published var timerString: String  = "00:00:00"
     @Published var isWorkoutRunning: Bool = false
     @Published var caloriesString: String = "0.0 kcal"
     @Published var isDistanceMetric: Bool = false
     @Published var distanceString: String = "0.0 m"
-    @Published var avgPaceString: String  = "--:--"
+    @Published var avgPaceString: String  = "--:-- /km"
     @Published var stepsString: String    = "0 steps"
     @Published var speedString: String    = "0.0 km/h"
+    @Published var workoutResult: String? = nil
     
     // Countdown state local to watch
     @Published var countdownSeconds: Int = -1
@@ -22,6 +23,14 @@ class WatchWorkoutViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        // Observe result
+        workoutService.$workoutResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                self?.workoutResult = result
+            }
+            .store(in: &cancellables)
+
         workoutService.$metrics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] metrics in
@@ -38,8 +47,8 @@ class WatchWorkoutViewModel: ObservableObject {
 
                 // Heart rate
                 self.bpmString = metrics.heartRate > 0
-                    ? "\(Int(metrics.heartRate)) BPM"
-                    : "-- BPM"
+                    ? "\(Int(metrics.heartRate)) /Bpm"
+                    : "-- /Bpm"
 
                 // Elapsed timer (HH:MM:SS) - held at 0 during countdown
                 if self.countdownSeconds >= 0 {
@@ -78,13 +87,13 @@ class WatchWorkoutViewModel: ObservableObject {
                         let pSecs = Int(paceSecPerKm) % 60
                         self.avgPaceString = pMins < 100
                             ? String(format: "%d:%02d /km", pMins, pSecs)
-                            : "--:--"
+                            : "--:-- /km"
                     } else {
-                        self.avgPaceString = "--:--"
+                        self.avgPaceString = "--:-- /km"
                     }
                 } else {
                     self.distanceString = "0.0 m"
-                    self.avgPaceString  = "--:--"
+                    self.avgPaceString  = "--:-- /km"
                 }
             }
             .store(in: &cancellables)
@@ -136,5 +145,9 @@ class WatchWorkoutViewModel: ObservableObject {
         let m = (seconds % 3600) / 60
         let s = seconds % 60
         timerString = String(format: "%02d:%02d:%02d", h, m, s)
+    }
+
+    func dismissResults() {
+        workoutService.workoutResult = nil
     }
 }
