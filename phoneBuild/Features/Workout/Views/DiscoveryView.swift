@@ -13,11 +13,6 @@ struct DiscoveryView: View {
 
     var body: some View {
         ZStack {
-            // Soft white-to-coral background
-            Image("bgifhome")
-                .resizable()
-                .ignoresSafeArea()
-
             TabView(selection: $selectedTab) {
                 // ─── TAB 1: DISCOVER ───
                 discoverTab
@@ -33,10 +28,10 @@ struct DiscoveryView: View {
                         Label("Profile", systemImage: "person.fill")
                     }
             }
-            .tint(Color("appPrimary"))
+            .tint(Color.flintRed)
             .toolbar(viewModel.appState == .home ? .visible : .hidden, for: .tabBar)
             .toolbarBackground(viewModel.appState == .home ? .visible : .hidden, for: .tabBar)
-            .toolbarColorScheme(viewModel.appState == .home ? nil : .dark, for: .tabBar)
+            .toolbarColorScheme(.dark, for: .tabBar)
 
             // Bottom slide-up card when a peer is selected
             peerOverlayCard
@@ -60,171 +55,188 @@ struct DiscoveryView: View {
     }
 
     // MARK: - Tab 1: Discover / Radar
+
     private var discoverTab: some View {
         ZStack {
+            // Pure background image extending 100% full screen to all edges (including bottom tab bar)
             Image("bgifhome")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            VStack {
-                HStack {
-                    if viewModel.appState == .searching && watchSession.isWatchConnected {
-                        Button(action: {
-                            withAnimation {
+            // Layer 1: Centered Content (Tap to find rival & Nearby button)
+            VStack() {
+                // Title Label: "Tap to find rival"
+                Text(viewModel.appState == .home ? "Tap to find rival" : "Finding people nearby...")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: Color.black.opacity(0.6), radius: 6, x: 0, y: 3)
+                    .multilineTextAlignment(.center)
+
+                ZStack {
+                    let pulseStroke = Color.white.opacity(0.6)
+
+                    if viewModel.appState == .searching {
+                        // Pulsing radar circles
+                        Circle()
+                            .stroke(pulseStroke.opacity(0.4), lineWidth: 1.5)
+                            .frame(width: 280, height: 280)
+                            .scaleEffect(pulseScale)
+                            .opacity(Double(2.0 - pulseScale))
+                            .onAppear {
+                                withAnimation(.easeOut(duration: 2.0).repeatForever(autoreverses: false)) {
+                                    pulseScale = 2.0
+                                }
+                            }
+
+                        Circle()
+                            .stroke(pulseStroke.opacity(0.25), lineWidth: 1)
+                            .frame(width: 180, height: 180)
+                            .scaleEffect(outerPulseScale)
+                            .opacity(Double(2.0 - outerPulseScale))
+                            .onAppear {
+                                withAnimation(.easeOut(duration: 2.0).delay(0.5).repeatForever(autoreverses: false)) {
+                                    outerPulseScale = 2.0
+                                }
+                            }
+
+                        // Found peers on radar
+                        if let peers = viewModel.multipeerManager?.foundPeers {
+                            ForEach(Array(peers.enumerated()), id: \.element.id) { index, peer in
+                                let radius = CGFloat(140 + (index % 2) * 60)
+                                let angle = Double(index) * 75.0 + 45.0
+                                let xOffset = radius * CGFloat(cos(angle * .pi / 180.0))
+                                let yOffset = radius * CGFloat(sin(angle * .pi / 180.0))
+
+                                Button(action: {
+                                    withAnimation {
+                                        selectedDiscoveryPeer = peer.id
+                                    }
+                                }) {
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "person.crop.circle.fill")
+                                            .resizable()
+                                            .frame(width: 46, height: 46)
+                                            .foregroundColor(Color.flintRed)
+                                            .background(Circle().fill(Color.black))
+                                            .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
+                                            .shadow(color: Color.flintRed.opacity(0.4), radius: 6)
+
+                                        Text(peer.displayName)
+                                            .font(.caption2).bold()
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .background(Capsule().fill(.ultraThinMaterial))
+                                    }
+                                }
+                                .offset(x: xOffset, y: yOffset)
+                                .transition(.scale.combined(with: .opacity))
+                            }
+                        }
+                    }
+
+                    // Native Apple Liquid Glass Button containing "nearbybutton" asset
+                    Button(action: {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            if viewModel.appState == .home {
+                                viewModel.appState = .searching
+                                viewModel.multipeerManager?.startBrowsing()
+                            } else {
                                 viewModel.appState = .home
                                 viewModel.multipeerManager?.stopSearching()
+                                selectedDiscoveryPeer = nil
                             }
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.title3.bold())
-                                .foregroundColor(Color("appLabel").opacity(0.8))
-                                .padding(10)
-                                .background(Circle().fill(.ultraThinMaterial))
                         }
-                    }
-                    Spacer()
-
-                    if !watchSession.isWatchConnected {
-                        HStack(spacing: 12) {
-                            Image(systemName: "exclamationmark.applewatch")
-                                .font(.system(size: 24))
-                                .foregroundColor(.orange)
-                            
-                            Text("Please connect to Apple Watch")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            Spacer()
-                        }
-                        .padding(16)
-                        .background(Color.white.opacity(0.06))
-                        .cornerRadius(18)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 18)
-                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                        )
-                        .padding(.horizontal, 24)
-                        .padding(.top, 10)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-
-                Spacer()
-
-                VStack(spacing: 16) {
-                    // Label di atas tombol flame
-                    Text(viewModel.appState == .home ? "Tap to find rival" : "Finding people nearby...")
-                        .font(.title).bold()
-                        .foregroundColor(Color("appLabel"))
-                        .multilineTextAlignment(.center)
-
-                    ZStack {
-                        let pulseStroke = (colorScheme == .light ? Color.flintRed : Color("appFlameHighlight"))
-
-                        if viewModel.appState == .searching {
-                            // Pulsing radar circles (stroke only — material breaks scaleAnimation)
-                            Circle()
-                                .stroke(pulseStroke.opacity(0.3), lineWidth: 1.5)
-                                .frame(width: 280, height: 280)
-                                .scaleEffect(pulseScale)
-                                .opacity(Double(2.0 - pulseScale))
-                                .onAppear {
-                                    withAnimation(.easeOut(duration: 2.0).repeatForever(autoreverses: false)) {
-                                        pulseScale = 2.0
-                                    }
-                                }
-
-                            Circle()
-                                .stroke(pulseStroke.opacity(0.15), lineWidth: 1)
-                                .frame(width: 180, height: 180)
-                                .scaleEffect(outerPulseScale)
-                                .opacity(Double(2.0 - outerPulseScale))
-                                .onAppear {
-                                    withAnimation(.easeOut(duration: 2.0).delay(0.5).repeatForever(autoreverses: false)) {
-                                        outerPulseScale = 2.0
-                                    }
-                                }
-
-                            // Concentric rings (static style) with liquid glass
+                    }) {
+                        ZStack {
+                            // Native Liquid Glass Outer Ring Layer
                             Circle()
                                 .fill(.ultraThinMaterial)
+                                .frame(width: 170, height: 170)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.flintRed.opacity(0.08), lineWidth: 1)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
                                 )
-                                .frame(width: 230, height: 230)
-
-                            // Found peers on radar
-                            if let peers = viewModel.multipeerManager?.foundPeers {
-                                ForEach(Array(peers.enumerated()), id: \.element.id) { index, peer in
-                                    let radius = CGFloat(140 + (index % 2) * 60)
-                                    let angle = Double(index) * 75.0 + 45.0
-                                    let xOffset = radius * CGFloat(cos(angle * .pi / 180.0))
-                                    let yOffset = radius * CGFloat(sin(angle * .pi / 180.0))
-
-                                    Button(action: {
-                                        withAnimation {
-                                            selectedDiscoveryPeer = peer.id
-                                        }
-                                    }) {
-                                        VStack(spacing: 4) {
-                                            Image(systemName: "person.crop.circle.fill")
-                                                .resizable()
-                                                .frame(width: 46, height: 46)
-                                                .foregroundColor(Color("appPrimary"))
-                                                .background(Circle().fill(Color("appBrandBackground")))
-                                                .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
-                                                .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
-
-                                            Text(peer.displayName)
-                                                .font(.caption2).bold()
-                                                .foregroundColor(.white)
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 2)
-                                                .background(Capsule().fill(Color("appOverlayDim")))
-                                        }
-                                    }
-                                    .offset(x: xOffset, y: yOffset)
-                                    .transition(.scale.combined(with: .opacity))
-                                }
-                            }
-                        }
-
-                        // Central glowing flame button
-                        Button(action: {
-                            withAnimation {
-                                if viewModel.appState == .home {
-                                    viewModel.appState = .searching
-                                    viewModel.multipeerManager?.startBrowsing()
-                                } else {
-                                    viewModel.appState = .home
-                                    viewModel.multipeerManager?.stopSearching()
-                                    selectedDiscoveryPeer = nil
-                                }
-                            }
-                        }) {
+                                .glassEffect(.regular.interactive(), in: .circle)
+                                .shadow(color: Color.black.opacity(0.4), radius: 15, x: 0, y: 8)
+                            
+                            // Nearby Button Image Asset
                             Image("nearbybutton")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 70, height: 70)
+                                .frame(width: 100, height: 100)
                         }
-
-                        .buttonStyle(FlameGlassButtonStyle())
                     }
-                    .frame(height: 320)
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .frame(height: 220)
 
-                    // Secondary info label
-                    VStack(spacing: 8) {
-                        if let count = viewModel.multipeerManager?.foundPeers.count, count > 0 {
-                            Text("\(count) peer(s) nearby")
-                                .font(.subheadline)
-                                .foregroundColor(Color("appSecondaryLabel"))
+                // Secondary info label & Solo skip
+                VStack(spacing: 8) {
+                    if let count = viewModel.multipeerManager?.foundPeers.count, count > 0 {
+                        Text("\(count) peer(s) nearby")
+                            .font(.subheadline.bold())
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    if showSearchSkip && viewModel.appState == .searching {
+                        Button(action: {
+                            withAnimation {
+                                viewModel.skipConnectionAndGoToSetup()
+                            }
+                        }) {
+                            Text("Skip to Setup (Solo)")
+                                .font(.callout).bold()
+                                .foregroundColor(.white)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 24)
+                                .background(Color.flintRed)
+                                .clipShape(Capsule())
+                                .glassEffect(.regular.interactive(), in: .capsule)
+                                .shadow(color: Color.flintRed.opacity(0.4), radius: 8)
                         }
+                        .padding(.top, 8)
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+            // Layer 2: Top Status Pill (Watch Connected indicator) aligned independently to top
+            VStack {
+                HStack {
+                    Spacer()
+                    
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
+                            .frame(width: 8, height: 8)
+                            .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
+                        
+                        Text(watchSession.isWatchConnected ? "Watch is connected" : "Please connect to Apple Watch")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    )
+                    .glassEffect(.regular, in: .capsule)
+                    .shadow(color: Color.black.opacity(0.3), radius: 8, y: 4)
+                    
+                    Spacer()
+                }
+                .padding(.top, 115)
 
                 Spacer()
             }
@@ -234,27 +246,20 @@ struct DiscoveryView: View {
     // MARK: - Tab 2: Profile
 
     private var profileTab: some View {
-        ZStack {
-            Image("bgifhome")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-
-            VStack {
-                // Header
-                HStack {
-                    Text("Profile & History")
-                        .font(.title3).bold()
-                        .foregroundColor(Color("appLabel"))
-                        .padding(.top, 8)
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-
-                ProfileView()
-                    .environmentObject(viewModel)
+        VStack {
+            // Header
+            HStack {
+                Text("Profile & History")
+                    .font(.title3).bold()
+                    .foregroundColor(Color("appLabel"))
+                    .padding(.top, 8)
+                Spacer()
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+
+            ProfileView()
+                .environmentObject(viewModel)
         }
     }
 
@@ -310,6 +315,7 @@ struct DiscoveryView: View {
                             .padding(.vertical, 16)
                             .background(Color.flintRed)
                             .clipShape(Capsule())
+                            .glassEffect(.regular.interactive(), in: .capsule)
                             .shadow(color: Color.flintRed.opacity(0.35), radius: 12, y: 6)
                     }
                     .padding(.horizontal, 24)
