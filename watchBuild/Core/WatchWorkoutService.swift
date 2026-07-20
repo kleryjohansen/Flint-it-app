@@ -9,6 +9,7 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     static let shared = WatchWorkoutService()
     
     @Published var metrics = WorkoutMetrics()
+    @Published var workoutResult: String? = nil
     
     private let healthStore = HKHealthStore()
     private var workoutSession: HKWorkoutSession?
@@ -139,6 +140,7 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                     
                     DispatchQueue.main.async {
                         if success {
+                            self.workoutResult = nil
                             print("[Watch] ✓ Collection started — sport: \(sport), sessionId: \(sessionId)")
                             self.metrics = WorkoutMetrics(
                                 heartRate: 0.0,
@@ -185,13 +187,13 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
         
         switch result {
         case "Victory":
-            assetName = "winningSound"
+            assetName = "winSound"
             hapticType = .success
         case "Defeat":
             assetName = "defeatSound"
             hapticType = .failure
         case "Solo":
-            assetName = "winningSound"
+            assetName = "winSound"
             hapticType = .success
         default:
             return
@@ -243,7 +245,8 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                 DispatchQueue.main.async {
                     self.metrics.isWorkoutRunning = false
                     self.countdown = 0
-                    print("[Watch] Workout ended and saved ✓")
+                    self.workoutResult = result // Track final winner/loser state
+                    print("[Watch] Workout ended and saved ✓ with result: \(result ?? "None")")
                     if let result = result {
                         self.playWorkoutResultSound(result: result)
                     }
