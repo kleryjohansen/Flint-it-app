@@ -550,29 +550,11 @@ struct ResultsView: View {
     
     var body: some View {
         ZStack {
-            // Selected sport background
-            switch challenge?.sport {
-            case .running:
-                Image("bgifrun")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            case .cycling:
-                Image("bgifcycling")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            case .swimming:
-                Image("bgifswim")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            default:
-                Image("bgifhome")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            }
+            // Win or Lose Background
+            Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBackground" : "loseBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
             
             Color.black.opacity(0.65)
                 .ignoresSafeArea()
