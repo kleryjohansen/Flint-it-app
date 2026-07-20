@@ -11,32 +11,34 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            switch viewModel.appState {
-            case .home, .searching:
-                DiscoveryView()
-                
-            case .navigating:
-                NearbyRadarView()
-                
-            case .room:
-                RoomFormedView()
-                
-            case .workoutSetup:
-                WorkoutSetupView()
-                
-            case .syncing:
-                ChallengeWaitingView()
-                
-            case .foundPartner:
-                MatchConfirmationView()
-                
-            case .activeWorkout:
-                ActiveWorkoutView()
-                    .environmentObject(viewModel)
-                
-            case .results:
-                ResultsView()
-                    .environmentObject(viewModel)
+            Group {
+                switch viewModel.appState {
+                case .home, .searching:
+                    DiscoveryView()
+                    
+                case .navigating:
+                    NearbyRadarView()
+                    
+                case .room:
+                    RoomFormedView()
+                    
+                case .workoutSetup:
+                    WorkoutSetupView()
+                    
+                case .syncing:
+                    ChallengeWaitingView()
+                    
+                case .foundPartner:
+                    MatchConfirmationView()
+                    
+                case .activeWorkout:
+                    ActiveWorkoutView()
+                        .environmentObject(viewModel)
+                    
+                case .results:
+                    ResultsView()
+                        .environmentObject(viewModel)
+                }
             }
             .environmentObject(viewModel)
             .sheet(item: Binding<IdentifiablePeer?>(

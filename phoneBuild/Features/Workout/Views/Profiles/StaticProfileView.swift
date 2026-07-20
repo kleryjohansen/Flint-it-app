@@ -13,7 +13,7 @@
 
 import SwiftUI
 
-struct ProfileView: View {
+struct StaticProfileView: View {
 
     let history = ChallengeHistory.sampleData
 
@@ -112,5 +112,5 @@ struct ProfileView: View {
 }
 
 #Preview {
-    ProfileView()
+    StaticProfileView()
 }
