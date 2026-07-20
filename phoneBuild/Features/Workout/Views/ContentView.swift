@@ -194,193 +194,224 @@ struct ActiveWorkoutView: View {
             .ignoresSafeArea()
             .allowsHitTesting(false)
 
-            VStack(spacing: 16) {
-                // Top HUD: Challenge name & subtitle
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 28, height: 28)
-                    .padding(.top, 80)
-                VStack(spacing: 4) {
+            VStack(spacing: 12) {
+                // Top HUD: Challenge name & status
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 10, height: 10)
+                        .shadow(color: .green.opacity(0.8), radius: 4)
+                    
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
-                            .font(.largeTitle .weight(.bold))
-                            .foregroundStyle(.primary)
-                        
-                        Text("Fastest to finish \(String(format: "%.0f", ch.goalValue))\(isDistanceChallenge ? "km" : "") wins")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.8))
+                            .font(.system(size: 16, weight: .black, design: .rounded))
+                            .foregroundColor(.white)
+                            .tracking(1)
                     } else {
-                        Text("Workout • Running")
-                            .font(.largeTitle .weight(.bold))
-                            .foregroundStyle(.primary)
-                        Text("Fastest to finish wins")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                        Text("Active Match")
+                            .font(.system(size: 16, weight: .black, design: .rounded))
+                            .foregroundColor(.white)
+                            .tracking(1)
                     }
                 }
-                .padding(.bottom, 32)
+                .padding(.top, 56)
+                
+                VStack(spacing: 4) {
+                    if let ch = challenge {
+                        Text("Goal: \(String(format: "%.0f", ch.goalValue))\(isDistanceChallenge ? " km" : "")")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                    } else {
+                        Text("Fastest to finish wins")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+                .padding(.bottom, 8)
                 
                 // 1. Time Display Card
-                HStack {
-                    Text(viewModel.countdownText)
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Spacer()
-                }
-                .padding(16)
-//                .background(.ultraThinMaterial)
-//                .cornerRadius(20)
-                .glassEffect(in: .rect(cornerRadius: 24))
-                .padding(.horizontal, 16)
-                
-                // 2. Distance Card
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.flintRed)
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "figure.run")
-                                .font(.body)
-                                .foregroundStyle(.primary)
-                        }
-                        Text("Distance")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color.flintRed)
                     }
                     
-                    Text("\(distanceText)")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(.white)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ELAPSED TIME")
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundColor(.white.opacity(0.5))
+                            .tracking(1.5)
+                        
+                        Text(viewModel.countdownText)
+                            .font(.system(size: 34, weight: .black, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .glassEffect(in: .rect(cornerRadius: 24))
                 .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .glassEffect(in: .rect(cornerRadius: 20))
+                .padding(.horizontal, 20)
+                
+                // 2. Distance Card
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "figure.run")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color.flintRed)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("DISTANCE")
+                            .font(.system(size: 10, weight: .black))
+                            .foregroundColor(.white.opacity(0.5))
+                            .tracking(1.5)
+                        
+                        Text("\(distanceText)")
+                            .font(.system(size: 34, weight: .black, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .glassEffect(in: .rect(cornerRadius: 20))
+                .padding(.horizontal, 20)
                 
                 // 3. Pace and Heartrate (Bottom Row)
                 HStack(spacing: 12) {
                     // Pace Card
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.flintRed)
-                                    .frame(width: 44, height: 44)
-                                Image(systemName: "powermeter")
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                            }
-                            Text("Pace")
-                                .font(.headline.weight( .semibold))
-                                .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(width: 34, height: 34)
+                            Image(systemName: "powermeter")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Color.flintRed)
                         }
                         
-                        Text(viewModel.avgPaceText)
-                            .font(.title.weight(.bold))
-                            .foregroundColor(.white)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("PACE")
+                                .font(.system(size: 9, weight: .black))
+                                .foregroundColor(.white.opacity(0.5))
+                                .tracking(1.5)
+                            
+                            Text(viewModel.avgPaceText)
+                                .font(.system(size: 20, weight: .black, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .glassEffect(in: .rect(cornerRadius: 24))
+                    .padding(12)
+                    .glassEffect(in: .rect(cornerRadius: 20))
                     
                     // Heartrate Card
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.flintRed)
-                                    .frame(width: 44, height: 44)
-                                Image(systemName: "heart.fill")
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                            }
-                            Text("Heartrate")
-                                .font(.headline.weight( .semibold))
-                                .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(width: 34, height: 34)
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Color.flintRed)
                         }
                         
-                        Text("\(Int(liveHR)) Bpm")
-                            .font(.title.weight(.bold))
-                            .foregroundColor(.white)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("HEARTRATE")
+                                .font(.system(size: 9, weight: .black))
+                                .foregroundColor(.white.opacity(0.5))
+                                .tracking(1.5)
+                            
+                            Text("\(Int(liveHR)) Bpm")
+                                .font(.system(size: 20, weight: .black, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .glassEffect(in: .rect(cornerRadius: 24))
+                    .padding(12)
+                    .glassEffect(in: .rect(cornerRadius: 20))
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
                 
                 Spacer()
                 
                 // 4. Multi-Player HUD (VS Progress)
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     // Player 1 (You)
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         ZStack {
                             Circle()
-                                .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                .frame(width: 24, height: 24)
+                                .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                                .frame(width: 20, height: 20)
                             Text("1")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white.opacity(0.8))
                         }
                         
                         GeometryReader { geometry in
                             ZStack(alignment: .leading) {
                                 Capsule()
                                     .fill(Color.white.opacity(0.1))
-                                    .frame(height: 8)
+                                    .frame(height: 6)
                                 
                                 Capsule()
                                     .fill(Color.flintRed)
-                                    .frame(width: geometry.size.width * CGFloat(viewModel.localProgress), height: 8)
+                                    .frame(width: geometry.size.width * CGFloat(viewModel.localProgress), height: 6)
                             }
                         }
-                        .frame(height: 8)
+                        .frame(height: 6)
                         
                         Text("\(Int(viewModel.localProgress * 100))%")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
-                            .frame(width: 40, alignment: .trailing)
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(width: 38, alignment: .trailing)
                     }
                     
                     // Player 2 (Partner)
                     if viewModel.multipeerManager?.connectedPeer != nil {
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             ZStack {
                                 Circle()
-                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                    .frame(width: 24, height: 24)
+                                    .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                                    .frame(width: 20, height: 20)
                                 Text("2")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white.opacity(0.8))
                             }
                             
                             GeometryReader { geometry in
                                 ZStack(alignment: .leading) {
                                     Capsule()
                                         .fill(Color.white.opacity(0.1))
-                                        .frame(height: 8)
+                                        .frame(height: 6)
                                     
                                     Capsule()
                                         .fill(Color.flintRed)
-                                        .frame(width: geometry.size.width * CGFloat(viewModel.partnerProgress), height: 8)
+                                        .frame(width: geometry.size.width * CGFloat(viewModel.partnerProgress), height: 6)
                                 }
                             }
-                            .frame(height: 8)
+                            .frame(height: 6)
                             
                             Text("\(Int(viewModel.partnerProgress * 100))%")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 40, alignment: .trailing)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.8))
+                                .frame(width: 38, alignment: .trailing)
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 24)
-                .glassEffect(in: .rect(cornerRadius: 24))
-                .padding(.horizontal, 24)
-                .padding(.bottom, 70)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .glassEffect(in: .rect(cornerRadius: 20))
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
             
                         // Countdown Overlay
