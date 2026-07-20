@@ -16,7 +16,7 @@ public enum AppState {
 public enum WorkoutType: String, CaseIterable, Identifiable, Codable {
     case running = "Running"
     case cycling = "Cycling"
-    case weightlifting = "Weightlifting"
+    case swimming = "Swimming"
     
     public var id: String { self.rawValue }
     
@@ -25,7 +25,7 @@ public enum WorkoutType: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .running: return "figure.run"
         case .cycling: return "figure.outdoor.cycle"
-        case .weightlifting: return "dumbbell.fill"
+        case .swimming: return "figure.pool.swim"
         }
     }
 }
@@ -36,12 +36,14 @@ public struct IncomingInvite: Identifiable {
     public let handler: (Bool, MCSession?) -> Void
 }
 
-public struct PastWorkout: Identifiable {
-    public let id = UUID()
+public struct PastWorkout: Identifiable, Codable {
+    public var id = UUID()
     public let date: Date
     public let type: WorkoutType
     public let duration: TimeInterval
     public let avgHeartRate: Double
+    public var calories: Double? = nil
+    public var partnerName: String? = nil
 }
 
 public struct PeerInfo: Identifiable, Equatable {
@@ -74,6 +76,9 @@ public struct MultipeerMessage: Codable {
         case sendChallenge // Sending a challenge
         case acceptChallenge // Accepting a challenge
         case endWorkout // Partner requested to end workout session
+        case watchStatus // Companion watch connection status
+        case workoutProgress // Realtime progress metrics
+        case peerLeftRoom // Inviter or rival left the lobby room
     }
     public let type: MessageType
     public let payload: Data
@@ -82,4 +87,19 @@ public struct MultipeerMessage: Codable {
         self.type = type
         self.payload = payload
     }
+}
+
+public struct WorkoutProgressPayload: Codable {
+    public let progressValue: Double
+    public let progressRatio: Double
+    public let currentPace: Double
+    public let steps: Double
+    public let speed: Double
+    public let elevation: Double
+}
+
+public enum WorkoutResult: String, Codable {
+    case solo = "Solo"
+    case victory = "Victory"
+    case defeat = "Defeat"
 }

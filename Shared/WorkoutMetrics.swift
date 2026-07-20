@@ -1,6 +1,9 @@
 import Foundation
 import WatchConnectivity
 import Combine
+#if canImport(WatchKit)
+import WatchKit
+#endif
 
 public struct WorkoutMetrics: Codable {
     public var heartRate: Double
@@ -9,14 +12,20 @@ public struct WorkoutMetrics: Codable {
     public var isWorkoutRunning: Bool
     public var calories: Double
     public var isDistanceMetric: Bool
+    public var steps: Double
+    public var speed: Double
+    public var elevation: Double
     
-    public init(heartRate: Double = 0.0, distance: Float? = nil, remainingSeconds: Int = 0, isWorkoutRunning: Bool = false, calories: Double = 0.0, isDistanceMetric: Bool = false) {
+    public init(heartRate: Double = 0.0, distance: Float? = nil, remainingSeconds: Int = 0, isWorkoutRunning: Bool = false, calories: Double = 0.0, isDistanceMetric: Bool = false, steps: Double = 0.0, speed: Double = 0.0, elevation: Double = 0.0) {
         self.heartRate = heartRate
         self.distance = distance
         self.remainingSeconds = remainingSeconds
         self.isWorkoutRunning = isWorkoutRunning
         self.calories = calories
         self.isDistanceMetric = isDistanceMetric
+        self.steps = steps
+        self.speed = speed
+        self.elevation = elevation
     }
 }
 
@@ -29,7 +38,19 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
     @Published public var heartRate: Double = 0.0
     @Published public var distance: Double = 0.0
     @Published public var isRunning: Bool = false
+    @Published public var isWatchPaired: Bool = false
+    @Published public var isWatchAppInstalled: Bool = false
     #endif
+    
+    public var isWatchConnected: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #elseif os(iOS)
+        return isWatchPaired
+        #else
+        return true
+        #endif
+    }
     
     private var session: WCSession?
     private var currentWorkoutSessionId: String = ""
@@ -40,6 +61,10 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
             session = WCSession.default
             session?.delegate = self
             session?.activate()
+            #if os(iOS)
+            self.isWatchPaired = session?.isPaired ?? false
+            self.isWatchAppInstalled = session?.isWatchAppInstalled ?? false
+            #endif
         }
     }
 
@@ -85,9 +110,24 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
     // MARK: - WCSessionDelegate
     public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         print("[WatchSessionManager] WCSession activationState: \(activationState.rawValue)")
+        #if os(iOS)
+        DispatchQueue.main.async {
+            self.isWatchPaired = session.isPaired
+            self.isWatchAppInstalled = session.isWatchAppInstalled
+            print("[WatchSessionManager] Watch status on activation: paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)")
+        }
+        #endif
     }
     
     #if os(iOS)
+    public func sessionWatchStateDidChange(_ session: WCSession) {
+        DispatchQueue.main.async {
+            self.isWatchPaired = session.isPaired
+            self.isWatchAppInstalled = session.isWatchAppInstalled
+            print("[WatchSessionManager] Watch state changed: paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)")
+        }
+    }
+    
     public func sessionDidBecomeInactive(_ session: WCSession) {}
     public func sessionDidDeactivate(_ session: WCSession) {
         WCSession.default.activate()
@@ -138,7 +178,19 @@ public class WatchSessionManager: NSObject, ObservableObject, WCSessionDelegate 
             // Watch side: hanya proses stop — START sekarang hanya via startWatchApp/WatchAppDelegate
             let status = data["status"] as? String ?? ""
             if status == "stop_request" {
-                WatchWorkoutService.shared.endWorkout(notifyPhone: false)
+                let res = data["result"] as? String
+                WatchWorkoutService.shared.endWorkout(notifyPhone: false, result: res)
+            }
+            if let hapticType = data["haptic"] as? String {
+                #if os(watchOS)
+                let type: WKHapticType
+                switch hapticType {
+                case "success": type = .success
+                case "failure": type = .failure
+                default: type = .notification
+                }
+                WKInterfaceDevice.current().play(type)
+                #endif
             }
             // Simpan sessionId yang dikirim iOS supaya Watch tahu session aktif saat ini
             if let sessionId = data["sessionId"] as? String {

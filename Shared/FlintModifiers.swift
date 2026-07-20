@@ -1,24 +1,57 @@
 import SwiftUI
 
 struct VibrantBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    
+    // Warna gradient adaptif via colorScheme — .white/.black di sini adalah
+    // system background semantic (putih untuk light, hitam untuk dark) karena
+    // digunakan di dalam conditional colorScheme, bukan hardcoded statis.
+    private var gradientStart: Color {
+        colorScheme == .light ? .white : .black
+    }
+
     func body(content: Content) -> some View {
-        ZStack {
-            // Dark base background
-            Color(red: 0.05, green: 0.04, blue: 0.04)
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                ZStack {
+                    if colorScheme == .light {
+                        // Light mode: clean white blending to dynamic primary red-orange at the bottom
+                        LinearGradient(
+                            colors: [
+                                gradientStart,
+                                gradientStart.opacity(0.9),
+                                Color("appPrimary").opacity(0.8)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    } else {
+                        // Dark mode: pitch black blending to deep primary red-orange at the bottom
+                        LinearGradient(
+                            colors: [
+                                gradientStart,
+                                gradientStart.opacity(0.85),
+                                Color("appPrimaryDeep").opacity(0.65)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+
+                    // Central radial glow around the central button matching the mockup glow
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Color("appPrimary").opacity(colorScheme == .light ? 0.25 : 0.35),
+                            Color.clear
+                        ]),
+                        center: .center,
+                        startRadius: 10,
+                        endRadius: 260
+                    )
+                }
                 .ignoresSafeArea()
-            
-            // Soft large radial glow centered at the bottom half to match the red glow in the screenshots
-            RadialGradient(
-                gradient: Gradient(colors: [Color.flintRed.opacity(0.32), Color.clear]),
-                center: .center,
-                startRadius: 10,
-                endRadius: 420
             )
-            .offset(y: 80)
-            .ignoresSafeArea()
-            
-            content
-        }
     }
 }
 
@@ -27,17 +60,17 @@ struct GlassCardModifier: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.flintGlass)
                     #if os(iOS)
                     .background(
-                        VisualEffectBlur(blurStyle: .systemUltraThinMaterialDark)
+                        VisualEffectBlur(blurStyle: .systemUltraThinMaterial)
                             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     )
                     #endif
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.flintCardBorder, lineWidth: 1)
             )
     }
 }
