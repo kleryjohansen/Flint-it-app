@@ -197,10 +197,9 @@ struct ActiveWorkoutView: View {
             VStack(spacing: 16) {
                 // Top HUD status indicator
                 HStack(spacing: 8) {
-                    Circle()
-                        .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                        .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
+                    Image(systemName: watchSession.isWatchConnected ? "applewatch.radiowaves.left.and.right" : "exclamationmark.applewatch")
+                        .font(.system(size: 13))
+                        .foregroundColor(watchSession.isWatchConnected ? Color.green : Color.orange)
                     
                     Text(watchSession.isWatchConnected ? "Watch is connected" : "Please connect to Apple Watch")
                         .font(.system(size: 11, weight: .bold))
