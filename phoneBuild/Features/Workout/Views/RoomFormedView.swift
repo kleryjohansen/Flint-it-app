@@ -1,4 +1,5 @@
 import SwiftUI
+import MultipeerConnectivity
 
 // MARK: - Badge Style
 
@@ -22,9 +23,7 @@ struct RoomFormedView: View {
             // Header (Lobby Title with Chevron Left back button to exit)
             HStack {
                 Button(action: {
-                    withAnimation {
-                        viewModel.fullCleanup()
-                    }
+                    viewModel.activeAlert = .leaveConfirmation
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.bold())
@@ -50,6 +49,35 @@ struct RoomFormedView: View {
 
 
                     
+                    // Live Proximity Range Banner
+                    let dist = viewModel.currentNearbyDistance
+                    if dist > 0 {
+                        HStack(spacing: 12) {
+                            Image(systemName: dist < 2.0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(dist < 2.0 ? Color.green : Color.orange)
+                            
+                            Text(dist < 2.0 ? "Rivals in Range (< 2m)" : "oops jangan jauh2 dari rival kamu")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            Text(String(format: "%.1fm", dist))
+                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                        .padding(14)
+                        .background(dist < 2.0 ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(dist < 2.0 ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                        )
+                        .padding(.top, 16)
+                        .transition(.slide.combined(with: .opacity))
+                    }
+
                     // Partner Watch Warning Banner
                     if !viewModel.partnerWatchConnected {
                         HStack(spacing: 12) {
@@ -70,77 +98,50 @@ struct RoomFormedView: View {
                             RoundedRectangle(cornerRadius: 16)
                                 .stroke(Color.orange.opacity(0.35), lineWidth: 1)
                         )
-                        .padding(.top, 16)
+                        .padding(.top, 8)
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
                     
 
-                    // SECTION 1: Who's in
+                    // SECTION 1: Who's in (Dynamic Lobby - Supports up to 8 peers maximum)
+                    let connectedPeers = viewModel.multipeerManager?.session.connectedPeers ?? []
+                    let totalCount = min(connectedPeers.count + 1, 8)
+                    
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Who's in (2)")
+                        Text("Who's in (\(totalCount)/8)")
                             .font(.subheadline).bold()
-                            .foregroundColor(Color("appSecondaryLabel")) // P1-01
+                            .foregroundColor(Color("appSecondaryLabel"))
                             .tracking(1)
                             .padding(.horizontal, 4)
 
                         VStack(spacing: 12) {
-                            if viewModel.isHost {
-                                // Current User is Host, Partner is Guest
-                                LobbyUserRow(
-                                    name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
-                                    isCurrentUser: true,
-                                    badgeText: "Host",
-                                    badgeColor: Color("appGlassBorder"),
-                                    badgeTextColor: Color("appSecondaryLabel"),
-                                    badgeStyle: .solid
-                                )
-                                
-                                LobbyUserRow(
-                                    name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
-                                    isCurrentUser: false,
-                                    badgeText: "Ready",
-                                    badgeColor: Color("appPrimary"),
-                                    badgeTextColor: Color("appPrimary"),
-                                    badgeStyle: .outline
-                                )
-                            } else {
-                                // Partner is Host, Current User is Guest
-                                LobbyUserRow(
-                                    name: viewModel.currentRoom?.partnerName ?? "Erling Antetokounmpo",
-                                    isCurrentUser: false,
-                                    badgeText: "Host",
-                                    badgeColor: Color("appGlassBorder"),
-                                    badgeTextColor: Color("appSecondaryLabel"),
-                                    badgeStyle: .solid
-                                )
-                                
-                                LobbyUserRow(
-                                    name: UserDefaults.standard.string(forKey: "savedUsername") ?? "Kring Blesd",
-                                    isCurrentUser: true,
-                                    badgeText: "Ready",
-                                    badgeColor: Color("appPrimary"),
-                                    badgeTextColor: Color("appPrimary"),
-                                    badgeStyle: .outline
-                                )
+                            // Host
+                            LobbyUserRow(
+                                name: viewModel.isHost ? (UserDefaults.standard.string(forKey: "savedUsername") ?? "Host") : (viewModel.currentRoom?.partnerName ?? "Host"),
+                                isCurrentUser: viewModel.isHost,
+                                badgeText: "Host",
+                                badgeColor: Color("appGlassBorder"),
+                                badgeTextColor: Color("appSecondaryLabel"),
+                                badgeStyle: .solid
+                            )
+                            
+                            // Connected Guest/Rival peers (max 7 guests + 1 host = 8 total)
+                            ForEach(connectedPeers.prefix(7), id: \.self) { peer in
+                                let isMe = peer == viewModel.multipeerManager?.peerID
+                                if !isMe {
+                                    LobbyUserRow(
+                                        name: peer.displayName,
+                                        isCurrentUser: false,
+                                        badgeText: "Rival",
+                                        badgeColor: Color("appPrimary"),
+                                        badgeTextColor: Color("appPrimary"),
+                                        badgeStyle: .outline
+                                    )
+                                }
                             }
                         }
                     }
-                    .padding(.top, 20)
-
-                    // SECTION 2: Invite more mates
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Invite more mates")
-                            .font(.subheadline).bold()
-                            .foregroundColor(Color("appSecondaryLabel")) // P1-01
-                            .tracking(1)
-                            .padding(.horizontal, 4)
-
-                        VStack(spacing: 12) {
-                            ForEach(nearbyMates, id: \.self) { name in
-                                LobbyInviteRow(name: name)
-                            }
-                        }
-                    }
+                    .padding(.top, 12)
                 }
                 .padding(.horizontal, 24)
             }

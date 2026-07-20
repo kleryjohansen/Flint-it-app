@@ -8,9 +8,6 @@ struct ProfileView: View {
         UserDefaults.standard.string(forKey: "savedUsername") ?? "Nearfit Athlete"
     }
 
-    private var email: String {
-        UserDefaults.standard.string(forKey: "savedEmail") ?? "athlete@nearfit.com"
-    }
 
     // Calculated statistics
     private var totalChallenges: Int {
@@ -54,10 +51,6 @@ struct ProfileView: View {
                     Text(username)
                         .font(.title3.bold())
                         .foregroundColor(Color("appLabel"))
-
-                    Text(email)
-                        .font(.subheadline)
-                        .foregroundColor(Color("appSecondaryLabel"))
                 }
             }
             .padding(.top, 24)

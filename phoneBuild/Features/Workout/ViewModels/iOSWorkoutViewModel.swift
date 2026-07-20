@@ -10,46 +10,67 @@ import AudioToolbox
 
 class AudioManager: NSObject {
     static let shared = AudioManager()
-    private let synthesizer = AVSpeechSynthesizer()
+    private var audioPlayer: AVAudioPlayer?
     
     override init() {
         super.init()
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .voicePrompt, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
         try? AVAudioSession.sharedInstance().setActive(true)
     }
     
     func playVictory() {
-        AudioServicesPlaySystemSound(1025) // success/chime
-        let utterance = AVSpeechUtterance(string: "Victory! You won the challenge!")
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = 0.5
-        synthesizer.speak(utterance)
+        playSound(name: "winningSound")
     }
     
     func playDefeat() {
-        AudioServicesPlaySystemSound(1053) // alert/fail
-        let utterance = AVSpeechUtterance(string: "Defeat! You lost the challenge.")
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = 0.5
-        synthesizer.speak(utterance)
+        playSound(name: "defeatSound")
     }
     
     func playSoloComplete() {
-        AudioServicesPlaySystemSound(1025)
-        let utterance = AVSpeechUtterance(string: "Workout completed! Great job!")
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = 0.5
-        synthesizer.speak(utterance)
+        playSound(name: "winningSound")
+    }
+    
+    private func playSound(name: String) {
+        if let asset = NSDataAsset(name: name) {
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+                try AVAudioSession.sharedInstance().setActive(true)
+                
+                audioPlayer = try AVAudioPlayer(data: asset.data)
+                audioPlayer?.numberOfLoops = 0
+                audioPlayer?.volume = 1.0
+                audioPlayer?.play()
+                print("[iOS] Successfully playing sound asset: \(name)")
+            } catch {
+                print("[iOS] Error playing sound asset: \(error.localizedDescription)")
+            }
+        } else {
+            print("[iOS] Sound asset not found in catalog: \(name)")
+        }
+    }
+}
+
+public enum ActiveAlert: Identifiable {
+    case distanceDisconnect
+    case rivalLeft
+    case leaveConfirmation
+    
+    public var id: String {
+        switch self {
+        case .distanceDisconnect: return "distanceDisconnect"
+        case .rivalLeft: return "rivalLeft"
+        case .leaveConfirmation: return "leaveConfirmation"
+        }
     }
 }
 
 public class iOSWorkoutViewModel: NSObject, ObservableObject {
+    @Published public var activeAlert: ActiveAlert? = nil
+    
     @Published var appState: AppState = .home {
         didSet {
             if appState == .activeWorkout {
-                startLocalWorkoutTimer()
-                startRealTimeHealthKitQueries()
-                startCloudKitSyncTimer()
+                startCountdown()
             } else if appState == .home || appState == .results {
                 stopLocalWorkoutTimer()
                 stopRealTimeHealthKitQueries()
@@ -94,6 +115,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var localSpeed: Double = 0.0
     @Published public var localElevation: Double = 0.0
     
+    // Proximity logic properties
+    @Published public var currentNearbyDistance: Double = 0.0
+    @Published public var showDistanceWarning: Bool = false
+
+    
     @Published public var partnerSteps: Double = 0.0
     @Published public var partnerSpeed: Double = 0.0
     @Published public var partnerElevation: Double = 0.0
@@ -122,6 +148,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private var elapsedSeconds: Int = 0
     private var lastWatchMessageTime: Date?
     
+    // Workout start countdown
+    @Published public var countdownSeconds: Int = -1
+    private var countdownTimer: Timer?
+    
     // Token exchange state
     private var hasSentOwnToken = false
     private var pendingPeerToken: Data?
@@ -134,8 +164,14 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         setupWatchObserving()
         loadPastWorkoutsLocally()
         
-        // Request all permissions sequentially at start
-        requestAllPermissions()
+        let hasPresented = UserDefaults.standard.bool(forKey: "hasPresentedPermissions")
+        if !hasPresented {
+            requestAllPermissions()
+        } else {
+            if HKHealthStore.isHealthDataAvailable() {
+                fetchHealthKitWorkouts()
+            }
+        }
     }
     
     private func setupWatchObserving() {
@@ -275,13 +311,15 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     public func requestAllPermissions() {
         requestNearbyInteractionPermission { [weak self] in
             self?.requestHealthKitAuthorization {
-                self?.requestLocalNetworkPermission()
+                self?.requestLocalNetworkPermission {
+                    UserDefaults.standard.set(true, forKey: "hasPresentedPermissions")
+                }
             }
         }
     }
     
     private func requestNearbyInteractionPermission(completion: @escaping () -> Void) {
-        guard NISession.isSupported else {
+        guard NISession.deviceCapabilities.supportsDirectionMeasurement || NISession.deviceCapabilities.supportsPreciseDistanceMeasurement else {
             completion()
             return
         }
@@ -324,7 +362,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         }
     }
     
-    private func requestLocalNetworkPermission() {
+    private func requestLocalNetworkPermission(completion: @escaping () -> Void = {}) {
         // Start multipeer browsing briefly to trigger Local Network dialog
         multipeerManager?.startBrowsing()
         
@@ -332,6 +370,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             if self.appState != .searching {
                 self.multipeerManager?.stopBrowsing()
             }
+            completion()
         }
     }
     
@@ -408,6 +447,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let challenge = try? JSONDecoder().decode(WorkoutChallenge.self, from: payload) {
                     DispatchQueue.main.async {
                         self.receivedChallenge = challenge
+                        self.acceptChallenge()
                     }
                 }
             case .acceptChallenge:
@@ -418,6 +458,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             case .endWorkout:
                 DispatchQueue.main.async {
                     self.endWorkoutNatively()
+                }
+            case .peerLeftRoom:
+                DispatchQueue.main.async {
+                    self.activeAlert = .rivalLeft
+                    self.fullCleanup()
+                    self.appState = .home
                 }
             case .watchStatus:
                 if let payloadObj = try? JSONDecoder().decode(WatchStatusPayload.self, from: payload) {
@@ -480,13 +526,35 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             // Sync live distance to Watch
             self.syncDistanceToWatch(Float(distance))
             
-            // Saat jarak < 2.0 meter, ubah appState = .room
-            guard distance < 2.0, self.currentRoom == nil else { return }
-            let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
-            
             DispatchQueue.main.async {
-                self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
-                self.appState = .room
+                self.currentNearbyDistance = distance
+                
+                // If the user has already entered the lobby/workout session
+                // Proximity distance check is ONLY active in the lobby (.room) before the match starts!
+                if self.appState == .room {
+                    if distance < 2.0 {
+                        self.showDistanceWarning = false
+                    } else if distance >= 3.0 && distance <= 8.0 {
+                        self.showDistanceWarning = true
+                    } else if distance > 8.0 {
+                        self.showDistanceWarning = false
+                        self.activeAlert = .distanceDisconnect
+                        
+                        // Automatically disconnect and go back to home
+                        self.fullCleanup()
+                        self.appState = .home
+                    }
+                } else if self.appState == .navigating {
+                    // Not in the lobby yet: if they get < 2.0 meters, enter the lobby
+                    if distance < 2.0 {
+                        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                        self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
+                        self.appState = .room
+                    }
+                } else {
+                    // During active workout or other screens, they can go as far as they want!
+                    self.showDistanceWarning = false
+                }
             }
         }
 
@@ -577,6 +645,20 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         print("[ViewModel] Both tokens exchanged, configuring NI session")
         niManager.handleReceivedToken(peerTokenData)
+    }
+
+    public func leaveLobby() {
+        let connectedCount = multipeerManager?.session.connectedPeers.count ?? 0
+        if connectedCount == 1 {
+            // Exactly 2 people (Host + 1 Guest). Send peerLeftRoom notification to the rival
+            let message = MultipeerMessage(type: .peerLeftRoom, payload: Data())
+            if let data = try? JSONEncoder().encode(message) {
+                multipeerManager?.sendData(data)
+            }
+        }
+        
+        fullCleanup()
+        appState = .home
     }
 
     /// Single entry point untuk cleanup. Dipanggil dari View.
@@ -806,6 +888,66 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private func stopLocalWorkoutTimer() {
         activeWorkoutTimer?.invalidate()
         activeWorkoutTimer = nil
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        countdownSeconds = -1
+    }
+    
+    private func startCountdown() {
+        // Reset timers and countdown state
+        activeWorkoutTimer?.invalidate()
+        activeWorkoutTimer = nil
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        
+        elapsedSeconds = 0
+        heartRate = 0.0
+        watchCalories = 0.0
+        lastWatchMessageTime = nil
+        formatCountdownText(seconds: 0)
+        localProgress = 0.0
+        localDistance = 0.0
+        localCalories = 0.0
+        localSteps = 0.0
+        localSpeed = 0.0
+        localElevation = 0.0
+        
+        countdownSeconds = 3
+        triggerCountdownHaptic(isFinal: false)
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if self.countdownSeconds > 1 {
+                    self.countdownSeconds -= 1
+                    self.triggerCountdownHaptic(isFinal: false)
+                } else if self.countdownSeconds == 1 {
+                    self.countdownSeconds = 0 // GO!
+                    self.triggerCountdownHaptic(isFinal: true)
+                    
+                    // Actually start workout tracking
+                    self.startLocalWorkoutTimer()
+                    self.startRealTimeHealthKitQueries()
+                    self.startCloudKitSyncTimer()
+                } else {
+                    self.countdownSeconds = -1
+                    self.countdownTimer?.invalidate()
+                    self.countdownTimer = nil
+                }
+            }
+        }
+    }
+    
+    private func triggerCountdownHaptic(isFinal: Bool) {
+        #if os(iOS)
+        if isFinal {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        } else {
+            let generator = UIImpactFeedbackGenerator(style: .heavy)
+            generator.impactOccurred()
+        }
+        #endif
     }
     
     private func isWatchConnectedAndSendingData() -> Bool {
@@ -868,7 +1010,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         Task {
             let targetValue = self.selectedChallenge?.goalValue ?? self.receivedChallenge?.goalValue ?? 1.0
             let metricType = self.selectedChallenge?.metricType ?? self.receivedChallenge?.metricType ?? "distance"
-            let targetInUnits = metricType == "distance" ? (targetValue * 1000.0) : targetValue
+            let _ = metricType == "distance" ? (targetValue * 1000.0) : targetValue
             let localVal = metricType == "distance" ? localDistance : localCalories
             await CloudKitService.shared.updateWorkoutProgress(
                 roomID: roomID,
