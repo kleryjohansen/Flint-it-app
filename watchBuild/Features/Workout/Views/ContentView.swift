@@ -149,10 +149,6 @@ struct WatchWorkoutView: View {
             }
 
             Spacer()
-
-            Text(Date(), style: .time)
-                .font(.system(size: 14, weight: .regular, design: .rounded))
-                .foregroundColor(.white.opacity(0.9))
         }
     }
 }
