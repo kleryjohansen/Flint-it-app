@@ -6,11 +6,14 @@ struct watchpairworkoutApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                ContentView()
-            } else {
-                OnboardingView()
+            Group {
+                if hasCompletedOnboarding {
+                    ContentView()
+                } else {
+                    OnboardingView()
+                }
             }
+            .preferredColorScheme(.dark)
         }
     }
 }
