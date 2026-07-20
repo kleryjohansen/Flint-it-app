@@ -198,9 +198,9 @@ struct ActiveWorkoutView: View {
                 // Top HUD: Challenge name & status
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(Color.green)
+                        .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
                         .frame(width: 10, height: 10)
-                        .shadow(color: .green.opacity(0.8), radius: 4)
+                        .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
                     
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
