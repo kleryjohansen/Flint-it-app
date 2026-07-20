@@ -163,77 +163,86 @@ struct WatchWorkoutResultView: View {
     @ObservedObject var viewModel: WatchWorkoutViewModel
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                // Central Trophy / Clapping badge with rays
-                ZStack {
-                    Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100, height: 100)
-                        .opacity(0.85)
-                    
+        ZStack {
+            Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+            
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 8) {
+                    // Central Trophy / Clapping badge with rays
                     ZStack {
-                        Circle()
-                            .fill(Color("appPrimary"))
-                            .frame(width: 50, height: 50)
-                            .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
+                        Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .opacity(0.85)
                         
-                        if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white)
-                        } else {
-                            Image(systemName: "hands.clap.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white)
+                        ZStack {
+                            Circle()
+                                .fill(Color("appPrimary"))
+                                .frame(width: 50, height: 50)
+                                .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
+                            
+                            if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
+                                Image(systemName: "trophy.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.white)
+                            } else {
+                                Image(systemName: "hands.clap.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
-                }
-                .frame(height: 100)
-                
-                VStack(spacing: 2) {
-                    if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
-                        Text("Congratulations!")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("You've just won")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.6))
-                    } else {
-                        Text("Try again buddy!")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("Nice try on")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.6))
+                    .frame(height: 100)
+                    
+                    VStack(spacing: 2) {
+                        if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
+                            Text("Congratulations!")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("You've just won")
+                                .font(.system(size: 10))
+                                .foregroundColor(.white.opacity(0.6))
+                        } else {
+                            Text("Try again buddy!")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("Nice try on")
+                                .font(.system(size: 10))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                        
+                        Text("1km sprint • \(viewModel.activeSport)")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(Color("appPrimary"))
+                            .multilineTextAlignment(.center)
                     }
                     
-                    Text("1km sprint • \(viewModel.activeSport)")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(Color("appPrimary"))
-                        .multilineTextAlignment(.center)
-                }
-                
-                Button(action: {
-                    withAnimation {
-                        viewModel.workoutResult = nil
-                        WatchWorkoutService.shared.workoutResult = nil
+                    Button(action: {
+                        withAnimation {
+                            viewModel.workoutResult = nil
+                            WatchWorkoutService.shared.workoutResult = nil
+                        }
+                    }) {
+                        Text("Done")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
                     }
-                }) {
-                    Text("Done")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
+                    .frame(height: 32)
+                    .background(Color.white.opacity(0.12))
+                    .clipShape(Capsule())
+                    .padding(.top, 4)
                 }
-                .frame(height: 32)
-                .background(Color.white.opacity(0.12))
-                .clipShape(Capsule())
-                .padding(.top, 4)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 8)
             }
-            .padding(.horizontal, 6)
-            .padding(.bottom, 8)
         }
-        .background(Color.black.ignoresSafeArea())
     }
 }
 
