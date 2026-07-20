@@ -1,8 +1,17 @@
 {
   "images" : [
     {
+      "filename" : "bgifhome.png",
       "idiom" : "universal",
-      "filename": "bgifhome.png"
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {
