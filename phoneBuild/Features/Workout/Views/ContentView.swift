@@ -141,37 +141,42 @@ struct ActiveWorkoutView: View {
 
             VStack(spacing: 16) {
                 // Top HUD: Challenge name & subtitle
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 28, height: 28)
+                    .padding(.top, 80)
                 VStack(spacing: 4) {
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.largeTitle .weight(.bold))
+                            .foregroundStyle(.primary)
                         
                         Text("Fastest to finish \(String(format: "%.0f", ch.goalValue))\(isDistanceChallenge ? "km" : "") wins")
                             .font(.system(size: 14))
                             .foregroundColor(.white.opacity(0.8))
                     } else {
                         Text("Workout • Running")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.largeTitle .weight(.bold))
+                            .foregroundStyle(.primary)
                         Text("Fastest to finish wins")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.8))
+                            .font(.body)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.top, 40)
+                .padding(.bottom, 32)
                 
                 // 1. Time Display Card
                 HStack {
                     Text(viewModel.countdownText)
-                        .font(.system(size: 56, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundStyle(.primary)
                     Spacer()
                 }
-                .padding(20)
-                .background(.ultraThinMaterial)
-                .cornerRadius(20)
-                .padding(.horizontal, 24)
+                .padding(16)
+//                .background(.ultraThinMaterial)
+//                .cornerRadius(20)
+                .glassEffect(in: .rect(cornerRadius: 24))
+                .padding(.horizontal, 16)
                 
                 // 2. Distance Card
                 VStack(alignment: .leading, spacing: 12) {
@@ -179,14 +184,14 @@ struct ActiveWorkoutView: View {
                         ZStack {
                             Circle()
                                 .fill(Color.flintRed)
-                                .frame(width: 32, height: 32)
+                                .frame(width: 44, height: 44)
                             Image(systemName: "figure.run")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.body)
+                                .foregroundStyle(.primary)
                         }
                         Text("Distance")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
                     
                     Text("\(distanceText)")
@@ -194,37 +199,35 @@ struct ActiveWorkoutView: View {
                         .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-                .background(.ultraThinMaterial)
-                .cornerRadius(20)
-                .padding(.horizontal, 24)
+                .padding(16)
+                .glassEffect(in: .rect(cornerRadius: 24))
+                .padding(.horizontal, 16)
                 
                 // 3. Pace and Heartrate (Bottom Row)
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     // Pace Card
                     VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 12) {
                             ZStack {
                                 Circle()
                                     .fill(Color.flintRed)
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: "speedometer")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "powermeter")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
                             }
                             Text("Pace")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(.headline.weight( .semibold))
+                                .foregroundStyle(.secondary)
                         }
                         
                         Text(viewModel.avgPaceText)
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.title.weight(.bold))
                             .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
-                    .background(Color.black.opacity(0.4))
-                    .cornerRadius(20)
+                    .glassEffect(in: .rect(cornerRadius: 24))
                     
                     // Heartrate Card
                     VStack(alignment: .leading, spacing: 12) {
@@ -232,24 +235,23 @@ struct ActiveWorkoutView: View {
                             ZStack {
                                 Circle()
                                     .fill(Color.flintRed)
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 44, height: 44)
                                 Image(systemName: "heart.fill")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
                             }
                             Text("Heartrate")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(.headline.weight( .semibold))
+                                .foregroundStyle(.secondary)
                         }
                         
                         Text("\(Int(liveHR)) Bpm")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.title.weight(.bold))
                             .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
-                    .background(Color.black.opacity(0.4))
-                    .cornerRadius(20)
+                    .glassEffect(in: .rect(cornerRadius: 24))
                 }
                 .padding(.horizontal, 24)
                 
@@ -265,7 +267,7 @@ struct ActiveWorkoutView: View {
                                 .frame(width: 24, height: 24)
                             Text("1")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.secondary)
                         }
                         
                         GeometryReader { geometry in
@@ -314,16 +316,16 @@ struct ActiveWorkoutView: View {
                             
                             Text("\(Int(viewModel.partnerProgress * 100))%")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
+                                .foregroundStyle(.secondary)
                                 .frame(width: 40, alignment: .trailing)
                         }
                     }
                 }
-                .padding(24)
-                .background(.ultraThinMaterial)
-                .cornerRadius(24)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
+                .glassEffect(in: .rect(cornerRadius: 24))
                 .padding(.horizontal, 24)
-                .padding(.bottom, 32)
+                .padding(.bottom, 70)
             }
             
                         // Countdown Overlay
