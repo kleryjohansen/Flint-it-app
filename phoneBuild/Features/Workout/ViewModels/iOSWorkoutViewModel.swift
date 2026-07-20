@@ -54,12 +54,14 @@ public enum ActiveAlert: Identifiable {
     case distanceDisconnect
     case rivalLeft
     case leaveConfirmation
+    case rematchPrompt
     
     public var id: String {
         switch self {
         case .distanceDisconnect: return "distanceDisconnect"
         case .rivalLeft: return "rivalLeft"
         case .leaveConfirmation: return "leaveConfirmation"
+        case .rematchPrompt: return "rematchPrompt"
         }
     }
 }
@@ -145,7 +147,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     
     // Local Fallback Workout Timer
     private var activeWorkoutTimer: Timer?
-    private var elapsedSeconds: Int = 0
+    @Published public var elapsedSeconds: Int = 0
     private var lastWatchMessageTime: Date?
     
     // Workout start countdown
@@ -454,6 +456,14 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 DispatchQueue.main.async {
                     self.appState = .activeWorkout
                     self.notifyWatchToStartWorkout()
+                }
+            case .rematchRequest:
+                DispatchQueue.main.async {
+                    self.activeAlert = .rematchPrompt
+                }
+            case .acceptRematch:
+                DispatchQueue.main.async {
+                    self.goToRematchSetup()
                 }
             case .endWorkout:
                 DispatchQueue.main.async {
@@ -1077,8 +1087,39 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         }
     }
     
-    func rematch() {
-        appState = .workoutSetup
+    public func sendRematchRequest() {
+        print("[iOS] Sending rematch request to partner...")
+        let message = MultipeerMessage(type: .rematchRequest, payload: Data())
+        if let encoded = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(encoded)
+        }
+    }
+    
+    public func acceptRematchRequest() {
+        print("[iOS] Accepting rematch request and notifying partner...")
+        let message = MultipeerMessage(type: .acceptRematch, payload: Data())
+        if let encoded = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(encoded)
+        }
+        goToRematchSetup()
+    }
+    
+    private func goToRematchSetup() {
+        DispatchQueue.main.async {
+            self.activeAlert = nil
+            // Reset active workout metrics
+            self.partnerProgress = 0.0
+            self.partnerDistance = 0.0
+            self.partnerCalories = 0.0
+            self.watchCalories = 0.0
+            self.heartRate = 0.0
+            self.countdownText = "00:00"
+            self.selectedChallenge = nil
+            self.receivedChallenge = nil
+            
+            // Route based on role: host goes to workoutSetup, guest goes to room formed
+            self.appState = self.isHost ? .workoutSetup : .room
+        }
     }
     
     public func skipProximityAndGoToRoom() {
