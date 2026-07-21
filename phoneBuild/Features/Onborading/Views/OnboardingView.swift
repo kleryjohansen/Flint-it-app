@@ -21,17 +21,17 @@ struct OnboardingView: View {
         OnboardingPage(
             title: "Ride Without Limits",
             description: "Discover cycling partners within your range. Challenge nearby friends and track every route you take. It's time to go further with Nearfit.",
-            imageName: "cycling"
+            imageName: "onboardingBgdCycling"
         ),
         OnboardingPage(
             title: "Never Run Alone",
             description: "Find local runners for friendly matches. Track your distance and pace in real-time while creating a fresh and exciting experience with Nearfit.",
-            imageName: "run"
+            imageName: "onboardingBgRunning"
         ),
         OnboardingPage(
             title: "Dive In Together",
             description: "Find swimming partners at your local pool. Challenge nearby swimmers to friendly matches and track every lap you swim with Nearfit.",
-            imageName: "swim"
+            imageName: "onboardingBgSwimming"
         )
     ]
 
@@ -51,9 +51,15 @@ struct OnboardingView: View {
                                 .frame(width: geometry.size.width, height: geometry.size.height)
                                 .clipped()
                                 
-                            // Gradient
+                            // Gradient overlay for better text readability
+                            Rectangle()
+                                .fill(.thinMaterial)
+                                .frame(height: 450)
+                                .mask {
+                                    LinearGradient(colors: [Color.black, Color.black, Color.black, Color.black.opacity(0)], startPoint: .bottom, endPoint: .top)
+                                }
                             LinearGradient(
-                                colors: [.clear, .black.opacity(0.4), .black.opacity(0.95), .black],
+                                colors: [.clear, .black.opacity(0.5), .black.opacity(0.9)],
                                 startPoint: .center,
                                 endPoint: .bottom
                             )
@@ -61,13 +67,13 @@ struct OnboardingView: View {
                             // Text Container
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(page.title)
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .minimumScaleFactor(0.8)
+                                    .font(.title .weight(.bold))
+                                    .foregroundStyle(.primary)
+                                    //.minimumScaleFactor(0.8)
                                 
                                 Text(page.description)
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.white.opacity(0.8))
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
                                     .lineSpacing(4)
                                     // Fix: let wrapping work naturally without fixedSize horizontal forces
                                     .fixedSize(horizontal: false, vertical: true)
@@ -188,7 +194,7 @@ struct ProfileSetupView: View {
             VStack(spacing: 8) {
                 Text("One last step")
                     .font(.title2.bold())
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text("Set your name and photo so partners can recognise you.")
