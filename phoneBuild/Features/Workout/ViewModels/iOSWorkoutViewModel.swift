@@ -153,6 +153,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     
     // Proximity logic properties
     @Published public var distances: [MCPeerID: Double] = [:]
+    @Published public var profileImages: [MCPeerID: UIImage] = [:]
     
     public enum RangeStatus { case inRange, far, unknown }
     
@@ -519,6 +520,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 DispatchQueue.main.async {
                     self.goToRematchSetup()
                 }
+            case .profilePhoto:
+                if let image = UIImage(data: payload) {
+                    DispatchQueue.main.async {
+                        self.profileImages[peerID] = image
+                    }
+                }
             case .endWorkout:
                 DispatchQueue.main.async {
                     self.endWorkoutNatively()
@@ -620,6 +627,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
             // Send our watch connection status to the peer
             self.sendWatchStatusToPeer()
+
+            // Send our profile photo to the peer
+            self.sendProfilePhotoToPeer()
         }
 
         niManager.onProximityUpdate = { [weak self] distance in
@@ -1258,6 +1268,16 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 multipeerManager?.sendData(messageData)
                 print("[iOS] Sent watch status to peer: \(isConnected)")
             }
+        }
+    }
+
+    private func sendProfilePhotoToPeer() {
+        guard let image = loadProfileImageFromDisk(),
+              let jpegData = image.jpegData(compressionQuality: 0.7) else { return }
+        let message = MultipeerMessage(type: .profilePhoto, payload: jpegData)
+        if let messageData = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(messageData)
+            print("[iOS] Sent profile photo (\(jpegData.count) bytes) to peer")
         }
     }
     

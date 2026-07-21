@@ -81,6 +81,7 @@ public struct MultipeerMessage: Codable {
         case peerLeftRoom // Inviter or rival left the lobby room
         case rematchRequest // Requesting a rematch
         case acceptRematch // Accepting a rematch request
+        case profilePhoto // User's resized profile photo (JPEG data in payload)
     }
     public let type: MessageType
     public let payload: Data

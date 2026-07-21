@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import MultipeerConnectivity
 
 // MARK: - Badge Style
@@ -144,7 +145,8 @@ struct RoomFormedView: View {
                                             badgeColor: Color(white: 0.25),
                                             badgeTextColor: .white,
                                             badgeStyle: .solid,
-                                            rangeStatus: .inRange
+                                            rangeStatus: .inRange,
+                                            profileImage: loadProfileImageFromDisk()
                                         )
                                         ForEach(viewModel.roomParticipants.prefix(7)) { p in
                                             LobbyUserRow(
@@ -155,7 +157,8 @@ struct RoomFormedView: View {
                                                 badgeTextColor: Color("appRed"),
                                                 badgeStyle: .outline,
                                                 opacity: p.status == .connecting ? 0.5 : 1.0,
-                                                rangeStatus: viewModel.rangeStatus(for: p.id)
+                                                rangeStatus: viewModel.rangeStatus(for: p.id),
+                                                profileImage: viewModel.profileImages[p.id]
                                             )
                                         }
                                     } else {
@@ -168,7 +171,8 @@ struct RoomFormedView: View {
                                             badgeColor: Color(white: 0.25),
                                             badgeTextColor: .white,
                                             badgeStyle: .solid,
-                                            rangeStatus: viewModel.hostPeerID.map { viewModel.rangeStatus(for: $0) } ?? .unknown
+                                            rangeStatus: viewModel.hostPeerID.map { viewModel.rangeStatus(for: $0) } ?? .unknown,
+                                            profileImage: viewModel.hostPeerID.flatMap { viewModel.profileImages[$0] }
                                         )
                                         LobbyUserRow(
                                             name: ownName,
@@ -177,7 +181,8 @@ struct RoomFormedView: View {
                                             badgeColor: Color("appRed"),
                                             badgeTextColor: Color("appRed"),
                                             badgeStyle: .outline,
-                                            rangeStatus: .inRange
+                                            rangeStatus: .inRange,
+                                            profileImage: loadProfileImageFromDisk()
                                         )
                                         ForEach(
                                             viewModel.roomParticipants.filter {
@@ -192,7 +197,8 @@ struct RoomFormedView: View {
                                                 badgeTextColor: Color("appRed"),
                                                 badgeStyle: .outline,
                                                 opacity: p.status == .connecting ? 0.5 : 1.0,
-                                                rangeStatus: viewModel.rangeStatus(for: p.id)
+                                                rangeStatus: viewModel.rangeStatus(for: p.id),
+                                                profileImage: viewModel.profileImages[p.id]
                                             )
                                         }
                                     }
@@ -286,14 +292,13 @@ struct LobbyUserRow: View {
     var badgeStyle: BadgeStyle = .solid
     var opacity: Double = 1.0
     var rangeStatus: iOSWorkoutViewModel.RangeStatus? = nil
+    var profileImage: UIImage? = nil
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: "person.crop.circle.fill")
-                .resizable()
+            avatarView
                 .frame(width: 44, height: 44)
-                .foregroundColor(Color("appPrimary"))
-                .background(Circle().fill(Color("appOverlayDim")))
+                .clipShape(Circle())
 
             Text(isCurrentUser ? "\(name) (You)" : name)
                 .font(.headline)
@@ -341,6 +346,23 @@ struct LobbyUserRow: View {
         case .inRange: return .green
         case .far: return .yellow
         case .unknown: return .red
+        }
+    }
+
+    @ViewBuilder
+    private var avatarView: some View {
+        if let profileImage {
+            Image(uiImage: profileImage)
+                .resizable()
+                .scaledToFill()
+        } else {
+            // Fallback: self = primary red, other = gray
+            ZStack {
+                Circle().fill(isCurrentUser ? Color("appPrimary") : Color(white: 0.4))
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .foregroundColor(.white.opacity(isCurrentUser ? 0.9 : 0.7))
+            }
         }
     }
 }
