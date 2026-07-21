@@ -481,7 +481,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let challenge = try? JSONDecoder().decode(WorkoutChallenge.self, from: payload) {
                     DispatchQueue.main.async {
                         self.receivedChallenge = challenge
-                        self.acceptChallenge()
+                        // Auto-start workout — guest already agreed to host's room
+                        self.appState = .activeWorkout
+                        self.notifyWatchToStartWorkout()
                     }
                 }
             case .acceptChallenge:
@@ -790,22 +792,6 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         }
     }
     
-    public func acceptChallenge() {
-        let message = MultipeerMessage(type: .acceptChallenge, payload: Data())
-        if let messageData = try? JSONEncoder().encode(message) {
-            multipeerManager?.sendData(messageData)
-            self.appState = .activeWorkout
-            notifyWatchToStartWorkout()
-        }
-    }
-    
-    public func declineChallenge() {
-        self.receivedChallenge = nil
-        DispatchQueue.main.async {
-            self.appState = self.isHost ? .workoutSetup : .room
-        }
-    }
-
     // MARK: - Watch Commands
     
     func notifyWatchToStartWorkout() {
