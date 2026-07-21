@@ -319,13 +319,6 @@ struct LobbyUserRow: View {
                 .font(.headline)
                 .foregroundColor(.white)
 
-            if let rangeStatus {
-                Circle()
-                    .fill(rangeDotColor(rangeStatus))
-                    .frame(width: 10, height: 10)
-                    .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
-            }
-
             Spacer()
 
             Group {
@@ -347,6 +340,13 @@ struct LobbyUserRow: View {
                         .background(Capsule().fill(Color.clear))
                         .overlay(Capsule().stroke(badgeColor, lineWidth: 1))
                 }
+            }
+
+            if let rangeStatus {
+                Circle()
+                    .fill(rangeDotColor(rangeStatus))
+                    .frame(width: 12, height: 12)
+                    .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
             }
         }
         .padding(.horizontal, 16)
