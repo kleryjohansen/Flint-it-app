@@ -146,9 +146,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var partnerWatchConnected: Bool = true
     
     // Workout Results and real-time syncing
-    @Published public var partnerProgress: Double = 0.0
-    @Published public var partnerDistance: Double = 0.0
-    @Published public var partnerCalories: Double = 0.0
+    @Published public var partnerProgress: [MCPeerID: Double] = [:]
+    @Published public var partnerDistance: [MCPeerID: Double] = [:]
+    @Published public var partnerCalories: [MCPeerID: Double] = [:]
     
     @Published public var localProgress: Double = 0.0
     @Published public var localDistance: Double = 0.0
@@ -182,9 +182,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var showDistanceWarning: Bool = false
 
     
-    @Published public var partnerSteps: Double = 0.0
-    @Published public var partnerSpeed: Double = 0.0
-    @Published public var partnerElevation: Double = 0.0
+    @Published public var partnerSteps: [MCPeerID: Double] = [:]
+    @Published public var partnerSpeed: [MCPeerID: Double] = [:]
+    @Published public var partnerElevation: [MCPeerID: Double] = [:]
     
     @Published public var avgPaceText: String = "--:--"
     @Published public var workoutResult: WorkoutResult = .solo
@@ -565,23 +565,27 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             case .workoutProgress:
                 if let payloadObj = try? JSONDecoder().decode(WorkoutProgressPayload.self, from: payload) {
                     DispatchQueue.main.async {
-                        self.partnerProgress = payloadObj.progressRatio
+                        self.partnerProgress[peerID] = payloadObj.progressRatio
                         let challenge = self.selectedChallenge ?? self.receivedChallenge
                         if challenge?.metricType == "distance" {
-                            self.partnerDistance = payloadObj.progressValue
+                            self.partnerDistance[peerID] = payloadObj.progressValue
                         } else {
-                            self.partnerCalories = payloadObj.progressValue
+                            self.partnerCalories[peerID] = payloadObj.progressValue
                         }
                         
-                        self.partnerSteps = payloadObj.steps
-                        self.partnerSpeed = payloadObj.speed
-                        self.partnerElevation = payloadObj.elevation
+                        self.partnerSteps[peerID] = payloadObj.steps
+                        self.partnerSpeed[peerID] = payloadObj.speed
+                        self.partnerElevation[peerID] = payloadObj.elevation
                         
                         let ownGoal = challenge?.goalValue ?? 1.0
                         let targetVal = (challenge?.metricType == "distance") ? (ownGoal * 1000.0) : ownGoal
                         let ownProgressVal = (challenge?.metricType == "distance") ? self.localDistance : self.localCalories
                         let ownRatio = targetVal > 0 ? min(ownProgressVal / targetVal, 1.0) : 0.0
-                        self.checkPassingStatus(localProgress: ownRatio, partnerProgress: payloadObj.progressRatio)
+                        
+                        // Cek status khusus progress rival primer untuk passing notif
+                        if peerID == self.primaryConnectedPeer {
+                            self.checkPassingStatus(localProgress: ownRatio, partnerProgress: payloadObj.progressRatio)
+                        }
                     }
                 }
             default:
@@ -682,7 +686,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 } else if self.appState == .navigating {
                     // Not in the lobby yet: if they get < 2.0 meters, enter the lobby
                     if distance < 2.0 {
-                        let partnerName = self.primaryPartnerName ?? "Partner"
+                        let partnerName = self.primaryPartnerName
                         self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
                         self.appState = .room
                     }
@@ -708,6 +712,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 self.distances.removeValue(forKey: peerID)
                 self.profileImages.removeValue(forKey: peerID)
                 self.lastMessageTime.removeValue(forKey: peerID)
+                self.partnerProgress.removeValue(forKey: peerID)
+                self.partnerDistance.removeValue(forKey: peerID)
+                self.partnerCalories.removeValue(forKey: peerID)
+                self.partnerSteps.removeValue(forKey: peerID)
+                self.partnerSpeed.removeValue(forKey: peerID)
+                self.partnerElevation.removeValue(forKey: peerID)
 
                 if self.isHost {
                     // Host: stay di room, tetap advertising agar device lain bisa masuk
@@ -725,6 +735,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         self.distances.removeAll()
                         self.profileImages.removeAll()
                         self.lastMessageTime.removeAll()
+                        self.partnerProgress.removeAll()
+                        self.partnerDistance.removeAll()
+                        self.partnerCalories.removeAll()
+                        self.partnerSteps.removeAll()
+                        self.partnerSpeed.removeAll()
+                        self.partnerElevation.removeAll()
                         self.appState = .home
                     }
                 }
@@ -832,6 +848,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         selectedChallenge = nil
         receivedChallenge = nil
         watchCalories = 0.0
+        partnerProgress.removeAll()
+        partnerDistance.removeAll()
+        partnerCalories.removeAll()
+        partnerSteps.removeAll()
+        partnerSpeed.removeAll()
+        partnerElevation.removeAll()
         appState = .home
 
         print("[ViewModel] Full cleanup done")
@@ -1243,9 +1265,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         DispatchQueue.main.async {
             self.activeAlert = nil
             // Reset active workout metrics
-            self.partnerProgress = 0.0
-            self.partnerDistance = 0.0
-            self.partnerCalories = 0.0
+            self.partnerProgress.removeAll()
+            self.partnerDistance.removeAll()
+            self.partnerCalories.removeAll()
+            self.partnerSteps.removeAll()
+            self.partnerSpeed.removeAll()
+            self.partnerElevation.removeAll()
             self.watchCalories = 0.0
             self.heartRate = 0.0
             self.countdownText = "00:00"
@@ -1258,7 +1283,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     public func skipProximityAndGoToRoom() {
-        let partnerName = self.primaryPartnerName ?? "Partner"
+        let partnerName = self.primaryPartnerName
         DispatchQueue.main.async {
             self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
             self.appState = .room
@@ -1455,25 +1480,27 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 
                 if let workoutData = try? await CloudKitService.shared.fetchWorkoutData(roomID: roomID) {
                     DispatchQueue.main.async {
-                        if self.isHost {
-                            self.partnerProgress = workoutData.guestProgressRatio
-                            self.partnerDistance = workoutData.guestProgressValue
-                            self.partnerCalories = workoutData.guestProgressValue
-                            self.partnerSteps = workoutData.guestSteps
-                            self.partnerSpeed = workoutData.guestSpeed
-                            self.partnerElevation = workoutData.guestElevation
-                            if workoutData.guestFinished && self.appState == .activeWorkout {
-                                self.endWorkoutNatively()
-                            }
-                        } else {
-                            self.partnerProgress = workoutData.hostProgressRatio
-                            self.partnerDistance = workoutData.hostProgressValue
-                            self.partnerCalories = workoutData.hostProgressValue
-                            self.partnerSteps = workoutData.hostSteps
-                            self.partnerSpeed = workoutData.hostSpeed
-                            self.partnerElevation = workoutData.hostElevation
-                            if workoutData.hostFinished && self.appState == .activeWorkout {
-                                self.endWorkoutNatively()
+                        if let peerID = self.primaryConnectedPeer {
+                            if self.isHost {
+                                self.partnerProgress[peerID] = workoutData.guestProgressRatio
+                                self.partnerDistance[peerID] = workoutData.guestProgressValue
+                                self.partnerCalories[peerID] = workoutData.guestProgressValue
+                                self.partnerSteps[peerID] = workoutData.guestSteps
+                                self.partnerSpeed[peerID] = workoutData.guestSpeed
+                                self.partnerElevation[peerID] = workoutData.guestElevation
+                                if workoutData.guestFinished && self.appState == .activeWorkout {
+                                    self.endWorkoutNatively()
+                                }
+                            } else {
+                                self.partnerProgress[peerID] = workoutData.hostProgressRatio
+                                self.partnerDistance[peerID] = workoutData.hostProgressValue
+                                self.partnerCalories[peerID] = workoutData.hostProgressValue
+                                self.partnerSteps[peerID] = workoutData.hostSteps
+                                self.partnerSpeed[peerID] = workoutData.hostSpeed
+                                self.partnerElevation[peerID] = workoutData.hostElevation
+                                if workoutData.hostFinished && self.appState == .activeWorkout {
+                                    self.endWorkoutNatively()
+                                }
                             }
                         }
                         
