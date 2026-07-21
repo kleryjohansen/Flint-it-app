@@ -166,7 +166,8 @@ struct RoomFormedView: View {
                                             badgeText: "Host",
                                             badgeColor: Color(white: 0.25),
                                             badgeTextColor: .white,
-                                            badgeStyle: .solid
+                                            badgeStyle: .solid,
+                                            rangeStatus: .inRange
                                         )
                                         ForEach(viewModel.roomParticipants.prefix(7)) { p in
                                             LobbyUserRow(
@@ -189,7 +190,8 @@ struct RoomFormedView: View {
                                             badgeText: "Host",
                                             badgeColor: Color(white: 0.25),
                                             badgeTextColor: .white,
-                                            badgeStyle: .solid
+                                            badgeStyle: .solid,
+                                            rangeStatus: viewModel.hostPeerID.map { viewModel.rangeStatus(for: $0) } ?? .unknown
                                         )
                                         LobbyUserRow(
                                             name: ownName,
@@ -197,7 +199,8 @@ struct RoomFormedView: View {
                                             badgeText: "Ready",
                                             badgeColor: Color("appRed"),
                                             badgeTextColor: Color("appRed"),
-                                            badgeStyle: .outline
+                                            badgeStyle: .outline,
+                                            rangeStatus: .inRange
                                         )
                                         ForEach(
                                             viewModel.roomParticipants.filter {
