@@ -250,10 +250,19 @@ struct RoomFormedView: View {
             } // End main Vertical
 
             // Floating CTA Button at the absolute bottom
-            VStack {
+            VStack(spacing: 0) {
                 Spacer()
 
                 if viewModel.isHost {
+                    // Gradient fade — content scroll memudar ke arah button
+                    LinearGradient(
+                        colors: [Color.black.opacity(0), Color.black.opacity(0.85)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 120)
+                    .allowsHitTesting(false)
+
                     Button(action: {
                         withAnimation {
                             viewModel.skipConnectionAndGoToSetup()
@@ -266,8 +275,10 @@ struct RoomFormedView: View {
                             .padding(.vertical, 16)
                             .background(Color("appRed"))
                             .clipShape(Capsule())
+                            .shadow(color: Color("appRed").opacity(0.4), radius: 12, y: 6)
                     }
                     .padding(.horizontal, 24)
+                    .padding(.top, 24)
                     .padding(.bottom, 32)
                 }
             }
