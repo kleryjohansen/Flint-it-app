@@ -3,12 +3,10 @@ import PhotosUI
 
 struct ProfileView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
+    // Bug 1 fix: @AppStorage reactive terhadap perubahan UserDefaults
+    @AppStorage("savedUsername") private var username: String = "Nearfit Athlete"
     @State private var profileImage: UIImage? = nil
     @State private var selectedProfileItem: PhotosPickerItem? = nil
-
-    private var username: String {
-        UserDefaults.standard.string(forKey: "savedUsername") ?? "Nearfit Athlete"
-    }
 
     private var totalChallenges: Int {
         viewModel.pastWorkouts.count
@@ -45,7 +43,8 @@ struct ProfileView: View {
             }
         }
         .onAppear {
-            loadLocalProfileImage()
+            // Bug 2 fix: baca dari Documents/profile.jpg
+            profileImage = loadProfileImageFromDisk()
         }
         .onChange(of: selectedProfileItem) { _, newItem in
             Task {
@@ -60,7 +59,7 @@ struct ProfileView: View {
             .scaledToFill()
             .ignoresSafeArea()
     }
-        
+
     private var profileHeader: some View {
         VStack(spacing: 14) {
             ZStack {
@@ -179,13 +178,6 @@ struct ProfileView: View {
         }
     }
 
-    private func loadLocalProfileImage() {
-        if let data = UserDefaults.standard.data(forKey: "savedProfileImageData"),
-           let image = UIImage(data: data) {
-            self.profileImage = image
-        }
-    }
-
     @MainActor
     private func loadSelectedProfileImage(from item: PhotosPickerItem?) async {
         guard let item,
@@ -194,8 +186,9 @@ struct ProfileView: View {
             return
         }
 
+        // Bug 2 fix: simpan ke Documents/profile.jpg, bukan UserDefaults
         profileImage = image
-        UserDefaults.standard.set(data, forKey: "savedProfileImageData")
+        saveProfileImageToDisk(image)
     }
 }
 

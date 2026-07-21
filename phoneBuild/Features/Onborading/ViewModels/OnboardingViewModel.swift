@@ -64,8 +64,9 @@ class OnboardingViewModel: ObservableObject {
             UserDefaults.standard.set(finalName, forKey: "savedUsername")
             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
-            if let image = profileImage, let pngData = image.pngData() {
-                UserDefaults.standard.set(pngData, forKey: "savedProfileImageData")
+            // Simpan foto profile ke Documents/profile.jpg (bukan UserDefaults)
+            if let image = profileImage {
+                saveProfileImageToDisk(image)
             }
 
             // Sync to CloudKit in the background (non-blocking)
@@ -95,4 +96,23 @@ class OnboardingViewModel: ObservableObject {
             }
         }
     }
+}
+
+// MARK: - Disk Storage Helper
+
+func saveProfileImageToDisk(_ image: UIImage) {
+    guard let jpegData = image.jpegData(compressionQuality: 0.5) else { return }
+    let url = profileImageURL()
+    try? jpegData.write(to: url, options: .atomic)
+}
+
+func loadProfileImageFromDisk() -> UIImage? {
+    let url = profileImageURL()
+    guard let data = try? Data(contentsOf: url) else { return nil }
+    return UIImage(data: data)
+}
+
+private func profileImageURL() -> URL {
+    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("profile.jpg")
 }
