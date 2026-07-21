@@ -83,40 +83,6 @@ struct RoomFormedView: View {
                                 .padding(.top, 8)
                             }
 
-                            // GUEST BANNER: Waiting for Host
-                            if !viewModel.isHost {
-                                HStack(spacing: 16) {
-                                    ZStack {
-                                        Circle()
-                                            .stroke(Color("appRed").opacity(0.2), lineWidth: 3.5)
-
-                                        Circle()
-                                            .trim(from: 0, to: 0.75)
-                                            .stroke(Color("appRed"), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                                            .rotationEffect(Angle(degrees: isLoading ? 360 : 0))
-                                            .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isLoading)
-                                            .onAppear { isLoading = true }
-                                    }
-                                    .frame(width: 24, height: 24)
-
-                                    Text("Host picking a sport & challenge...")
-                                        .font(.subheadline)
-                                        .foregroundColor(.white.opacity(0.9))
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 24)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .fill(Color("appRed").opacity(0.08))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                        .stroke(Color("appRed"), lineWidth: 1)
-                                )
-                                .padding(.top, !viewModel.partnerWatchConnected ? 0 : 24)
-                            }
-
                             // SECTION 1: Who's in
                             let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
                             let totalCount: Int = {
@@ -206,6 +172,40 @@ struct RoomFormedView: View {
                                 }
                             }
                             .padding(.top, (!viewModel.isHost) ? 12 : 24)
+
+                            // GUEST BANNER: Waiting for Host (tampil di bawah Who's in)
+                            if !viewModel.isHost {
+                                HStack(spacing: 16) {
+                                    ZStack {
+                                        Circle()
+                                            .stroke(Color("appRed").opacity(0.2), lineWidth: 3.5)
+
+                                        Circle()
+                                            .trim(from: 0, to: 0.75)
+                                            .stroke(Color("appRed"), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                                            .rotationEffect(Angle(degrees: isLoading ? 360 : 0))
+                                            .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isLoading)
+                                            .onAppear { isLoading = true }
+                                    }
+                                    .frame(width: 24, height: 24)
+
+                                    Text("Host picking a sport & challenge...")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.9))
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(Color("appRed").opacity(0.08))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                        .stroke(Color("appRed"), lineWidth: 1)
+                                )
+                                .padding(.top, 12)
+                            }
 
                             // SECTION 2: Invite more nearby (ONLY FOR HOST, jika belum lock, dan ada peer)
                             let foundPeers = (viewModel.multipeerManager?.foundPeers ?? [])
