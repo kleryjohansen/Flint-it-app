@@ -16,7 +16,7 @@ public enum ParticipantStatus {
 
 public struct RoomParticipant: Identifiable, Equatable {
     public let id: MCPeerID
-    public let displayName: String
+    public var displayName: String
     public var status: ParticipantStatus
 
     public init(id: MCPeerID, displayName: String, status: ParticipantStatus) {
