@@ -59,7 +59,7 @@ struct ContentView: View {
                 switch alertType {
                 case .distanceDisconnect:
                     return Alert(
-                        title: Text("Koneksi Terputus"),
+                        title: Text("Lost connection"),
                         message: Text("ur left the match because off disconected from nearby"),
                         dismissButton: .default(Text("OK")) {
                             viewModel.activeAlert = nil
@@ -170,8 +170,8 @@ struct ActiveWorkoutView: View {
             }
             
             // Dark overlay
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
+//            Color.black.opacity(0.55)
+//                .ignoresSafeArea()
 
             // Top & bottom vertical gradient for text readability
             VStack(spacing: 0) {
@@ -196,150 +196,142 @@ struct ActiveWorkoutView: View {
 
             VStack(spacing: 12) {
                 // Top HUD: Challenge name & status
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 10, height: 10)
-                        .shadow(color: .green.opacity(0.8), radius: 4)
-                    
+                VStack {
+                    HStack {
+                        Spacer()
+                        
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
+                                .frame(width: 8, height: 8)
+                                .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
+                            
+                            Text(watchSession.isWatchConnected ? "Watch is connected" : "Please connect to Apple Watch")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .glassEffect(.regular, in: .capsule)
+//                        .shadow(color: Color.black.opacity(0.3), radius: 8, y: 4)
+                        
+                        Spacer()
+                    }
+                    .padding(.top, 80)
+                    .padding(.bottom, 16)
+                }
+                VStack(spacing: 8) {
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
-                            .font(.system(size: 16, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                            .tracking(1)
+                            .font(.largeTitle .weight(.bold))
+                            .foregroundStyle(.primary)
                     } else {
                         Text("Active Match")
-                            .font(.system(size: 16, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                            .tracking(1)
+                            .font(.largeTitle .weight(.bold))
+                            .foregroundStyle(.primary)
                     }
-                }
-                .padding(.top, 56)
-                
-                VStack(spacing: 4) {
-                    if let ch = challenge {
-                        Text("Goal: \(String(format: "%.0f", ch.goalValue))\(isDistanceChallenge ? " km" : "")")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.7))
-                    } else {
-                        Text("Fastest to finish wins")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white.opacity(0.7))
+                    
+                    VStack(spacing: 4) {
+                        if let ch = challenge {
+                            Text("Goal: \(String(format: "%.0f", ch.goalValue))\(isDistanceChallenge ? " km" : "")")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Fastest to finish wins")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    .padding(.bottom, 32)
                 }
-                .padding(.bottom, 8)
                 
                 // 1. Time Display Card
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 38, height: 38)
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.flintRed)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("ELAPSED TIME")
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundColor(.white.opacity(0.5))
-                            .tracking(1.5)
-                        
-                        Text(viewModel.countdownText)
-                            .font(.system(size: 34, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                    }
+                HStack {
+                    Text(viewModel.countdownText)
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundStyle(.primary)
                     Spacer()
                 }
+                .padding(16)
+                .glassEffect(in: .rect(cornerRadius: 24))
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .glassEffect(in: .rect(cornerRadius: 20))
-                .padding(.horizontal, 20)
                 
                 // 2. Distance Card
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 38, height: 38)
-                        Image(systemName: "figure.run")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color.flintRed)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.flintRed)
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "figure.run")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        }
+                        Text("Distance")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
                     
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("DISTANCE")
-                            .font(.system(size: 10, weight: .black))
-                            .foregroundColor(.white.opacity(0.5))
-                            .tracking(1.5)
-                        
-                        Text("\(distanceText)")
-                            .font(.system(size: 34, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
+                    Text("\(distanceText)")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(.white)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .glassEffect(in: .rect(cornerRadius: 24))
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .glassEffect(in: .rect(cornerRadius: 20))
-                .padding(.horizontal, 20)
                 
                 // 3. Pace and Heartrate (Bottom Row)
                 HStack(spacing: 12) {
                     // Pace Card
-                    HStack(spacing: 10) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.08))
-                                .frame(width: 34, height: 34)
-                            Image(systemName: "powermeter")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color.flintRed)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.flintRed)
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "powermeter")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                            }
+                            Text("Pace")
+                                .font(.headline.weight( .semibold))
+                                .foregroundStyle(.secondary)
                         }
                         
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("PACE")
-                                .font(.system(size: 9, weight: .black))
-                                .foregroundColor(.white.opacity(0.5))
-                                .tracking(1.5)
-                            
-                            Text(viewModel.avgPaceText)
-                                .font(.system(size: 20, weight: .black, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
+                        Text(viewModel.avgPaceText)
+                            .font(.title.weight(.bold))
+                            .foregroundColor(.white)
                     }
-                    .padding(12)
-                    .glassEffect(in: .rect(cornerRadius: 20))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .glassEffect(in: .rect(cornerRadius: 24))
                     
                     // Heartrate Card
-                    HStack(spacing: 10) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.08))
-                                .frame(width: 34, height: 34)
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color.flintRed)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.flintRed)
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "heart.fill")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                            }
+                            Text("Heartrate")
+                                .font(.headline.weight( .semibold))
+                                .foregroundStyle(.secondary)
                         }
                         
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("HEARTRATE")
-                                .font(.system(size: 9, weight: .black))
-                                .foregroundColor(.white.opacity(0.5))
-                                .tracking(1.5)
-                            
-                            Text("\(Int(liveHR)) Bpm")
-                                .font(.system(size: 20, weight: .black, design: .rounded))
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
+                        Text("\(Int(liveHR)) Bpm")
+                            .font(.title.weight(.bold))
+                            .foregroundColor(.white)
                     }
-                    .padding(12)
-                    .glassEffect(in: .rect(cornerRadius: 20))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .glassEffect(in: .rect(cornerRadius: 24))
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 16)
                 
                 Spacer()
                 
@@ -407,11 +399,11 @@ struct ActiveWorkoutView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 14)
-                .glassEffect(in: .rect(cornerRadius: 20))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
+                .glassEffect(in: .rect(cornerRadius: 24))
+                .padding(.horizontal, 24)
+                .padding(.bottom, 70)
             }
             
                         // Countdown Overlay
@@ -577,12 +569,9 @@ struct ResultsView: View {
     var body: some View {
         ZStack {
             // Win or Lose Background
-            Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBackground" : "loseBackground")
+            Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBG" : "loseBG")
                 .resizable()
                 .scaledToFill()
-                .ignoresSafeArea()
-            
-            Color.black.opacity(0.65)
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -590,19 +579,19 @@ struct ResultsView: View {
                 VStack(spacing: 4) {
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
                     } else {
                         Text("Workout Complete")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
                     }
                     
                     Text(Date(), style: .date)
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.top, 60)
+                .padding(.top, 80)
                 
                 Spacer()
                 
@@ -616,70 +605,76 @@ struct ResultsView: View {
                         VStack(spacing: 24) {
                             // Circular Badge with rays background
                             ZStack {
-                                Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBackground" : "loseBackground")
+                                Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winCardBg" : "loseCardBg")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 200, height: 200)
-                                    .opacity(0.85)
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+//                                    .opacity(0.85)
+                                    .cornerRadius(32)
+                                
                                 
                                 // Central trophy or clapping hands icon
                                 ZStack {
-                                    Circle()
-                                        .fill(Color("appPrimary"))
-                                        .frame(width: 80, height: 80)
-                                        .shadow(color: Color("appPrimary").opacity(0.4), radius: 8)
-                                    
+//                                    Circle()
+//                                        .fill(Color("appPrimary"))
+//                                        .frame(width: 120, height: 80)
+//                                        .shadow(color: Color("appPrimary").opacity(0.4), radius: 8)
+//                                    
                                     if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
                                         Image(systemName: "trophy.fill")
-                                            .font(.system(size: 36))
+                                            .font(.system(size: 44))
                                             .foregroundColor(.white)
+                                            .padding(24)
+                                            .glassEffect(.regular.tint(Color("appPrimary")))
+                                            .shadow(color: Color("appPrimary").opacity(1), radius: 32)
                                     } else {
                                         Image(systemName: "hands.clap.fill")
                                             .font(.system(size: 36))
                                             .foregroundColor(.white)
+                                            .padding(24)
+                                            .glassEffect(.regular.tint(.black))
+                                            .shadow(color: .black .opacity(0.6), radius: 32)
                                     }
                                 }
                             }
-                            .frame(height: 200)
+//                            .frame(height: 400)
                             
-                            VStack(spacing: 6) {
+                            VStack(spacing: 12) {
                                 if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
                                     Text("Congratulations!")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .font(.largeTitle .weight(.bold))
+                                        .foregroundStyle(.primary)
                                     
                                     Text("You've just won")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .font(.body)
+                                        .foregroundStyle(.secondary)
                                 } else {
                                     Text("Try again buddy!")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .font(.largeTitle .weight(.bold))
+                                        .foregroundStyle(.primary)
                                     
                                     Text("Nice try on")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .font(.body)
+                                        .foregroundStyle(.secondary)
                                 }
                                 
                                 Text(challenge?.challengeName ?? "1km sprint • Run")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(Color("appPrimary"))
+                                    .font(.title2 .bold())
+                                    .foregroundStyle(.primary )
                             }
-                            .padding(.bottom, 20)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
+                        .padding(.bottom, 32)
+                        //                     .padding(.vertical, 32)
                         .background(
-                            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                                .fill(Color.black.opacity(0.8))
                         )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1.5)
-                        )
+                        .glassEffect(in: .rect(cornerRadius: 32))
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 24)
+                    
                     
                     Spacer()
                     
@@ -693,6 +688,7 @@ struct ResultsView: View {
                             .foregroundColor(.white.opacity(0.7))
                     }
                     .padding(.bottom, 48)
+                    Spacer()
                     
                 } else {
                     // Leaderboard / Pod View + Rematch Buttons

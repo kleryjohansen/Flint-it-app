@@ -24,30 +24,37 @@ struct RoomFormedView: View {
             Color.black.ignoresSafeArea()
             
             // Top background image
-            Image("bgifrun") 
+            Image("bgLobby")
                 .resizable()
                 .scaledToFill()
-                .frame(width: UIScreen.main.bounds.width, height: 350)
+//                .frame(width: UIScreen.main.bounds.width, height: 350)
                 .clipped()
                 .mask(LinearGradient(gradient: Gradient(colors: [.black, .black.opacity(0)]), startPoint: .top, endPoint: .bottom))
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header Nav
+                
                 HStack {
+                    var glassStyle: Glass = .regular
+
                     Button(action: {
                         viewModel.activeAlert = .leaveConfirmation
                     }) {
                         Image(systemName: "xmark")
                             .font(.title3.bold())
-                            .foregroundColor(.white)
-                            .padding(12)
-                            .background(Circle().fill(Color.white.opacity(0.15)))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical,6)
+                        // Button Action
                     }
+                    .buttonStyle(.glass(glassStyle))
+                    .controlSize(.regular)
+                    .buttonBorderShape(.automatic)
+                    
                     Spacer()
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.horizontal, 16)
+                .padding(.top, 40)
                 
                 // Title Area
                 VStack(alignment: .leading, spacing: 8) {
@@ -59,7 +66,7 @@ struct RoomFormedView: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)
                 .padding(.top, 60)
                 .padding(.bottom, 24)
 
@@ -227,12 +234,16 @@ struct RoomFormedView: View {
                             .font(.headline)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color("appRed"))
-                            .clipShape(Capsule())
+                            .padding(.vertical, 12)
+//                            .background(Color("appRed"))
+//                            .clipShape(Capsule())
                     }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.regular)
+                    .buttonBorderShape(.automatic)
+                    .tint(.flintRed)
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 70)
                 }
             }
             .ignoresSafeArea(.keyboard)

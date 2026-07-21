@@ -226,17 +226,11 @@ struct DiscoveryView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
-                    )
                     .glassEffect(.regular, in: .capsule)
-                    .shadow(color: Color.black.opacity(0.3), radius: 8, y: 4)
                     
                     Spacer()
                 }
-                .padding(.top, 115)
+                .padding(.top, 96)
 
                 Spacer()
             }

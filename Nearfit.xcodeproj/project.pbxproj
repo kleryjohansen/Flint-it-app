@@ -18,6 +18,8 @@
 		EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE9859FB30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE985C1630050D12007EB100 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE985C0D30050D12007EB100 /* DesignSystem.swift */; };
+		EEF15F32300E80EA0017042D /* NearfitIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = EEF15F31300E80EA0017042D /* NearfitIcon.icon */; };
+		EEF15F33300E80EA0017042D /* NearfitIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = EEF15F31300E80EA0017042D /* NearfitIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +67,7 @@
 		EE9859D12FFFB530007EB100 /* watchBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMetrics.swift; sourceTree = "<group>"; };
 		EE985C0D30050D12007EB100 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		EEF15F31300E80EA0017042D /* NearfitIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = NearfitIcon.icon; sourceTree = "<group>"; };
 		FLINT00100010001FFF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -137,6 +140,7 @@
 				EE1B4B21300619990080CC08 /* FlintColors.swift */,
 				EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */,
 				EE985C0D30050D12007EB100 /* DesignSystem.swift */,
+				EEF15F31300E80EA0017042D /* NearfitIcon.icon */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -256,6 +260,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EEF15F32300E80EA0017042D /* NearfitIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,6 +275,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EEF15F33300E80EA0017042D /* NearfitIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -434,7 +440,7 @@
 		EE9859C82FFFB461007EB100 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -471,7 +477,7 @@
 		EE9859C92FFFB461007EB100 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -508,7 +514,7 @@
 		EE9859DD2FFFB531007EB100 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "watchBuild/watchpairworkout Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -548,7 +554,7 @@
 		EE9859DE2FFFB531007EB100 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "watchBuild/watchpairworkout Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
