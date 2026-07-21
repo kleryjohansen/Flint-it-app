@@ -40,19 +40,22 @@ public final class MultipeerManager: NSObject {
             onFoundPeersChanged?(foundPeers)
         }
     }
-    public private(set) var connectedPeer: MCPeerID?
+    public private(set) var connectedPeers: [MCPeerID] = []
+    public private(set) var connectingPeers: [MCPeerID] = []
     public private(set) var pendingInvitingPeer: MCPeerID?
     public private(set) var invitedPeer: MCPeerID?
     public private(set) var isAdvertising = false
     public private(set) var isBrowsing = false
     public private(set) var browserState: MultipeerBrowserState = .idle
     public private(set) var permissionState: MultipeerPermissionState = .unknown
+    public private(set) var isRoomLocked: Bool = false
 
     @ObservationIgnored private var currentRetryCount = 0
     @ObservationIgnored private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
 
+    @ObservationIgnored public var onPeerConnecting: ((MCPeerID) -> Void)?
     @ObservationIgnored public var onPeerConnected: ((MCPeerID) -> Void)?
-    @ObservationIgnored public var onPeerDisconnected: (() -> Void)?
+    @ObservationIgnored public var onPeerDisconnected: ((MCPeerID) -> Void)?
     @ObservationIgnored public var onDataReceived: ((MultipeerMessage.MessageType, Data, MCPeerID) -> Void)?
     @ObservationIgnored public var onFoundPeersChanged: (([PeerInfo]) -> Void)?
 
@@ -119,6 +122,19 @@ public final class MultipeerManager: NSObject {
     public func stopAll() {
         stopAdvertising()
         stopBrowsing()
+    }
+
+    public func lockRoom() {
+        isRoomLocked = true
+        stopAll()
+        print("[MP] Room locked — discovery stopped")
+    }
+
+    public func unlockRoom() {
+        isRoomLocked = false
+        startAdvertising()
+        startBrowsing()
+        print("[MP] Room unlocked — discovery resumed")
     }
 
     // MARK: - Manual Invite
@@ -188,9 +204,10 @@ public final class MultipeerManager: NSObject {
     }
     
     public func setConnectedPeer(_ peer: MCPeerID) {
-        self.connectedPeer = peer
+        if !connectedPeers.contains(peer) {
+            connectedPeers.append(peer)
+        }
         self.invitedPeer = nil
-        self.stopAll()
         self.onPeerConnected?(peer)
     }
 
@@ -215,7 +232,8 @@ public final class MultipeerManager: NSObject {
         session.disconnect()
         stopAll()
         DispatchQueue.main.async {
-            self.connectedPeer = nil
+            self.connectedPeers.removeAll()
+            self.connectingPeers.removeAll()
             self.invitedPeer = nil
             self.foundPeers.removeAll()
         }
@@ -355,23 +373,31 @@ extension MultipeerManager: MCSessionDelegate {
         case .notConnected:
             print("[MP] Disconnected from: \(peerID.displayName)")
             DispatchQueue.main.async {
-                let wasConnected = self.connectedPeer == peerID
-                if wasConnected { self.connectedPeer = nil }
+                let wasConnected = self.connectedPeers.contains(peerID)
+                self.connectedPeers.removeAll { $0 == peerID }
+                self.connectingPeers.removeAll { $0 == peerID }
                 if self.invitedPeer == peerID { self.invitedPeer = nil }
                 self.foundPeers.removeAll { $0.id == peerID }
-                if wasConnected { self.onPeerDisconnected?() }
+                if wasConnected { self.onPeerDisconnected?(peerID) }
             }
 
         case .connecting:
             print("[MP] Connecting to: \(peerID.displayName)")
+            DispatchQueue.main.async {
+                if !self.connectingPeers.contains(peerID) {
+                    self.connectingPeers.append(peerID)
+                }
+                self.onPeerConnecting?(peerID)
+            }
 
         case .connected:
             print("[MP] Connected to: \(peerID.displayName)")
             DispatchQueue.main.async {
-                self.connectedPeer = peerID
+                if !self.connectedPeers.contains(peerID) {
+                    self.connectedPeers.append(peerID)
+                }
+                self.connectingPeers.removeAll { $0 == peerID }
                 self.invitedPeer = nil
-                // Stop semua — handshake selesai
-                self.stopAll()
                 self.onPeerConnected?(peerID)
             }
 
