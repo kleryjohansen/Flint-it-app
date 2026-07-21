@@ -7,7 +7,6 @@ public enum AppState {
     case foundPartner       // Muncul profil partner
     case navigating         // Layar panah arah (Nearby Interaction)
     case workoutSetup       // Pilih olahraga & challenge
-    case syncing            // Waiting / Countdown sinkronisasi
     case activeWorkout      // Dashboard olahraga berjalan
     case results            // Layar hasil akhir
     case room               // Workout Room Ready!

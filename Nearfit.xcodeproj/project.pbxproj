@@ -440,7 +440,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -455,7 +455,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -477,7 +477,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -492,7 +492,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -514,7 +514,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
@@ -522,14 +522,14 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -554,7 +554,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
@@ -562,14 +562,14 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -590,13 +590,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -609,13 +609,13 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8V4LVBCX83;
+				DEVELOPMENT_TEAM = CJZ2787AMQ;
 				INFOPLIST_KEY_CFBundleDisplayName = wathpairworkout;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need to read your heart rate and active energy burned.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need to update your workouts and active energy burned.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;

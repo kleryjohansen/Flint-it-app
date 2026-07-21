@@ -25,9 +25,6 @@ struct ContentView: View {
                 case .workoutSetup:
                     WorkoutSetupView()
 
-                case .syncing:
-                    ChallengeWaitingView()
-
                 case .foundPartner:
                     Group { Text("Found Partner") }
                         .flintVibrantBackground()
