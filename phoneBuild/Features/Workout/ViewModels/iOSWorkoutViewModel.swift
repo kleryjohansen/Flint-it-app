@@ -152,7 +152,21 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var localElevation: Double = 0.0
     
     // Proximity logic properties
-    @Published public var currentNearbyDistance: Double = 0.0
+    @Published public var distances: [MCPeerID: Double] = [:]
+    
+    public var currentNearbyDistance: Double? {
+        // Distance ke primary partner (untuk backward-compat single card)
+        primaryConnectedPeer.flatMap { distances[$0] }
+    }
+    
+    public enum RangeStatus { case inRange, far, unknown }
+    
+    public func rangeStatus(for peerID: MCPeerID) -> RangeStatus {
+        guard let d = distances[peerID] else { return .unknown }
+        if d < 2.0 { return .inRange }
+        if d <= 8.0 { return .far }
+        return .unknown
+    }
     @Published public var showDistanceWarning: Bool = false
 
     
@@ -620,7 +634,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.syncDistanceToWatch(Float(distance))
             
             DispatchQueue.main.async {
-                self.currentNearbyDistance = distance
+                // NI 1:1 — update distance for the primary partner only.
+                // For additional guests, distances[peerID] stays nil (red dot).
+                if let primary = self.primaryConnectedPeer {
+                    self.distances[primary] = distance
+                }
                 
                 // If the user has already entered the lobby/workout session
                 // Proximity distance check is ONLY active in the lobby (.room) before the match starts!

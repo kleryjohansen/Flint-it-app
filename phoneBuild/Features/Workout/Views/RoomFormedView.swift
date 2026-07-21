@@ -66,8 +66,10 @@ struct RoomFormedView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
 
-                            let dist = viewModel.currentNearbyDistance
-                            if dist > 0 {
+                            let dist = viewModel.currentNearbyDistance ?? 0
+                            let hasDistance = (viewModel.currentNearbyDistance ?? 0) > 0
+
+                            if hasDistance {
                                 HStack(spacing: 12) {
                                     Image(systemName: dist < 2.0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                                         .font(.system(size: 20))
@@ -174,7 +176,8 @@ struct RoomFormedView: View {
                                                 badgeColor: Color("appRed"),
                                                 badgeTextColor: Color("appRed"),
                                                 badgeStyle: .outline,
-                                                opacity: p.status == .connecting ? 0.5 : 1.0
+                                                opacity: p.status == .connecting ? 0.5 : 1.0,
+                                                rangeStatus: viewModel.rangeStatus(for: p.id)
                                             )
                                         }
                                     } else {
@@ -208,7 +211,8 @@ struct RoomFormedView: View {
                                                 badgeColor: Color("appRed"),
                                                 badgeTextColor: Color("appRed"),
                                                 badgeStyle: .outline,
-                                                opacity: p.status == .connecting ? 0.5 : 1.0
+                                                opacity: p.status == .connecting ? 0.5 : 1.0,
+                                                rangeStatus: viewModel.rangeStatus(for: p.id)
                                             )
                                         }
                                     }
@@ -301,6 +305,7 @@ struct LobbyUserRow: View {
     let badgeTextColor: Color
     var badgeStyle: BadgeStyle = .solid
     var opacity: Double = 1.0
+    var rangeStatus: iOSWorkoutViewModel.RangeStatus? = nil
 
     var body: some View {
         HStack(spacing: 16) {
@@ -313,6 +318,13 @@ struct LobbyUserRow: View {
             Text(isCurrentUser ? "\(name) (You)" : name)
                 .font(.headline)
                 .foregroundColor(.white)
+
+            if let rangeStatus {
+                Circle()
+                    .fill(rangeDotColor(rangeStatus))
+                    .frame(width: 10, height: 10)
+                    .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
+            }
 
             Spacer()
 
@@ -342,6 +354,14 @@ struct LobbyUserRow: View {
         .background(Color(white: 0.12))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .opacity(opacity)
+    }
+    
+    private func rangeDotColor(_ status: iOSWorkoutViewModel.RangeStatus) -> Color {
+        switch status {
+        case .inRange: return .green
+        case .far: return .yellow
+        case .unknown: return .red
+        }
     }
 }
 
