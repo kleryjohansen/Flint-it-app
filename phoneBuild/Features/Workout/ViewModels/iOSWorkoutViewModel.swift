@@ -98,10 +98,16 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 stopLocalWorkoutTimer()
                 stopRealTimeHealthKitQueries()
                 stopCloudKitSyncTimer()
+                stopRangeTickTimer()
             } else if appState == .searching {
                 startCloudKitSyncTimer()
             } else {
                 stopCloudKitSyncTimer()
+            }
+            if appState == .room {
+                startRangeTickTimer()
+            } else {
+                stopRangeTickTimer()
             }
         }
     }
@@ -154,13 +160,23 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // Proximity logic properties
     @Published public var distances: [MCPeerID: Double] = [:]
     @Published public var profileImages: [MCPeerID: UIImage] = [:]
+    @Published public var lastMessageTime: [MCPeerID: Date] = [:]
+    @Published public var rangeTick: Date = Date()  // increments to retrigger range status UI
     
     public enum RangeStatus { case inRange, far, unknown }
     
     public func rangeStatus(for peerID: MCPeerID) -> RangeStatus {
-        guard let d = distances[peerID] else { return .unknown }
-        if d < 2.0 { return .inRange }
-        if d <= 8.0 { return .far }
+        // Primary signal: NI distance (akurasi tinggi)
+        if let d = distances[peerID] {
+            if d < 2.0 { return .inRange }
+            if d <= 8.0 { return .far }
+            return .unknown
+        }
+        // Fallback: heartbeat proxy (untuk peer tanpa NI)
+        guard let lastTime = lastMessageTime[peerID] else { return .unknown }
+        let elapsed = Date().timeIntervalSince(lastTime)
+        if elapsed < 3.0 { return .inRange }
+        if elapsed <= 10.0 { return .far }
         return .unknown
     }
     @Published public var showDistanceWarning: Bool = false
@@ -198,6 +214,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // Workout start countdown
     @Published public var countdownSeconds: Int = -1
     private var countdownTimer: Timer?
+    private var rangeTickTimer: Timer?
     
     // Token exchange state
     private var hasSentOwnToken = false
@@ -493,6 +510,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         manager.onDataReceived = { [weak self] type, payload, peerID in
             guard let self = self else { return }
+            // Heartbeat: track kapan terakhir kita terima message dari peer ini
+            self.lastMessageTime[peerID] = Date()
             switch type {
             case .niDiscoveryToken:
                 self.handlePeerTokenReceived(payload)
@@ -685,6 +704,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             DispatchQueue.main.async {
                 // Hapus participant dari room
                 self.roomParticipants.removeAll { $0.id == peerID }
+                // Cleanup per-peer state
+                self.distances.removeValue(forKey: peerID)
+                self.profileImages.removeValue(forKey: peerID)
+                self.lastMessageTime.removeValue(forKey: peerID)
 
                 if self.isHost {
                     // Host: stay di room, tetap advertising agar device lain bisa masuk
@@ -699,6 +722,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         self.currentRoom = nil
                         self.roomParticipants = []
                         self.partnerWatchConnected = true
+                        self.distances.removeAll()
+                        self.profileImages.removeAll()
+                        self.lastMessageTime.removeAll()
                         self.appState = .home
                     }
                 }
@@ -1356,6 +1382,18 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private func stopCloudKitSyncTimer() {
         cloudKitSyncTimer?.invalidate()
         cloudKitSyncTimer = nil
+    }
+
+    private func startRangeTickTimer() {
+        stopRangeTickTimer()
+        rangeTickTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.rangeTick = Date()
+        }
+    }
+
+    private func stopRangeTickTimer() {
+        rangeTickTimer?.invalidate()
+        rangeTickTimer = nil
     }
     
     private func performCloudKitSync() {

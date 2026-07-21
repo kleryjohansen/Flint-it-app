@@ -135,6 +135,7 @@ struct RoomFormedView: View {
                                     .font(.subheadline)
                                     .foregroundColor(Color(white: 0.8))
                                     .padding(.horizontal, 4)
+                                    .id(viewModel.rangeTick)  // re-evaluate on heartbeat tick
 
                                 VStack(spacing: 12) {
                                     if viewModel.isHost {
