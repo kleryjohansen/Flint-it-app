@@ -564,6 +564,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
 
+            // Auto-lock when room reaches 7 guests (8 total with host)
+            if self.isHost && self.roomParticipants.count >= 7 {
+                self.multipeerManager?.lockRoom()
+            }
+
             DispatchQueue.main.async {
                 if let idx = self.roomParticipants.firstIndex(where: { $0.id == peerID }) {
                     self.roomParticipants[idx].status = .connected
@@ -775,7 +780,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // MARK: - Challenge Functions
     
     public func sendChallenge(_ challenge: WorkoutChallenge) {
-        if multipeerManager?.connectedPeer == nil {
+        if multipeerManager?.connectedPeers.isEmpty ?? true {
             self.selectedChallenge = challenge
             self.workoutResult = .solo
             self.appState = .activeWorkout
@@ -786,7 +791,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let messageData = try? JSONEncoder().encode(message) {
                     multipeerManager?.sendData(messageData)
                     self.selectedChallenge = challenge
-                    self.appState = .syncing // screen: "Waiting for Erling..."
+                    self.appState = .syncing // screen: "Waiting for everyone..."
+                    // Host: lock discovery setelah broadcast
+                    if self.isHost {
+                        self.multipeerManager?.lockRoom()
+                    }
                 }
             }
         }
@@ -1197,6 +1206,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     public func skipConnectionAndGoToSetup() {
         DispatchQueue.main.async {
             self.appState = .workoutSetup
+            if self.isHost {
+                self.multipeerManager?.lockRoom()
+            }
         }
     }
     

@@ -271,7 +271,7 @@ struct RoomFormedView: View {
                 if viewModel.isHost {
                     Button(action: {
                         withAnimation {
-                            viewModel.appState = .workoutSetup
+                            viewModel.skipConnectionAndGoToSetup()
                         }
                     }) {
                         Text("Create the challenge")
