@@ -802,7 +802,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let messageData = try? JSONEncoder().encode(message) {
                     multipeerManager?.sendData(messageData)
                     self.selectedChallenge = challenge
-                    self.appState = .syncing // screen: "Waiting for everyone..."
+                    // Auto-start workout for host too — challenge applies to everyone in room
+                    self.appState = .activeWorkout
+                    notifyWatchToStartWorkout()
                     // Host: lock discovery setelah broadcast
                     if self.isHost {
                         self.multipeerManager?.lockRoom()
