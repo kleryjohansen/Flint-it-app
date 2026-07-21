@@ -178,186 +178,190 @@ struct OnboardingView: View {
 @MainActor
 struct ProfileSetupView: View {
     @ObservedObject var viewModel: OnboardingViewModel
+    @FocusState private var isNicknameFocused: Bool
 
     private var avatarImage: UIImage? { viewModel.profileImage }
 
     var body: some View {
-        ZStack {
-            // Background image
-            Image("bgifhome")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+        VStack(spacing: 0) {
+            // MARK: Header
+            VStack(spacing: 8) {
+                Text("One last step")
+                    .font(.title2.bold())
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
 
-            // Dark overlay (full screen) — locks color regardless of light/dark
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
-
-            // Top + bottom vertical gradient for text readability
-            VStack(spacing: 0) {
-                LinearGradient(
-                    colors: [.black.opacity(0.65), .black.opacity(0)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 220)
-
-                Spacer()
-
-                LinearGradient(
-                    colors: [.black.opacity(0), .black.opacity(0.7)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 220)
+                Text("Set your name and photo so partners can recognise you.")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.75))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 60)
+            .padding(.horizontal, 24)
 
-            // Decorative radial gradient (centered, behind content)
-            RadialGradient(
-                gradient: Gradient(colors: [
-                    Color.flintRed.opacity(0.18),
-                    Color.black.opacity(0)
-                ]),
-                center: .center,
-                startRadius: 10,
-                endRadius: 320
-            )
-            .ignoresSafeArea()
-            .blendMode(.normal)
+            Spacer(minLength: 16)
 
-            VStack(spacing: 0) {
-                // MARK: Header
-                VStack(spacing: 8) {
-                    Text("One last step")
-                        .font(.title2.bold())
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-
-                    Text("Set your name and photo so partners can recognise you.")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.75))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 72)
-                .padding(.horizontal, 24)
-
-                Spacer(minLength: 16)
-
-                // MARK: Centered group (Avatar + Name) — together
-                VStack(spacing: 24) {
-                    let snapshot = avatarImage
-                    PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
-                        ZStack(alignment: .bottomTrailing) {
-                            Group {
-                                if let image = snapshot {
-                                    Image(uiImage: image)
-                                        .resizable()
-                                        .scaledToFill()
-                                } else {
-                                    ZStack {
-                                        Color.white.opacity(0.12)
-                                        Image(systemName: "person.fill")
-                                            .font(.system(size: 44))
-                                            .foregroundStyle(.white.opacity(0.6))
-                                    }
+            // MARK: Centered group (Avatar + Name) — together
+            VStack(spacing: 24) {
+                let snapshot = avatarImage
+                PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
+                    ZStack(alignment: .bottomTrailing) {
+                        Group {
+                            if let image = snapshot {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                ZStack {
+                                    Color.white.opacity(0.12)
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 44))
+                                        .foregroundStyle(.white.opacity(0.6))
                                 }
                             }
-                            .frame(width: 110, height: 110)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle().stroke(
-                                    LinearGradient(
-                                        colors: [Color.flintRed, Color.flintRed.opacity(0.4)],
-                                        startPoint: .topLeading, endPoint: .bottomTrailing
-                                    ), lineWidth: 2.5
-                                )
-                            )
-
-                            ZStack {
-                                Circle().fill(Color.flintRed)
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.white)
-                            }
-                            .frame(width: 32, height: 32)
-                            .shadow(color: Color.flintRed.opacity(0.45), radius: 6)
                         }
-                    }
-                    .onChange(of: viewModel.selectedItem) { _, _ in
-                        viewModel.processSelectedImage()
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Nickname")
-                            .font(.caption.bold())
-                            .foregroundColor(.white.opacity(0.7))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        TextField("Type here...", text: $viewModel.username)
-                            .font(.body)
-                            .foregroundStyle(.white)
-                            .tint(.white)
-                            .accentColor(.white)
-                            .colorScheme(.dark)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.words)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white.opacity(0.12))
-                            .clipShape(.rect(cornerRadius: 14))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        .frame(width: 110, height: 110)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle().stroke(
+                                LinearGradient(
+                                    colors: [Color.flintRed, Color.flintRed.opacity(0.4)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                ), lineWidth: 2.5
                             )
+                        )
+
+                        ZStack {
+                            Circle().fill(Color.flintRed)
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .frame(width: 32, height: 32)
+                        .shadow(color: Color.flintRed.opacity(0.45), radius: 6)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 24)
+                .onChange(of: viewModel.selectedItem) { _, _ in
+                    viewModel.processSelectedImage()
+                }
 
-                Spacer(minLength: 24)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Nickname")
+                        .font(.caption.bold())
+                        .foregroundColor(.white.opacity(0.7))
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                // MARK: Action (bottom anchored)
-                VStack(spacing: 16) {
+                    TextField("Type here...", text: $viewModel.username)
+                        .font(.body)
+                        .foregroundStyle(.white)
+                        .tint(.white)
+                        .accentColor(.white)
+                        .colorScheme(.dark)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.words)
+                        .focused($isNicknameFocused)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isNicknameFocused = false
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(.rect(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        )
+
                     if !viewModel.errorMessage.isEmpty {
-                        HStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill").font(.caption)
-                            Text(viewModel.errorMessage).font(.caption.bold())
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                            Text(viewModel.errorMessage)
+                                .font(.caption.bold())
                         }
                         .foregroundColor(Color.flintRed)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 2)
                     }
-
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.2)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 54)
-                    } else {
-                        Button {
-                            viewModel.completeProfile()
-                        } label: {
-                            Text("Continue")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(FlintPrimaryButtonStyle())
-                    }
-
-                    Text("Your data stays private. We never share your information.")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.55))
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 64)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+
+            Spacer(minLength: 24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            // MARK: Action (bottom anchored above keyboard)
+            VStack(spacing: 16) {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.2)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                } else {
+                    Button {
+                        viewModel.completeProfile()
+                    } label: {
+                        Text("Continue")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(FlintPrimaryButtonStyle())
+                }
+
+                Text("Your data stays private. We never share your information.")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
+            .padding(.bottom, isNicknameFocused ? 12 : 24)
+        }
+        .background {
+            ZStack {
+                Image("bgifhome")
+                    .resizable()
+                    .scaledToFill()
+
+                Color.black.opacity(0.55)
+
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [.black.opacity(0.65), .black.opacity(0)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 220)
+
+                    Spacer()
+
+                    LinearGradient(
+                        colors: [.black.opacity(0), .black.opacity(0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 220)
+                }
+                .allowsHitTesting(false)
+
+                RadialGradient(
+                    gradient: Gradient(colors: [
+                        Color.flintRed.opacity(0.18),
+                        Color.black.opacity(0)
+                    ]),
+                    center: .center,
+                    startRadius: 10,
+                    endRadius: 320
+                )
+                .blendMode(.normal)
+            }
+            .ignoresSafeArea()
         }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
