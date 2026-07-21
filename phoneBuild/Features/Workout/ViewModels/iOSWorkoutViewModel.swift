@@ -1504,11 +1504,16 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                             }
                         }
                         
-                        let ownGoal = self.selectedChallenge?.goalValue ?? self.receivedChallenge?.goalValue ?? 1.0
-                        let targetVal = (self.selectedChallenge?.metricType ?? self.receivedChallenge?.metricType == "distance") ? (ownGoal * 1000.0) : ownGoal
-                        let ownProgressVal = (self.selectedChallenge?.metricType ?? self.receivedChallenge?.metricType == "distance") ? self.localDistance : self.localCalories
+                        let challenge = self.selectedChallenge ?? self.receivedChallenge
+                        let ownGoal = challenge?.goalValue ?? 1.0
+                        let isDistance = challenge?.metricType == "distance"
+                        let targetVal = isDistance ? (ownGoal * 1000.0) : ownGoal
+                        let ownProgressVal = isDistance ? self.localDistance : self.localCalories
                         let ownRatio = targetVal > 0 ? min(ownProgressVal / targetVal, 1.0) : 0.0
-                        self.checkPassingStatus(localProgress: ownRatio, partnerProgress: self.partnerProgress)
+                        if let peerID = self.primaryConnectedPeer,
+                           let rivalProgress = self.partnerProgress[peerID] {
+                            self.checkPassingStatus(localProgress: ownRatio, partnerProgress: rivalProgress)
+                        }
                     }
                 }
             }
