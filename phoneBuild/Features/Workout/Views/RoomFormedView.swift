@@ -22,9 +22,9 @@ struct RoomFormedView: View {
         ZStack(alignment: .top) {
             // Force strict black background behind everything ignoring system theme
             Color.black.ignoresSafeArea()
-            
+
             // Top background image
-            Image("bgifrun") 
+            Image("bgifrun")
                 .resizable()
                 .scaledToFill()
                 .frame(width: UIScreen.main.bounds.width, height: 350)
@@ -48,7 +48,7 @@ struct RoomFormedView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-                
+
                 // Title Area
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Create the challenge")
@@ -66,13 +66,13 @@ struct RoomFormedView: View {
                 // Scrollable Content Area with Dark Card Background behind it
                 ZStack(alignment: .top) {
                     // Dark backing card hugging the entire lists section
-                    Color(white: 0.05) 
+                    Color(white: 0.05)
                         .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                         .ignoresSafeArea(edges: .bottom)
-                        
+
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
-                            
+
                             let dist = viewModel.currentNearbyDistance
                             if dist > 0 {
                                 HStack(spacing: 12) {
@@ -109,15 +109,14 @@ struct RoomFormedView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.orange.opacity(0.35), lineWidth: 1))
                                 .padding(.top, 8)
                             }
-                            
+
                             // GUEST BANNER: Waiting for Host
                             if !viewModel.isHost {
                                 HStack(spacing: 16) {
-                                    // Custom red loading spinner with dark background track
                                     ZStack {
                                         Circle()
                                             .stroke(Color("appRed").opacity(0.2), lineWidth: 3.5)
-                                        
+
                                         Circle()
                                             .trim(from: 0, to: 0.75)
                                             .stroke(Color("appRed"), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
@@ -126,7 +125,7 @@ struct RoomFormedView: View {
                                             .onAppear { isLoading = true }
                                     }
                                     .frame(width: 24, height: 24)
-                       
+
                                     Text("Host picking a sport & challenge...")
                                         .font(.subheadline)
                                         .foregroundColor(.white.opacity(0.9))
@@ -136,7 +135,6 @@ struct RoomFormedView: View {
                                 .padding(.vertical, 24)
                                 .background(
                                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        // A very dark, subtle red fill as seen in the mockup
                                         .fill(Color("appRed").opacity(0.08))
                                 )
                                 .overlay(
@@ -148,8 +146,10 @@ struct RoomFormedView: View {
 
                             // SECTION 1: Who's in
                             let connectedPeers = viewModel.multipeerManager?.session.connectedPeers ?? []
+                            // +1 untuk diri sendiri yang tidak ada di connectedPeers
                             let totalCount = min(connectedPeers.count + 1, 8)
-                            
+                            let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
+
                             VStack(alignment: .leading, spacing: 14) {
                                 Text("Who's in (\(totalCount))")
                                     .font(.subheadline)
@@ -157,17 +157,32 @@ struct RoomFormedView: View {
                                     .padding(.horizontal, 4)
 
                                 VStack(spacing: 12) {
+                                    // Row 1: Host selalu paling atas
                                     LobbyUserRow(
-                                        name: viewModel.isHost ? (UserDefaults.standard.string(forKey: "savedUsername") ?? "King Messi") : (viewModel.currentRoom?.partnerName ?? "Host"),
+                                        name: viewModel.isHost ? ownName : (viewModel.currentRoom?.partnerName ?? "Host"),
                                         isCurrentUser: viewModel.isHost,
                                         badgeText: "Host",
                                         badgeColor: Color(white: 0.25),
                                         badgeTextColor: .white,
                                         badgeStyle: .solid
                                     )
-                                    
-                                    ForEach(connectedPeers.prefix(7), id: \.self) { peer in
-                                        if peer != viewModel.multipeerManager?.peerID {
+
+                                    // Row 2: Jika Guest — tampilkan diri sendiri eksplisit setelah Host
+                                    if !viewModel.isHost {
+                                        LobbyUserRow(
+                                            name: ownName,
+                                            isCurrentUser: true,
+                                            badgeText: "Ready",
+                                            badgeColor: Color("appRed"),
+                                            badgeTextColor: Color("appRed"),
+                                            badgeStyle: .outline
+                                        )
+                                    }
+
+                                    // Row 3+: Guest lain — hanya ditampilkan dari sisi Host
+                                    // Dari sisi Guest, connectedPeers = Host (sudah di row 1), skip
+                                    if viewModel.isHost {
+                                        ForEach(connectedPeers.prefix(6), id: \.self) { peer in
                                             LobbyUserRow(
                                                 name: peer.displayName,
                                                 isCurrentUser: false,
@@ -181,7 +196,7 @@ struct RoomFormedView: View {
                                 }
                             }
                             .padding(.top, (dist > 0 || !viewModel.isHost) ? 12 : 24)
-                            
+
                             // SECTION 2: Invite more nearby (ONLY FOR HOST)
                             if viewModel.isHost {
                                 VStack(alignment: .leading, spacing: 14) {
@@ -189,13 +204,13 @@ struct RoomFormedView: View {
                                         .font(.subheadline)
                                         .foregroundColor(Color(white: 0.8))
                                         .padding(.horizontal, 4)
-                                    
+
                                     VStack(spacing: 12) {
                                         ForEach(nearbyMates, id: \.self) { mate in
                                             LobbyInviteRow(name: mate)
                                         }
                                     }
-                                    
+
                                     Text("*You can add up to 8 people.")
                                         .font(.system(size: 13))
                                         .foregroundColor(Color(white: 0.6))
@@ -204,19 +219,18 @@ struct RoomFormedView: View {
                                 }
                                 .padding(.top, 12)
                             }
-                            
-                            Spacer().frame(height: 120) // Bottom padding for fixed CTA button
+
+                            Spacer().frame(height: 120)
                         }
                         .padding(.horizontal, 24)
                     }
                 }
             } // End main Vertical
-            
+
             // Floating CTA Button at the absolute bottom
             VStack {
                 Spacer()
-                
-                // Bottom action button: Only Host sees the Create Button
+
                 if viewModel.isHost {
                     Button(action: {
                         withAnimation {
@@ -257,7 +271,7 @@ struct LobbyUserRow: View {
                 .frame(width: 44, height: 44)
                 .foregroundColor(Color("appPrimary"))
                 .background(Circle().fill(Color("appOverlayDim")))
-                
+
             Text(isCurrentUser ? "\(name) (You)" : name)
                 .font(.headline)
                 .foregroundColor(.white)
@@ -287,7 +301,7 @@ struct LobbyUserRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color(white: 0.12)) // Inner Card Color
+        .background(Color(white: 0.12))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
@@ -321,7 +335,7 @@ struct LobbyInviteRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color.clear) // Outline Row Logic
+        .background(Color.clear)
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Color(white: 0.25), lineWidth: 1)
@@ -332,15 +346,13 @@ struct LobbyInviteRow: View {
 
 #Preview("Host View") {
     let mockHostVM = iOSWorkoutViewModel()
-    // Make sure we simulate Host state by default
-    mockHostVM.isHost = true 
+    mockHostVM.isHost = true
     return RoomFormedView()
         .environmentObject(mockHostVM)
 }
 
 #Preview("Guest View") {
     let mockGuestVM = iOSWorkoutViewModel()
-    // Force it to falsely act like a guest to reveal the guest elements
     mockGuestVM.isHost = false
     return RoomFormedView()
         .environmentObject(mockGuestVM)
