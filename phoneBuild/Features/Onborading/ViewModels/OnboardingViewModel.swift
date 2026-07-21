@@ -101,7 +101,8 @@ class OnboardingViewModel: ObservableObject {
 // MARK: - Disk Storage Helper
 
 func saveProfileImageToDisk(_ image: UIImage) {
-    guard let jpegData = image.jpegData(compressionQuality: 0.5) else { return }
+    let resized = ImageResizer.resize(image, maxDimension: 256)
+    guard let jpegData = resized.jpegData(compressionQuality: 0.7) else { return }
     let url = profileImageURL()
     try? jpegData.write(to: url, options: .atomic)
 }
