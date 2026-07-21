@@ -66,29 +66,6 @@ struct RoomFormedView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
 
-                            let dist = viewModel.currentNearbyDistance ?? 0
-                            let hasDistance = (viewModel.currentNearbyDistance ?? 0) > 0
-
-                            if hasDistance {
-                                HStack(spacing: 12) {
-                                    Image(systemName: dist < 2.0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(dist < 2.0 ? Color.green : Color.orange)
-                                    Text(dist < 2.0 ? "Rivals in Range (< 2m)" : "oops jangan jauh2 dari rival kamu")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                    Text(String(format: "%.1fm", dist))
-                                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
-                                .padding(14)
-                                .background(dist < 2.0 ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
-                                .cornerRadius(16)
-                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(dist < 2.0 ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1))
-                                .padding(.top, 24)
-                            }
-
                             if !viewModel.partnerWatchConnected {
                                 HStack(spacing: 12) {
                                     Image(systemName: "exclamationmark.applewatch")
@@ -136,7 +113,7 @@ struct RoomFormedView: View {
                                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                                         .stroke(Color("appRed"), lineWidth: 1)
                                 )
-                                .padding(.top, dist > 0 || !viewModel.partnerWatchConnected ? 0 : 24)
+                                .padding(.top, !viewModel.partnerWatchConnected ? 0 : 24)
                             }
 
                             // SECTION 1: Who's in
@@ -221,7 +198,7 @@ struct RoomFormedView: View {
                                     }
                                 }
                             }
-                            .padding(.top, (dist > 0 || !viewModel.isHost) ? 12 : 24)
+                            .padding(.top, (!viewModel.isHost) ? 12 : 24)
 
                             // SECTION 2: Invite more nearby (ONLY FOR HOST, jika belum lock)
                             if viewModel.isHost && !(viewModel.multipeerManager?.isRoomLocked ?? false) {

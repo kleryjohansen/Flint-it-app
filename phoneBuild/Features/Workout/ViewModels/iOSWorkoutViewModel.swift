@@ -154,11 +154,6 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // Proximity logic properties
     @Published public var distances: [MCPeerID: Double] = [:]
     
-    public var currentNearbyDistance: Double? {
-        // Distance ke primary partner (untuk backward-compat single card)
-        primaryConnectedPeer.flatMap { distances[$0] }
-    }
-    
     public enum RangeStatus { case inRange, far, unknown }
     
     public func rangeStatus(for peerID: MCPeerID) -> RangeStatus {
