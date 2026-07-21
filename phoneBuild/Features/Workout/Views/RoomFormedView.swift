@@ -11,13 +11,6 @@ struct RoomFormedView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var isLoading = false
 
-    // Mock other nearby people to populate the invite list
-    private let nearbyMates = [
-        "Nathaniel John",
-        "Jasper Komrade",
-        "Christie Almanda"
-    ]
-
     var body: some View {
         ZStack(alignment: .top) {
             // Force strict black background behind everything ignoring system theme
@@ -145,10 +138,17 @@ struct RoomFormedView: View {
                             }
 
                             // SECTION 1: Who's in
-                            let connectedPeers = viewModel.multipeerManager?.session.connectedPeers ?? []
-                            // +1 untuk diri sendiri yang tidak ada di connectedPeers
-                            let totalCount = min(connectedPeers.count + 1, 8)
                             let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
+                            let totalCount: Int = {
+                                if viewModel.isHost {
+                                    return min(viewModel.roomParticipants.count + 1, 8)
+                                } else {
+                                    let others = viewModel.roomParticipants.filter {
+                                        $0.id != viewModel.hostPeerID && $0.id != viewModel.multipeerManager?.peerID
+                                    }
+                                    return min(2 + others.count, 8)
+                                }
+                            }()
 
                             VStack(alignment: .leading, spacing: 14) {
                                 Text("Who's in (\(totalCount))")
@@ -157,18 +157,37 @@ struct RoomFormedView: View {
                                     .padding(.horizontal, 4)
 
                                 VStack(spacing: 12) {
-                                    // Row 1: Host selalu paling atas
-                                    LobbyUserRow(
-                                        name: viewModel.isHost ? ownName : (viewModel.currentRoom?.partnerName ?? "Host"),
-                                        isCurrentUser: viewModel.isHost,
-                                        badgeText: "Host",
-                                        badgeColor: Color(white: 0.25),
-                                        badgeTextColor: .white,
-                                        badgeStyle: .solid
-                                    )
-
-                                    // Row 2: Jika Guest — tampilkan diri sendiri eksplisit setelah Host
-                                    if !viewModel.isHost {
+                                    if viewModel.isHost {
+                                        LobbyUserRow(
+                                            name: ownName,
+                                            isCurrentUser: true,
+                                            badgeText: "Host",
+                                            badgeColor: Color(white: 0.25),
+                                            badgeTextColor: .white,
+                                            badgeStyle: .solid
+                                        )
+                                        ForEach(viewModel.roomParticipants.prefix(7)) { p in
+                                            LobbyUserRow(
+                                                name: p.displayName,
+                                                isCurrentUser: false,
+                                                badgeText: p.status == .connecting ? "Connecting…" : "Ready",
+                                                badgeColor: Color("appRed"),
+                                                badgeTextColor: Color("appRed"),
+                                                badgeStyle: .outline,
+                                                opacity: p.status == .connecting ? 0.5 : 1.0
+                                            )
+                                        }
+                                    } else {
+                                        LobbyUserRow(
+                                            name: viewModel.currentRoom?.partnerName
+                                                ?? viewModel.hostPeerID?.displayName
+                                                ?? "Host",
+                                            isCurrentUser: false,
+                                            badgeText: "Host",
+                                            badgeColor: Color(white: 0.25),
+                                            badgeTextColor: .white,
+                                            badgeStyle: .solid
+                                        )
                                         LobbyUserRow(
                                             name: ownName,
                                             isCurrentUser: true,
@@ -177,19 +196,19 @@ struct RoomFormedView: View {
                                             badgeTextColor: Color("appRed"),
                                             badgeStyle: .outline
                                         )
-                                    }
-
-                                    // Row 3+: Guest lain — hanya ditampilkan dari sisi Host
-                                    // Dari sisi Guest, connectedPeers = Host (sudah di row 1), skip
-                                    if viewModel.isHost {
-                                        ForEach(connectedPeers.prefix(6), id: \.self) { peer in
+                                        ForEach(
+                                            viewModel.roomParticipants.filter {
+                                                $0.id != viewModel.hostPeerID && $0.id != viewModel.multipeerManager?.peerID
+                                            }
+                                        ) { p in
                                             LobbyUserRow(
-                                                name: peer.displayName,
+                                                name: p.displayName,
                                                 isCurrentUser: false,
-                                                badgeText: "Ready",
+                                                badgeText: p.status == .connecting ? "Connecting…" : "Ready",
                                                 badgeColor: Color("appRed"),
                                                 badgeTextColor: Color("appRed"),
-                                                badgeStyle: .outline
+                                                badgeStyle: .outline,
+                                                opacity: p.status == .connecting ? 0.5 : 1.0
                                             )
                                         }
                                     }
@@ -197,21 +216,39 @@ struct RoomFormedView: View {
                             }
                             .padding(.top, (dist > 0 || !viewModel.isHost) ? 12 : 24)
 
-                            // SECTION 2: Invite more nearby (ONLY FOR HOST)
-                            if viewModel.isHost {
+                            // SECTION 2: Invite more nearby (ONLY FOR HOST, jika belum lock)
+                            if viewModel.isHost && !(viewModel.multipeerManager?.isRoomLocked ?? false) {
                                 VStack(alignment: .leading, spacing: 14) {
                                     Text("Invite more nearby")
                                         .font(.subheadline)
                                         .foregroundColor(Color(white: 0.8))
                                         .padding(.horizontal, 4)
 
-                                    VStack(spacing: 12) {
-                                        ForEach(nearbyMates, id: \.self) { mate in
-                                            LobbyInviteRow(name: mate)
+                                    let foundPeers = (viewModel.multipeerManager?.foundPeers ?? [])
+                                        .filter { info in
+                                            info.id != viewModel.multipeerManager?.peerID
+                                                && !viewModel.roomParticipants.contains(where: { $0.id == info.id })
+                                        }
+
+                                    if foundPeers.isEmpty {
+                                        Text("No one nearby yet. Open the app on another device to invite.")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(Color(white: 0.6))
+                                            .padding(.horizontal, 4)
+                                    } else {
+                                        VStack(spacing: 12) {
+                                            ForEach(foundPeers) { info in
+                                                LobbyInviteRow(
+                                                    name: info.displayName,
+                                                    onInvite: {
+                                                        viewModel.multipeerManager?.invite(info.id)
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
 
-                                    Text("*You can add up to 8 people.")
+                                    Text("*You can add up to 8 people. Discovery locks when you start a challenge.")
                                         .font(.system(size: 13))
                                         .foregroundColor(Color(white: 0.6))
                                         .padding(.horizontal, 4)
@@ -263,6 +300,7 @@ struct LobbyUserRow: View {
     let badgeColor: Color
     let badgeTextColor: Color
     var badgeStyle: BadgeStyle = .solid
+    var opacity: Double = 1.0
 
     var body: some View {
         HStack(spacing: 16) {
@@ -303,11 +341,13 @@ struct LobbyUserRow: View {
         .padding(.vertical, 12)
         .background(Color(white: 0.12))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .opacity(opacity)
     }
 }
 
 struct LobbyInviteRow: View {
     let name: String
+    var onInvite: () -> Void = {}
 
     var body: some View {
         HStack(spacing: 16) {
@@ -323,7 +363,7 @@ struct LobbyInviteRow: View {
 
             Spacer()
 
-            Button(action: {}) {
+            Button(action: onInvite) {
                 Text("Invite")
                     .font(.subheadline).bold()
                     .foregroundColor(.white)
