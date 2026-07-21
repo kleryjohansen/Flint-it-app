@@ -153,7 +153,7 @@ struct RoomFormedView: View {
                                             LobbyUserRow(
                                                 name: p.displayName,
                                                 isCurrentUser: false,
-                                                badgeText: p.status == .connecting ? "Connecting…" : "Ready",
+                                                badgeText: p.status == .connecting ? "Connecting…" : "",
                                                 badgeColor: Color("appRed"),
                                                 badgeTextColor: Color("appRed"),
                                                 badgeStyle: .outline,
@@ -178,7 +178,7 @@ struct RoomFormedView: View {
                                         LobbyUserRow(
                                             name: ownName,
                                             isCurrentUser: true,
-                                            badgeText: "Ready",
+                                            badgeText: "",
                                             badgeColor: Color("appRed"),
                                             badgeTextColor: Color("appRed"),
                                             badgeStyle: .outline,
@@ -193,7 +193,7 @@ struct RoomFormedView: View {
                                             LobbyUserRow(
                                                 name: p.displayName,
                                                 isCurrentUser: false,
-                                                badgeText: p.status == .connecting ? "Connecting…" : "Ready",
+                                                badgeText: p.status == .connecting ? "Connecting…" : "",
                                                 badgeColor: Color("appRed"),
                                                 badgeTextColor: Color("appRed"),
                                                 badgeStyle: .outline,
@@ -207,35 +207,29 @@ struct RoomFormedView: View {
                             }
                             .padding(.top, (!viewModel.isHost) ? 12 : 24)
 
-                            // SECTION 2: Invite more nearby (ONLY FOR HOST, jika belum lock)
-                            if viewModel.isHost && !(viewModel.multipeerManager?.isRoomLocked ?? false) {
+                            // SECTION 2: Invite more nearby (ONLY FOR HOST, jika belum lock, dan ada peer)
+                            let foundPeers = (viewModel.multipeerManager?.foundPeers ?? [])
+                                .filter { info in
+                                    info.id != viewModel.multipeerManager?.peerID
+                                        && !viewModel.roomParticipants.contains(where: { $0.id == info.id })
+                                }
+                            if viewModel.isHost
+                                && !(viewModel.multipeerManager?.isRoomLocked ?? false)
+                                && !foundPeers.isEmpty {
                                 VStack(alignment: .leading, spacing: 14) {
                                     Text("Invite more nearby")
                                         .font(.subheadline)
                                         .foregroundColor(Color(white: 0.8))
                                         .padding(.horizontal, 4)
 
-                                    let foundPeers = (viewModel.multipeerManager?.foundPeers ?? [])
-                                        .filter { info in
-                                            info.id != viewModel.multipeerManager?.peerID
-                                                && !viewModel.roomParticipants.contains(where: { $0.id == info.id })
-                                        }
-
-                                    if foundPeers.isEmpty {
-                                        Text("No one nearby yet. Open the app on another device to invite.")
-                                            .font(.system(size: 13))
-                                            .foregroundColor(Color(white: 0.6))
-                                            .padding(.horizontal, 4)
-                                    } else {
-                                        VStack(spacing: 12) {
-                                            ForEach(foundPeers) { info in
-                                                LobbyInviteRow(
-                                                    name: info.displayName,
-                                                    onInvite: {
-                                                        viewModel.multipeerManager?.invite(info.id)
-                                                    }
-                                                )
-                                            }
+                                    VStack(spacing: 12) {
+                                        ForEach(foundPeers) { info in
+                                            LobbyInviteRow(
+                                                name: info.displayName,
+                                                onInvite: {
+                                                    viewModel.multipeerManager?.invite(info.id)
+                                                }
+                                            )
                                         }
                                     }
 
@@ -296,43 +290,50 @@ struct LobbyUserRow: View {
     var profileImage: UIImage? = nil
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             avatarView
                 .frame(width: 44, height: 44)
                 .clipShape(Circle())
-
-            Text(isCurrentUser ? "\(name) (You)" : name)
-                .font(.headline)
-                .foregroundColor(.white)
-
-            Spacer()
-
-            Group {
-                switch badgeStyle {
-                case .solid:
-                    Text(badgeText)
-                        .font(.subheadline)
-                        .foregroundColor(badgeTextColor)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Capsule().fill(badgeColor))
-
-                case .outline:
-                    Text(badgeText)
-                        .font(.subheadline)
-                        .foregroundColor(badgeTextColor)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Capsule().fill(Color.clear))
-                        .overlay(Capsule().stroke(badgeColor, lineWidth: 1))
+                .overlay {
+                    if isCurrentUser {
+                        Circle().stroke(Color("appPrimary"), lineWidth: 2.5)
+                    }
                 }
-            }
 
             if let rangeStatus {
                 Circle()
                     .fill(rangeDotColor(rangeStatus))
                     .frame(width: 12, height: 12)
                     .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
+            }
+
+            Text(name)
+                .font(.headline)
+                .foregroundColor(.white)
+
+            Spacer()
+
+            if !badgeText.isEmpty {
+                Group {
+                    switch badgeStyle {
+                    case .solid:
+                        Text(badgeText)
+                            .font(.subheadline)
+                            .foregroundColor(badgeTextColor)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(badgeColor))
+
+                    case .outline:
+                        Text(badgeText)
+                            .font(.subheadline)
+                            .foregroundColor(badgeTextColor)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(Color.clear))
+                            .overlay(Capsule().stroke(badgeColor, lineWidth: 1))
+                    }
+                }
             }
         }
         .padding(.horizontal, 16)
