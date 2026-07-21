@@ -71,7 +71,7 @@ struct NearbyRadarView: View {
                             .foregroundColor(Color("appSecondaryLabel"))
                             .tracking(2)
                         
-                        Text(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")
+                        Text(viewModel.primaryPartnerName ?? "Partner")
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(Color("appLabel"))
                     }

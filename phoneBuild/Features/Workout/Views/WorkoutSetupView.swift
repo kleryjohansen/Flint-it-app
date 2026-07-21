@@ -36,7 +36,7 @@ public struct WorkoutSetupView: View {
                         if step > 1 {
                             withAnimation { step = 1 }
                         } else {
-                            if viewModel.multipeerManager?.connectedPeer != nil {
+                            if viewModel.primaryConnectedPeer != nil {
                                 viewModel.activeAlert = .leaveConfirmation
                             } else {
                                 withAnimation { viewModel.appState = .home }
@@ -286,7 +286,7 @@ public struct ChallengeWaitingView: View {
                     
                     // Spinner Status Description Text
                     VStack(spacing: 8) {
-                        Text("Waiting for \(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner")...")
+                        Text("Waiting for \(viewModel.primaryPartnerName ?? "Partner")...")
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
                     }
@@ -340,7 +340,7 @@ public struct ChallengeReceivedView: View {
 
                 // Info Cards
                 VStack(spacing: 12) {
-                    Text("\(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner") challenged you!")
+                    Text("\(viewModel.primaryPartnerName ?? "Partner") challenged you!")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)

@@ -118,6 +118,17 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var currentRoom: RoomSession?
     @Published public var roomParticipants: [RoomParticipant] = []
     @Published public var hostPeerID: MCPeerID?
+
+    /// Convenience: peer pertama yang terkoneksi (untuk label UI 1v1)
+    public var primaryConnectedPeer: MCPeerID? {
+        multipeerManager?.connectedPeers.first
+    }
+
+    /// Convenience: nama display peer pertama yang terkoneksi
+    public var primaryPartnerName: String {
+        if let name = currentRoom?.partnerName { return name }
+        return primaryConnectedPeer?.displayName ?? "Partner"
+    }
     
     // Challenge states
     @Published public var selectedChallenge: WorkoutChallenge?
@@ -313,7 +324,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                if self.multipeerManager?.connectedPeer != nil {
+                if self.primaryConnectedPeer != nil {
                     self.sendWatchStatusToPeer()
                 }
             }
@@ -629,7 +640,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 } else if self.appState == .navigating {
                     // Not in the lobby yet: if they get < 2.0 meters, enter the lobby
                     if distance < 2.0 {
-                        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                        let partnerName = self.primaryPartnerName ?? "Partner"
                         self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
                         self.appState = .room
                     }
@@ -675,7 +686,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // MARK: - Token Exchange Handshake
 
     private func sendLocalNIToken() {
-        guard multipeerManager?.connectedPeer != nil else {
+        guard primaryConnectedPeer != nil else {
             print("[ViewModel] Skipping token send: no connected peer")
             return
         }
@@ -709,7 +720,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     private func sendTokenACK() {
-        guard multipeerManager?.connectedPeer != nil, !hasSentTokenACK else { return }
+        guard primaryConnectedPeer != nil, !hasSentTokenACK else { return }
         let envelope = MultipeerMessage(type: .niTokenACK, payload: Data())
         if let encoded = try? JSONEncoder().encode(envelope) {
             multipeerManager?.sendData(encoded)
@@ -1071,7 +1082,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     public func endWorkout() {
-        if multipeerManager?.connectedPeer == nil {
+        if primaryConnectedPeer == nil {
             self.workoutResult = .solo
             AudioManager.shared.playSoloComplete()
         } else {
@@ -1106,7 +1117,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     private func endWorkoutNatively() {
-        if multipeerManager?.connectedPeer != nil && self.workoutResult != .victory {
+        if primaryConnectedPeer != nil && self.workoutResult != .victory {
             self.workoutResult = .defeat
             AudioManager.shared.playDefeat()
         }
@@ -1196,7 +1207,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     public func skipProximityAndGoToRoom() {
-        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+        let partnerName = self.primaryPartnerName ?? "Partner"
         DispatchQueue.main.async {
             self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
             self.appState = .room

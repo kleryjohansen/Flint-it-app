@@ -87,7 +87,7 @@ struct ContentView: View {
                 case .rematchPrompt:
                     return Alert(
                         title: Text("Rematch Request"),
-                        message: Text("\(viewModel.multipeerManager?.connectedPeer?.displayName ?? "Opponent") asked you for a rematch!"),
+                        message: Text("\(viewModel.primaryPartnerName ?? "Opponent") asked you for a rematch!"),
                         primaryButton: .default(Text("Accept")) {
                             viewModel.acceptRematchRequest()
                         },
@@ -350,7 +350,7 @@ struct ActiveWorkoutView: View {
                     }
                     
                     // Player 2 (Partner)
-                    if viewModel.multipeerManager?.connectedPeer != nil {
+                    if viewModel.primaryConnectedPeer != nil {
                         HStack(spacing: 10) {
                             ZStack {
                                 Circle()
@@ -698,8 +698,8 @@ struct ResultsView: View {
                                     image: ownProfileImage
                                 )
                                 
-                                if viewModel.multipeerManager?.connectedPeer != nil {
-                                    let partnerName = viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                                if viewModel.primaryConnectedPeer != nil {
+                                    let partnerName = viewModel.primaryPartnerName ?? "Partner"
                                     let partnerSecs = viewModel.elapsedSeconds + 7
                                     let pMin = partnerSecs / 60
                                     let pSec = partnerSecs % 60
@@ -712,7 +712,7 @@ struct ResultsView: View {
                                     )
                                 }
                             } else {
-                                let partnerName = viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                                let partnerName = viewModel.primaryPartnerName ?? "Partner"
                                 PlayerResultPod(
                                     rank: "①",
                                     name: partnerName,
@@ -734,7 +734,7 @@ struct ResultsView: View {
                         }
                         
                         VStack(spacing: 16) {
-                            if viewModel.multipeerManager?.connectedPeer != nil {
+                            if viewModel.primaryConnectedPeer != nil {
                                 Button(action: {
                                     viewModel.sendRematchRequest()
                                 }) {
