@@ -1,6 +1,7 @@
 import SwiftUI
 import AuthenticationServices
 import PhotosUI
+import Combine
 
 // MARK: - Data Model
 
@@ -34,7 +35,7 @@ struct OnboardingView: View {
         )
     ]
 
-    var isLastPage: Bool { currentPage == pages.count - 1 }
+    let timer = Timer.publish(every: 5.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -102,46 +103,31 @@ struct OnboardingView: View {
                         }
                     }
 
-                    if !isLastPage {
-                        Button {
-                            withAnimation { currentPage += 1 }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Text("Continue")
-                            }
-                        }
-                        .padding(.horizontal, 24)
-                        .buttonStyle(FlintPrimaryButtonStyle())
-                        
-                    } else {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(1.2)
-                                .frame(height: 50)
-                        } else {
-                            SignInWithAppleButton(.signIn) { request in
-                                request.requestedScopes = [.fullName]
-                            } onCompletion: { result in
-                                handleAppleResult(result)
-                            }
-                            .cornerRadius(72)
-                            .signInWithAppleButtonStyle(.white)
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.2)
                             .frame(height: 50)
-                            .padding(.horizontal, 24)
-                            
+                    } else {
+                        SignInWithAppleButton(.signIn) { request in
+                            request.requestedScopes = [.fullName]
+                        } onCompletion: { result in
+                            handleAppleResult(result)
                         }
+                        .cornerRadius(72)
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 50)
+                        .padding(.horizontal, 24)
+                    }
 
-                        if !viewModel.errorMessage.isEmpty {
-                            HStack(spacing: 6) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.caption)
-                                Text(viewModel.errorMessage)
-                                    .font(.caption.bold())
-                            }
-                            .foregroundColor(Color.flintRed)
-                            
+                    if !viewModel.errorMessage.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                            Text(viewModel.errorMessage)
+                                .font(.caption.bold())
                         }
+                        .foregroundColor(Color.flintRed)
                     }
 
                     Text("By continuing, you agree to our \(Text("Terms of Service").foregroundColor(Color.flintRed)) and \(Text("Privacy Policy").foregroundColor(Color.flintRed)).")
@@ -154,6 +140,11 @@ struct OnboardingView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onReceive(timer) { _ in
+            withAnimation(.easeInOut(duration: 0.8)) {
+                currentPage = (currentPage + 1) % pages.count
+            }
+        }
         .fullScreenCover(isPresented: $viewModel.isSignedIn) {
             ProfileSetupView(viewModel: viewModel)
         }

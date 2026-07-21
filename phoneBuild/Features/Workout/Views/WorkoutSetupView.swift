@@ -201,7 +201,12 @@ public struct WorkoutSetupView: View {
                 Spacer()
             }
         }
-        .flintVibrantBackground()
+        .background(
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
         .navigationBarBackButtonHidden(true)
     }
 }
@@ -290,7 +295,12 @@ public struct ChallengeWaitingView: View {
                 Spacer()
             }
         }
-        .flintVibrantBackground()
+        .background(
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
         .navigationBarBackButtonHidden(true)
         .onAppear {
             // Trigger skip button helper after 5 seconds of waiting

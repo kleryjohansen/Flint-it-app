@@ -9,6 +9,8 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     static let shared = WatchWorkoutService()
     
     @Published var metrics = WorkoutMetrics()
+    @Published var workoutResult: String? = nil
+    @Published var activeSport: String = "Running"
     
     private let healthStore = HKHealthStore()
     private var workoutSession: HKWorkoutSession?
@@ -75,6 +77,8 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
         }
         
         isStartingWorkout = true
+        self.activeSport = sport
+        self.workoutResult = nil
         print("[Watch] startWorkout called — sport: \(sport)")
         
         // Step 1: Minta authorization dulu, BARU start
@@ -243,6 +247,7 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
                 DispatchQueue.main.async {
                     self.metrics.isWorkoutRunning = false
                     self.countdown = 0
+                    self.workoutResult = result
                     print("[Watch] Workout ended and saved ✓")
                     if let result = result {
                         self.playWorkoutResultSound(result: result)

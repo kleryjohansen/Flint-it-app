@@ -135,6 +135,22 @@ struct NearbyRadarView: View {
                 
                 // Action Buttons at the Bottom
                 VStack(spacing: 12) {
+                    if showSkipButton {
+                        Button(action: {
+                            viewModel.skipProximityAndGoToRoom()
+                        }) {
+                            Text("Skip Connection")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color.flintRed)
+                                .clipShape(Capsule())
+                                .shadow(color: Color.flintRed.opacity(0.3), radius: 10, y: 5)
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                    
                     Button(action: {
                         withAnimation {
                             viewModel.fullCleanup()
@@ -154,7 +170,12 @@ struct NearbyRadarView: View {
                 .padding(.bottom, 32)
             }
         }
-        .flintVibrantBackground()
+        .background(
+            Image("bgifhome")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
         .navigationBarBackButtonHidden(true)
         .onAppear {
             // Delay 5 seconds before showing the skip button for testing

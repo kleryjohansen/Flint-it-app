@@ -35,7 +35,11 @@ public final class MultipeerManager: NSObject {
     private let browser: MCNearbyServiceBrowser
 
     // SwiftUI-observed state
-    public private(set) var foundPeers: [PeerInfo] = []
+    public private(set) var foundPeers: [PeerInfo] = [] {
+        didSet {
+            onFoundPeersChanged?(foundPeers)
+        }
+    }
     public private(set) var connectedPeer: MCPeerID?
     public private(set) var pendingInvitingPeer: MCPeerID?
     public private(set) var invitedPeer: MCPeerID?
@@ -50,6 +54,7 @@ public final class MultipeerManager: NSObject {
     @ObservationIgnored public var onPeerConnected: ((MCPeerID) -> Void)?
     @ObservationIgnored public var onPeerDisconnected: (() -> Void)?
     @ObservationIgnored public var onDataReceived: ((MultipeerMessage.MessageType, Data, MCPeerID) -> Void)?
+    @ObservationIgnored public var onFoundPeersChanged: (([PeerInfo]) -> Void)?
 
     // MARK: - Init
 
