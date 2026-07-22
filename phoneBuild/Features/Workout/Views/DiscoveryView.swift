@@ -9,6 +9,7 @@ struct DiscoveryView: View {
     @State private var selectedDiscoveryPeer: MCPeerID? = nil
     @State private var selectedTab = 0
     @State private var showSearchSkip = false
+    @State private var isPulsing = false
     @ObservedObject private var watchSession = WatchSessionManager.shared
 
     var body: some View {
@@ -68,16 +69,17 @@ struct DiscoveryView: View {
             VStack(spacing: 0) {
                 // Spacer below top status pill
                 Spacer()
-                    .frame(height: 160)
+//                    .frame(height: 160)
                 
                 // Title Label
                 Text(viewModel.appState == .home ? "Tap to find\nmatch buddy" : "Finding people nearby...")
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.title .bold())
                     .foregroundColor(.white)
                     .shadow(color: Color.black.opacity(0.6), radius: 6, x: 0, y: 3)
                     .multilineTextAlignment(.center)
+                    .padding(.bottom, 24)
                 
-                Spacer(minLength: 16)
+//                Spacer()
 
                 ZStack {
                     let pulseStroke = Color.white.opacity(0.6)
@@ -85,7 +87,8 @@ struct DiscoveryView: View {
                     if viewModel.appState == .searching {
                         // Pulsing radar circles
                         Circle()
-                            .stroke(pulseStroke.opacity(0.4), lineWidth: 1.5)
+                            .stroke(Color.flintRed.opacity(0.7), lineWidth: 1.5)
+                            .fill(Color.flintRed.opacity(0.5))
                             .frame(width: 280, height: 280)
                             .scaleEffect(pulseScale)
                             .opacity(Double(2.0 - pulseScale))
@@ -96,7 +99,8 @@ struct DiscoveryView: View {
                             }
 
                         Circle()
-                            .stroke(pulseStroke.opacity(0.25), lineWidth: 1)
+                            .stroke(Color.flintRed.opacity(0.7), lineWidth: 1)
+                            .fill(Color.flintRed.opacity(0.5))
                             .frame(width: 180, height: 180)
                             .scaleEffect(outerPulseScale)
                             .opacity(Double(2.0 - outerPulseScale))
@@ -166,36 +170,45 @@ struct DiscoveryView: View {
                                 selectedDiscoveryPeer = nil
                             }
                         }
-                    }) {
+                    })
+                    {
                         ZStack {
-                            // Native Liquid Glass Outer Ring Layer
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .frame(width: 170, height: 170)
-                                .overlay(
-                                    Circle()
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1.5
-                                        )
-                                )
-                                .glassEffect(.regular.interactive(), in: .circle)
-                                .shadow(color: Color.black.opacity(0.4), radius: 15, x: 0, y: 8)
-                            
-                            // Nearby Button Image Asset
-                            Image("nearbybutton")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 100, height: 100)
+                                // Native Liquid Glass Outer Ring Layer
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .frame(width: 170, height: 170)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                                    .glassEffect(.regular.interactive(), in: .circle)
+                                    .shadow(color: Color.black.opacity(0.4), radius: 15, x: 0, y: 8)
+                                    
+                                // Nearby Button Image Asset
+                                Image("nearbybutton")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 100, height: 100)
+                            }
+                            // 1. Apply the scale effect using the state variable
+                            .scaleEffect(isPulsing ? 1.10 : 0.95)
+                            // 2. Trigger the continuous loop when the view appears
+                            .onAppear {
+                                withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                                    isPulsing = true
+                                }
+                            }
                         }
-                    }
-                    .buttonStyle(PlainButtonStyle())
+//                        .buttonStyle(PlainButtonStyle())
+                        .shadow(color: Color.appQuaternary, radius: 24, x: 0, y: 8)
                 }
-                .frame(height: 220)
                 
                 // Solo button directly below search/radar button
                 if showSearchSkip && viewModel.appState == .searching {
@@ -209,10 +222,8 @@ struct DiscoveryView: View {
                             .foregroundColor(.white)
                             .padding(.vertical, 12)
                             .padding(.horizontal, 24)
-                            .background(Color.flintRed)
                             .clipShape(Capsule())
-                            .glassEffect(.regular.interactive(), in: .capsule)
-                            .shadow(color: Color.flintRed.opacity(0.4), radius: 8)
+                            .glassEffect(.regular.tint(Color.flintRed).interactive(), in: .capsule)
                     }
                     .padding(.top, 16)
                     .transition(.scale.combined(with: .opacity))

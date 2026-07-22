@@ -11,6 +11,7 @@ public struct WorkoutSetupView: View {
     @State private var step: Int = 1
     @State private var selectedSport: WorkoutType = .running
     @State private var selectedGoalIndex: Int = 0
+    @State private var showExitConfirmation = false
     
     // Goals configuration
     private let runningCyclingGoals = [
@@ -55,12 +56,13 @@ public struct WorkoutSetupView: View {
                                     withAnimation { viewModel.appState = .home }
                                 }
                             }
-                        }) {
+                        }
+                        ) {
                             // Use chevron if going back a step, otherwise use xmark to close
                             Image(systemName: step > 1 ? "chevron.left" : "xmark")
                                 .font(.title3.bold())
                                 .foregroundStyle(.primary)
-                                .padding(.vertical, 6)
+                                .frame(width: 32, height: 44)
                         }
                         .buttonStyle(.glass(glassStyle))
                         .controlSize(.regular)
@@ -121,11 +123,25 @@ public struct WorkoutSetupView: View {
                                                 }
                                                 .padding(.vertical, 14)
                                                 .padding(.horizontal, 16)
-                                                .background(Color.white.opacity(0.04))
+                                                .background(
+                                                    ZStack {
+                                                            if selectedSport == type {
+                                                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                                                    .fill(
+                                                                        LinearGradient(
+                                                                            colors: [Color.flintRed.opacity(0.3), Color.appTertiary.opacity(0.1)],
+                                                                            startPoint: .leading,
+                                                                            endPoint: .trailing
+                                                                        )
+                                                                    )
+                                                            }
+                                                        }
+                                                )
                                                 .cornerRadius(18)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 18)
                                                         .stroke(selectedSport == type ? Color.flintRed : Color.white.opacity(0.04), lineWidth: 1.5)
+                                                    
                                                 )
                                             }
                                         }
@@ -152,7 +168,20 @@ public struct WorkoutSetupView: View {
                                                 }
                                                 .padding(.vertical, 16)
                                                 .padding(.horizontal, 16)
-                                                .background(Color.white.opacity(0.04))
+                                                .background(
+                                                    ZStack {
+                                                            if selectedGoalIndex == index {
+                                                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                                                    .fill(
+                                                                        LinearGradient(
+                                                                            colors: [Color.flintRed.opacity(0.3), Color.appTertiary.opacity(0.1)],
+                                                                            startPoint: .leading,
+                                                                            endPoint: .trailing
+                                                                        )
+                                                                    )
+                                                            }
+                                                        }
+                                                )
                                                 .cornerRadius(18)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 18)
@@ -194,10 +223,10 @@ public struct WorkoutSetupView: View {
                             .font(.headline)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+//                            .padding(.vertical, 10)
                     }
                     .buttonStyle(.glassProminent)
-                    .controlSize(.regular)
+                    .controlSize(.large)
                     .buttonBorderShape(.automatic)
                     .tint(.flintRed)
                     .padding(.horizontal, 24)

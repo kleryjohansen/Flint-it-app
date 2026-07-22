@@ -201,10 +201,9 @@ struct ActiveWorkoutView: View {
                         Spacer()
                         
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
-                                .frame(width: 8, height: 8)
-                                .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
+                            Image(systemName: watchSession.isWatchConnected ? "applewatch.radiowaves.left.and.right" : "exclamationmark.applewatch")
+                                .font(.system(size: 14))
+                                .foregroundColor(watchSession.isWatchConnected ? Color.green : Color.orange)
                             
                             Text(watchSession.isWatchConnected ? "Watch is connected" : "Please connect to Apple Watch")
                                 .font(.system(size: 14, weight: .semibold))
@@ -213,22 +212,26 @@ struct ActiveWorkoutView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .glassEffect(.regular, in: .capsule)
-//                        .shadow(color: Color.black.opacity(0.3), radius: 8, y: 4)
                         
                         Spacer()
                     }
-                    .padding(.top, 80)
+                    .padding(.top, 72)
                     .padding(.bottom, 16)
+
+//                    Spacer()
                 }
                 VStack(spacing: 8) {
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
                             .font(.largeTitle .weight(.bold))
                             .foregroundStyle(.primary)
+                            .frame(maxWidth: 300)
                     } else {
                         Text("Active Match")
                             .font(.largeTitle .weight(.bold))
                             .foregroundStyle(.primary)
+                            .frame(maxWidth: 300)
+                            .multilineTextAlignment(.center)
                     }
                     
                     VStack(spacing: 4) {

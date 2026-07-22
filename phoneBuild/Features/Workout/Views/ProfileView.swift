@@ -90,14 +90,14 @@ struct ProfileView: View {
                         .padding(.vertical, 40)
                         
                     }
-                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 120)
                     .background(
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
                             .fill(Color.black)
                     )
                 }
             }
-            .ignoresSafeArea(edges: .horizontal)
+            .ignoresSafeArea(edges: .all)
         }
         .onAppear {
             loadLocalProfileImage()
@@ -160,7 +160,6 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .frame(width: 26, height: 26)
                     .background(Circle().fill(Color("appPrimary")))
-                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
                     .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
             }
             .buttonStyle(.plain)
@@ -283,7 +282,7 @@ struct StatCard: View {
         .padding(.horizontal, 16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(white: 0.15))
+                .fill(Color(.secondarySystemBackground))
         )
     }
 }
