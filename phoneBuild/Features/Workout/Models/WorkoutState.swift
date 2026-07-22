@@ -72,15 +72,17 @@ public struct MultipeerMessage: Codable {
     public enum MessageType: String, Codable {
         case text
         case niDiscoveryToken
-        case niTokenACK  // Acknowledgment that peer received our token
-        case sendChallenge // Sending a challenge
-        case acceptChallenge // Accepting a challenge
-        case endWorkout // Partner requested to end workout session
-        case watchStatus // Companion watch connection status
-        case workoutProgress // Realtime progress metrics
-        case peerLeftRoom // Inviter or rival left the lobby room
-        case rematchRequest // Requesting a rematch
-        case acceptRematch // Accepting a rematch request
+        case niTokenACK       // Acknowledgment that peer received our token
+        case sendChallenge    // Sending a challenge
+        case acceptChallenge  // Accepting a challenge
+        case endWorkout       // Partner requested to end workout session
+        case watchStatus      // Companion watch connection status
+        case workoutProgress  // Realtime progress metrics
+        case peerLeftRoom     // Inviter or rival left the lobby room
+        case rematchRequest   // Requesting a rematch
+        case acceptRematch    // Accepting a rematch request
+        case joinRoom         // Broadcast: host signals all peers to enter the room
+        case workoutResults   // Broadcast final workout stats to all peers
     }
     public let type: MessageType
     public let payload: Data
@@ -98,6 +100,15 @@ public struct WorkoutProgressPayload: Codable {
     public let steps: Double
     public let speed: Double
     public let elevation: Double
+}
+
+/// Final stats broadcast from each device to all peers when a workout ends
+public struct WorkoutResultsPayload: Codable {
+    public let senderResult: String   // "Victory", "Defeat", "Solo"
+    public let distance: Double       // metres
+    public let elapsedSeconds: Int
+    public let calories: Double
+    public let steps: Double
 }
 
 public enum WorkoutResult: String, Codable {

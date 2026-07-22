@@ -28,15 +28,25 @@ public final class MultipeerManager: NSObject {
     private let serviceType = "fit-challenge"
     private let maxRetryAttempts = 3
     private let retryDelayBase: TimeInterval = 1.0
+    private let maxPeers = 8
 
     public let peerID: MCPeerID
     public let session: MCSession
-    private let advertiser: MCNearbyServiceAdvertiser
-    private let browser: MCNearbyServiceBrowser
+    private var advertiser: MCNearbyServiceAdvertiser
+    private var browser: MCNearbyServiceBrowser
 
     // SwiftUI-observed state
     public private(set) var foundPeers: [PeerInfo] = []
-    public private(set) var connectedPeer: MCPeerID?
+
+    /// All currently-connected peers (up to 8). Use this instead of the old `connectedPeer`.
+    public private(set) var connectedPeers: [MCPeerID] = []
+
+    /// Backward-compat convenience: first connected peer, or nil.
+    public var primaryConnectedPeer: MCPeerID? { connectedPeers.first }
+
+    /// Legacy alias kept so existing call-sites still compile.
+    public var connectedPeer: MCPeerID? { primaryConnectedPeer }
+
     public private(set) var pendingInvitingPeer: MCPeerID?
     public private(set) var invitedPeer: MCPeerID?
     public private(set) var isAdvertising = false
@@ -48,7 +58,8 @@ public final class MultipeerManager: NSObject {
     @ObservationIgnored private var pendingInvitationHandler: ((Bool, MCSession?) -> Void)?
 
     @ObservationIgnored public var onPeerConnected: ((MCPeerID) -> Void)?
-    @ObservationIgnored public var onPeerDisconnected: (() -> Void)?
+    /// Now provides the specific peer that disconnected.
+    @ObservationIgnored public var onPeerDisconnected: ((MCPeerID) -> Void)?
     @ObservationIgnored public var onDataReceived: ((MultipeerMessage.MessageType, Data, MCPeerID) -> Void)?
 
     // MARK: - Init
@@ -69,7 +80,7 @@ public final class MultipeerManager: NSObject {
         self.advertiser.delegate = self
         self.browser.delegate = self
 
-        // Auto-advertise — device selalu bisa ditemukan
+        // Always advertise so others can find us
         startAdvertising()
     }
 
@@ -116,6 +127,23 @@ public final class MultipeerManager: NSObject {
         stopBrowsing()
     }
 
+    // MARK: - Full Reset
+    /// Completely tears down and rebuilds advertising/browsing state so no stale
+    /// session data carries over to the next match. Call this on fullCleanup().
+    public func fullReset() {
+        stopAll()
+        session.disconnect()
+        DispatchQueue.main.async {
+            self.connectedPeers.removeAll()
+            self.invitedPeer = nil
+            self.pendingInvitingPeer = nil
+            self.foundPeers.removeAll()
+        }
+        // Re-start advertising so we are discoverable again
+        startAdvertising()
+        print("[MP] Full reset complete")
+    }
+
     // MARK: - Manual Invite
 
     public func invite(_ peerID: MCPeerID) {
@@ -146,7 +174,7 @@ public final class MultipeerManager: NSObject {
                 await CloudKitService.shared.acceptInternetInvite(from: fromUsername)
             }
             DispatchQueue.main.async {
-                self.setConnectedPeer(peer)
+                self.addConnectedPeer(peer)
             }
         } else {
             guard let handler = pendingInvitationHandler else { return }
@@ -182,8 +210,9 @@ public final class MultipeerManager: NSObject {
         self.pendingInvitingPeer = peer
     }
     
+    /// Called when a cloud-based invite is accepted (no MPC handshake).
     public func setConnectedPeer(_ peer: MCPeerID) {
-        self.connectedPeer = peer
+        addConnectedPeer(peer)
         self.invitedPeer = nil
         self.stopAll()
         self.onPeerConnected?(peer)
@@ -191,16 +220,28 @@ public final class MultipeerManager: NSObject {
 
     // MARK: - Data Sending
 
+    /// Send data to ALL connected peers.
     public func sendData(_ data: Data) {
-        guard !session.connectedPeers.isEmpty else {
+        let peers = session.connectedPeers
+        guard !peers.isEmpty else {
             print("[MP] Cannot send: no connected peers")
             return
         }
         do {
-            try session.send(data, toPeers: session.connectedPeers, with: .reliable)
-            print("[MP] Sent \(data.count) bytes")
+            try session.send(data, toPeers: peers, with: .reliable)
+            print("[MP] Sent \(data.count) bytes to \(peers.count) peer(s)")
         } catch {
             print("[MP] Send error: \(error.localizedDescription)")
+        }
+    }
+
+    /// Send data to a specific subset of peers.
+    public func sendData(_ data: Data, to peers: [MCPeerID]) {
+        guard !peers.isEmpty else { return }
+        do {
+            try session.send(data, toPeers: peers, with: .reliable)
+        } catch {
+            print("[MP] Targeted send error: \(error.localizedDescription)")
         }
     }
 
@@ -210,11 +251,25 @@ public final class MultipeerManager: NSObject {
         session.disconnect()
         stopAll()
         DispatchQueue.main.async {
-            self.connectedPeer = nil
+            self.connectedPeers.removeAll()
             self.invitedPeer = nil
             self.foundPeers.removeAll()
         }
         print("[MP] Disconnected")
+    }
+
+    // MARK: - Private Helpers
+
+    private func addConnectedPeer(_ peer: MCPeerID) {
+        guard !connectedPeers.contains(peer), connectedPeers.count < maxPeers else { return }
+        connectedPeers.append(peer)
+        invitedPeer = nil
+        print("[MP] Added peer to room: \(peer.displayName) (total: \(connectedPeers.count))")
+    }
+
+    private func removeConnectedPeer(_ peer: MCPeerID) {
+        connectedPeers.removeAll { $0 == peer }
+        print("[MP] Removed peer from room: \(peer.displayName) (remaining: \(connectedPeers.count))")
     }
 }
 
@@ -226,7 +281,7 @@ extension MultipeerManager: MCNearbyServiceBrowserDelegate {
         DispatchQueue.main.async {
             if !self.foundPeers.contains(peerInfo) {
                 self.foundPeers.append(peerInfo)
-                self.browserState = .scanning // Still scanning, but found peers
+                self.browserState = .scanning
                 print("[MP] Found peer: \(peerID.displayName)")
             }
         }
@@ -236,8 +291,6 @@ extension MultipeerManager: MCNearbyServiceBrowserDelegate {
         DispatchQueue.main.async {
             self.foundPeers.removeAll { $0.id == peerID }
             print("[MP] Lost peer: \(peerID.displayName)")
-
-            // If no peers left after losing one, update state
             if self.foundPeers.isEmpty {
                 self.browserState = .noPeersFound
             }
@@ -246,26 +299,20 @@ extension MultipeerManager: MCNearbyServiceBrowserDelegate {
 
     public func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
         let nsError = error as NSError
-
         print("[MP] Browse error: \(error.localizedDescription)")
         print("[MP] Error domain: \(nsError.domain), code: \(nsError.code)")
 
-        // Update permission state based on error
         if nsError.code == -72008 || nsError.code == -72002 {
-            // -72008: Permission denied / Local network access denied
-            // -72002: Service unavailable
             DispatchQueue.main.async {
                 self.permissionState = .denied
                 self.browserState = .permissionNeeded
             }
         } else if nsError.code == -72003 {
-            // -72003: Network is restricted
             DispatchQueue.main.async {
                 self.permissionState = .restricted
                 self.browserState = .permissionNeeded
             }
         } else {
-            // Other errors - try retry with backoff
             DispatchQueue.main.async {
                 self.handleBrowseError(error)
             }
@@ -281,38 +328,25 @@ extension MultipeerManager: MCNearbyServiceBrowserDelegate {
 
         currentRetryCount += 1
         let delay = retryDelayBase * pow(2.0, Double(currentRetryCount - 1))
-
         print("[MP] Retry attempt \(currentRetryCount)/\(maxRetryAttempts) in \(delay)s")
 
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self = self, self.isBrowsing == false else { return }
-
             print("[MP] Retrying browse...")
             self.browser.startBrowsingForPeers()
         }
     }
 
-    /// Check and update permission state by attempting a probe
     public func checkPermissionState() {
-        // Stop any existing browse to do a clean check
         let wasBrowsing = isBrowsing
-        if isBrowsing {
-            browser.stopBrowsingForPeers()
-        }
-
-        // Attempt to start browsing briefly to trigger permission prompt
+        if isBrowsing { browser.stopBrowsingForPeers() }
         browser.startBrowsingForPeers()
-
-        // Stop after a short delay - we just want to trigger the permission dialog
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.browser.stopBrowsingForPeers()
-            if wasBrowsing {
-                self?.startBrowsing()
-            }
+            if wasBrowsing { self?.startBrowsing() }
         }
     }
 
-    /// Reset permission state to unknown (e.g., after user returns from Settings)
     public func resetPermissionState() {
         permissionState = .unknown
         browserState = .idle
@@ -350,23 +384,21 @@ extension MultipeerManager: MCSessionDelegate {
         case .notConnected:
             print("[MP] Disconnected from: \(peerID.displayName)")
             DispatchQueue.main.async {
-                let wasConnected = self.connectedPeer == peerID
-                if wasConnected { self.connectedPeer = nil }
+                self.removeConnectedPeer(peerID)
                 if self.invitedPeer == peerID { self.invitedPeer = nil }
                 self.foundPeers.removeAll { $0.id == peerID }
-                if wasConnected { self.onPeerDisconnected?() }
+                self.onPeerDisconnected?(peerID)
             }
 
         case .connecting:
             print("[MP] Connecting to: \(peerID.displayName)")
 
         case .connected:
-            print("[MP] Connected to: \(peerID.displayName)")
+            print("[MP] Connected to: \(peerID.displayName) — room now has \(session.connectedPeers.count) peer(s)")
             DispatchQueue.main.async {
-                self.connectedPeer = peerID
-                self.invitedPeer = nil
-                // Stop semua — handshake selesai
-                self.stopAll()
+                self.addConnectedPeer(peerID)
+                // NOTE: We intentionally do NOT call stopAll() here.
+                // Keeping advertising alive lets a 3rd, 4th... peer join the same session.
                 self.onPeerConnected?(peerID)
             }
 

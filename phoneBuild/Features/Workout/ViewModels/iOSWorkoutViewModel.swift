@@ -121,7 +121,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var currentNearbyDistance: Double = 0.0
     @Published public var showDistanceWarning: Bool = false
 
-    
+    /// Final stats received from partner(s) at end of workout — used in ResultsView leaderboard.
+    @Published public var partnerFinalDistance: Double = 0.0
+    @Published public var partnerFinalTime: Int = 0
+    @Published public var partnerFinalCalories: Double = 0.0
+
     @Published public var partnerSteps: Double = 0.0
     @Published public var partnerSpeed: Double = 0.0
     @Published public var partnerElevation: Double = 0.0
@@ -492,11 +496,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         } else {
                             self.partnerCalories = payloadObj.progressValue
                         }
-                        
                         self.partnerSteps = payloadObj.steps
                         self.partnerSpeed = payloadObj.speed
                         self.partnerElevation = payloadObj.elevation
-                        
                         let ownGoal = challenge?.goalValue ?? 1.0
                         let targetVal = (challenge?.metricType == "distance") ? (ownGoal * 1000.0) : ownGoal
                         let ownProgressVal = (challenge?.metricType == "distance") ? self.localDistance : self.localCalories
@@ -504,43 +506,70 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         self.checkPassingStatus(localProgress: ownRatio, partnerProgress: payloadObj.progressRatio)
                     }
                 }
+
+            // BUG FIX #3: Handle joinRoom broadcast — any peer that receives this moves into .room
+            case .joinRoom:
+                DispatchQueue.main.async {
+                    guard self.appState == .navigating || self.appState == .searching else { return }
+                    let partnerName = self.multipeerManager?.primaryConnectedPeer?.displayName ?? "Partner"
+                    self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
+                    self.appState = .room
+                    print("[iOS] Received joinRoom broadcast — entering room")
+                }
+
+            // BUG FIX #4: Handle final workout stats broadcast from peer
+            case .workoutResults:
+                if let payloadObj = try? JSONDecoder().decode(WorkoutResultsPayload.self, from: payload) {
+                    DispatchQueue.main.async {
+                        self.partnerFinalDistance = payloadObj.distance
+                        self.partnerFinalTime = payloadObj.elapsedSeconds
+                        self.partnerFinalCalories = payloadObj.calories
+                        print("[iOS] Received partner final stats: \(payloadObj.distance)m in \(payloadObj.elapsedSeconds)s")
+                    }
+                }
+
             default:
                 break
             }
         }
 
-        manager.onPeerConnected = { [weak self] _ in
+        manager.onPeerConnected = { [weak self] connectedPeerID in
             guard let self = self else { return }
-            // Reset state on new connection
+
+            // Reset NI token state for the new connection handshake
             self.hasSentOwnToken = false
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
-            
-            // Saat peer terkoneksi, ubah appState = .navigating
-            // PENTING: Jangan overwrite self.isHost di sini agar penentu host tetap diatur saat invite/terima.
+
+            let connectedCount = self.multipeerManager?.session.connectedPeers.count ?? 0
+
             DispatchQueue.main.async {
-                self.appState = .navigating
+                if connectedCount == 1 {
+                    // BUG FIX #2: First peer — transition to .navigating for NI proximity check
+                    self.appState = .navigating
+                    print("[iOS] First peer connected — entering navigating state for proximity")
+                } else {
+                    // BUG FIX #2: Subsequent peers — they joined while we're already in .room
+                    // Stay in current state; the new peer will receive a joinRoom broadcast
+                    if self.appState == .room || self.appState == .workoutSetup {
+                        self.broadcastJoinRoom()
+                        print("[iOS] Additional peer \(connectedPeerID.displayName) connected — broadcasting joinRoom")
+                    }
+                }
             }
-            
-            // Send our token
+
+            // Send our NI token so proximity can be established
             self.sendLocalNIToken()
-            
-            // Send our watch connection status to the peer
+            // Share watch connection status
             self.sendWatchStatusToPeer()
         }
 
         niManager.onProximityUpdate = { [weak self] distance in
             guard let self = self else { return }
-            
-            // Sync live distance to Watch
             self.syncDistanceToWatch(Float(distance))
-            
             DispatchQueue.main.async {
                 self.currentNearbyDistance = distance
-                
-                // If the user has already entered the lobby/workout session
-                // Proximity distance check is ONLY active in the lobby (.room) before the match starts!
                 if self.appState == .room {
                     if distance < 2.0 {
                         self.showDistanceWarning = false
@@ -549,42 +578,46 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                     } else if distance > 8.0 {
                         self.showDistanceWarning = false
                         self.activeAlert = .distanceDisconnect
-                        
-                        // Automatically disconnect and go back to home
                         self.fullCleanup()
                         self.appState = .home
                     }
                 } else if self.appState == .navigating {
-                    // Not in the lobby yet: if they get < 2.0 meters, enter the lobby
+                    // BUG FIX #3: When proximity < 2m, enter room AND broadcast joinRoom to all peers
                     if distance < 2.0 {
-                        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                        let partnerName = self.multipeerManager?.primaryConnectedPeer?.displayName ?? "Partner"
                         self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
                         self.appState = .room
+                        self.broadcastJoinRoom()
+                        print("[iOS] Proximity met (<2m) — entering room and broadcasting joinRoom")
                     }
                 } else {
-                    // During active workout or other screens, they can go as far as they want!
                     self.showDistanceWarning = false
                 }
             }
         }
 
-        manager.onPeerDisconnected = { [weak self] in
+        // BUG FIX #1 + #2: onPeerDisconnected now receives the specific peer ID
+        manager.onPeerDisconnected = { [weak self] disconnectedPeer in
             guard let self = self else { return }
-            // Reset token exchange state
             self.hasSentOwnToken = false
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
-            
-            // Restart advertising so we can be discovered again
-            self.multipeerManager?.startAdvertising()
-            
-            DispatchQueue.main.async {
-                self.isHost = false
-                self.partnerWatchConnected = true // Reset to true
-                self.currentRoom = nil
-                self.appState = .home
+
+            let remainingPeers = self.multipeerManager?.session.connectedPeers.count ?? 0
+            print("[iOS] Peer disconnected: \(disconnectedPeer.displayName). Remaining: \(remainingPeers)")
+
+            if remainingPeers == 0 {
+                // Last peer left — go home
+                self.multipeerManager?.startAdvertising()
+                DispatchQueue.main.async {
+                    self.isHost = false
+                    self.partnerWatchConnected = true
+                    self.currentRoom = nil
+                    self.appState = .home
+                }
             }
+            // If other peers remain, stay in current state — the room is still valid
         }
     }
     
@@ -658,39 +691,42 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     public func leaveLobby() {
-        let connectedCount = multipeerManager?.session.connectedPeers.count ?? 0
-        if connectedCount == 1 {
-            // Exactly 2 people (Host + 1 Guest). Send peerLeftRoom notification to the rival
-            let message = MultipeerMessage(type: .peerLeftRoom, payload: Data())
-            if let data = try? JSONEncoder().encode(message) {
-                multipeerManager?.sendData(data)
-            }
+        // BUG FIX #2: Broadcast peerLeftRoom to ALL connected peers, not just one
+        let message = MultipeerMessage(type: .peerLeftRoom, payload: Data())
+        if let data = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(data)
         }
-        
         fullCleanup()
         appState = .home
     }
 
-    /// Single entry point untuk cleanup. Dipanggil dari View.
-    /// idempotent — aman dipanggil berkali-kali.
+    /// Single entry point for cleanup. Idempotent — safe to call multiple times.
     public func fullCleanup() {
-        // 1. Reset NI session (ini akan invalidate dan buat session baru)
+        // 1. Reset NI session
         niManager.reset()
 
-        // 2. Disconnect Multipeer (callback onPeerDisconnected hanya clear state, tidak reset NI)
-        multipeerManager?.disconnect()
+        // 2. BUG FIX #1: Use fullReset() so no stale MPC session data carries over
+        multipeerManager?.fullReset()
 
-        // Restart advertising so we can be discovered again
-        multipeerManager?.startAdvertising()
-
-        // 3. Clear room state
+        // 3. Clear room and workout state
         currentRoom = nil
         selectedChallenge = nil
         receivedChallenge = nil
         watchCalories = 0.0
+        partnerFinalDistance = 0.0
+        partnerFinalTime = 0
+        partnerFinalCalories = 0.0
         appState = .home
 
         print("[ViewModel] Full cleanup done")
+    }
+
+    /// BUG FIX #3: Broadcast joinRoom to all currently connected peers.
+    private func broadcastJoinRoom() {
+        let message = MultipeerMessage(type: .joinRoom, payload: Data())
+        if let data = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(data)
+        }
     }
 
     // MARK: - Challenge Functions
@@ -999,7 +1035,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     public func endWorkout() {
-        if multipeerManager?.connectedPeer == nil {
+        if multipeerManager?.session.connectedPeers.isEmpty ?? true {
             self.workoutResult = .solo
             AudioManager.shared.playSoloComplete()
         } else {
@@ -1011,16 +1047,29 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     private func sendEndWorkoutCommandToPartner() {
-        let message = MultipeerMessage(type: .endWorkout, payload: Data())
-        if let messageData = try? JSONEncoder().encode(message) {
+        // BUG FIX #4: Broadcast final stats to ALL peers so every device sees real leaderboard data
+        let resultsPayload = WorkoutResultsPayload(
+            senderResult: workoutResult.rawValue,
+            distance: localDistance,
+            elapsedSeconds: elapsedSeconds,
+            calories: localCalories,
+            steps: localSteps
+        )
+        if let resultsData = try? JSONEncoder().encode(resultsPayload) {
+            let resultsMessage = MultipeerMessage(type: .workoutResults, payload: resultsData)
+            if let messageData = try? JSONEncoder().encode(resultsMessage) {
+                multipeerManager?.sendData(messageData)
+            }
+        }
+
+        let endMessage = MultipeerMessage(type: .endWorkout, payload: Data())
+        if let messageData = try? JSONEncoder().encode(endMessage) {
             multipeerManager?.sendData(messageData)
         }
         
         let roomID = self.roomIdentifier
         Task {
-            let targetValue = self.selectedChallenge?.goalValue ?? self.receivedChallenge?.goalValue ?? 1.0
             let metricType = self.selectedChallenge?.metricType ?? self.receivedChallenge?.metricType ?? "distance"
-            let _ = metricType == "distance" ? (targetValue * 1000.0) : targetValue
             let localVal = metricType == "distance" ? localDistance : localCalories
             await CloudKitService.shared.updateWorkoutProgress(
                 roomID: roomID,
@@ -1034,7 +1083,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     private func endWorkoutNatively() {
-        if multipeerManager?.connectedPeer != nil && self.workoutResult != .victory {
+        if !(multipeerManager?.session.connectedPeers.isEmpty ?? true) && self.workoutResult != .victory {
             self.workoutResult = .defeat
             AudioManager.shared.playDefeat()
         }
@@ -1088,7 +1137,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     public func sendRematchRequest() {
-        print("[iOS] Sending rematch request to partner...")
+        print("[iOS] Sending rematch request to ALL partners...")
+        // BUG FIX #5: Broadcast to all peers, not just the first
         let message = MultipeerMessage(type: .rematchRequest, payload: Data())
         if let encoded = try? JSONEncoder().encode(message) {
             multipeerManager?.sendData(encoded)
@@ -1096,7 +1146,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     public func acceptRematchRequest() {
-        print("[iOS] Accepting rematch request and notifying partner...")
+        print("[iOS] Accepting rematch request and notifying all partners...")
         let message = MultipeerMessage(type: .acceptRematch, payload: Data())
         if let encoded = try? JSONEncoder().encode(message) {
             multipeerManager?.sendData(encoded)
@@ -1107,17 +1157,28 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     private func goToRematchSetup() {
         DispatchQueue.main.async {
             self.activeAlert = nil
-            // Reset active workout metrics
+            // BUG FIX #5: Reset only workout metrics — do NOT disconnect MPC session.
+            // Keeping the session alive means all peers stay grouped for the next round.
             self.partnerProgress = 0.0
             self.partnerDistance = 0.0
             self.partnerCalories = 0.0
+            self.partnerFinalDistance = 0.0
+            self.partnerFinalTime = 0
+            self.partnerFinalCalories = 0.0
             self.watchCalories = 0.0
             self.heartRate = 0.0
             self.countdownText = "00:00"
+            self.localDistance = 0.0
+            self.localCalories = 0.0
+            self.localProgress = 0.0
+            self.localSteps = 0.0
+            self.localSpeed = 0.0
+            self.localElevation = 0.0
+            self.elapsedSeconds = 0
             self.selectedChallenge = nil
             self.receivedChallenge = nil
             
-            // Route based on role: host goes to workoutSetup, guest goes to room formed
+            // Route based on role: host picks new challenge, guest waits
             self.appState = self.isHost ? .workoutSetup : .room
         }
     }
@@ -1153,8 +1214,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         if let payloadData = try? JSONEncoder().encode(payload) {
             let message = MultipeerMessage(type: .watchStatus, payload: payloadData)
             if let messageData = try? JSONEncoder().encode(message) {
+                // BUG FIX #2: broadcast to ALL connected peers
                 multipeerManager?.sendData(messageData)
-                print("[iOS] Sent watch status to peer: \(isConnected)")
+                print("[iOS] Sent watch status to all peers: \(isConnected)")
             }
         }
     }

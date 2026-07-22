@@ -176,9 +176,10 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     }
     
     func updateSessionId(_ sessionId: String) {
-        if currentSessionId.isEmpty {
-            currentSessionId = sessionId
-        }
+        // BUG FIX #6: Always overwrite — ensure Watch always uses the latest iOS session ID,
+        // especially important on rematch so stale data is never attributed to the new session.
+        currentSessionId = sessionId
+        print("[Watch] Session ID updated: \(sessionId)")
     }
     
     private var audioPlayer: AVAudioPlayer?
@@ -271,6 +272,10 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
         self.workoutSession = nil
         self.workoutBuilder = nil
         self.countdown = 0
+        
+        // BUG FIX #6: Always zero out metrics before a new session so Watch never shows
+        // stale distance/calories from a previous workout.
+        self.metrics = WorkoutMetrics()
         
         session.end()
         builder?.endCollection(withEnd: Date()) { _, _ in
@@ -393,6 +398,10 @@ class WatchWorkoutService: NSObject, ObservableObject, HKWorkoutSessionDelegate,
     }
     
     func syncMetricsToPhone() {
+        // BUG FIX #6: Only sync if the session has been running for at least 2 seconds.
+        // This prevents a false "active" echo on the very first tick that can confuse iOS.
+        guard countdown >= 2 else { return }
+        
         // Calculate speed dynamically
         let dist = Double(metrics.distance ?? 0.0)
         let elapsed = Double(metrics.remainingSeconds)

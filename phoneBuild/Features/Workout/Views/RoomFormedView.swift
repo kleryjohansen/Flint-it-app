@@ -11,13 +11,6 @@ struct RoomFormedView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var isLoading = false
 
-    // Mock other nearby people to populate the invite list
-    private let nearbyMates = [
-        "Nathaniel John",
-        "Jasper Komrade",
-        "Christie Almanda"
-    ]
-
     var body: some View {
         ZStack(alignment: .top) {
             // Force strict black background behind everything ignoring system theme
@@ -191,25 +184,37 @@ struct RoomFormedView: View {
                             
                             // SECTION 2: Invite more nearby (ONLY FOR HOST)
                             if viewModel.isHost {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Text("Invite more nearby")
-                                        .font(.subheadline)
-                                        .foregroundColor(Color(white: 0.8))
-                                        .padding(.horizontal, 4)
-                                    
-                                    VStack(spacing: 12) {
-                                        ForEach(nearbyMates, id: \.self) { mate in
-                                            LobbyInviteRow(name: mate)
+                                // Real nearby peers that are NOT already connected
+                                let alreadyConnected = viewModel.multipeerManager?.session.connectedPeers ?? []
+                                let invitablePeers = (viewModel.multipeerManager?.foundPeers ?? [])
+                                    .filter { info in !alreadyConnected.contains(info.id) }
+
+                                if !invitablePeers.isEmpty {
+                                    VStack(alignment: .leading, spacing: 14) {
+                                        Text("Invite more nearby")
+                                            .font(.subheadline)
+                                            .foregroundColor(Color(white: 0.8))
+                                            .padding(.horizontal, 4)
+                                        
+                                        VStack(spacing: 12) {
+                                            ForEach(invitablePeers) { peerInfo in
+                                                LobbyInviteRow(
+                                                    name: peerInfo.displayName,
+                                                    onInvite: {
+                                                        viewModel.invite(peer: peerInfo.id)
+                                                    }
+                                                )
+                                            }
                                         }
+                                        
+                                        Text("*You can add up to 8 people.")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(Color(white: 0.6))
+                                            .padding(.horizontal, 4)
+                                            .padding(.top, 6)
                                     }
-                                    
-                                    Text("*You can add up to 8 people.")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(Color(white: 0.6))
-                                        .padding(.horizontal, 4)
-                                        .padding(.top, 6)
+                                    .padding(.top, 12)
                                 }
-                                .padding(.top, 12)
                             }
                             
                             Spacer().frame(height: 120) // Bottom padding for fixed CTA button
@@ -305,6 +310,7 @@ struct LobbyUserRow: View {
 
 struct LobbyInviteRow: View {
     let name: String
+    var onInvite: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 16) {
@@ -320,7 +326,7 @@ struct LobbyInviteRow: View {
 
             Spacer()
 
-            Button(action: {}) {
+            Button(action: { onInvite?() }) {
                 Text("Invite")
                     .font(.subheadline).bold()
                     .foregroundColor(.white)
@@ -332,7 +338,7 @@ struct LobbyInviteRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color.clear) // Outline Row Logic
+        .background(Color.clear)
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Color(white: 0.25), lineWidth: 1)

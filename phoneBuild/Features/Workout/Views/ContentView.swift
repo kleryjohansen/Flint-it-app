@@ -702,9 +702,10 @@ struct ResultsView: View {
                                     image: ownProfileImage
                                 )
                                 
-                                if viewModel.multipeerManager?.connectedPeer != nil {
-                                    let partnerName = viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner"
-                                    let partnerSecs = viewModel.elapsedSeconds + 7
+                                // BUG FIX #4: Use real partnerFinalTime from workoutResults broadcast
+                                if viewModel.multipeerManager?.primaryConnectedPeer != nil {
+                                    let partnerName = viewModel.multipeerManager?.primaryConnectedPeer?.displayName ?? "Partner"
+                                    let partnerSecs = viewModel.partnerFinalTime > 0 ? viewModel.partnerFinalTime : viewModel.elapsedSeconds
                                     let pMin = partnerSecs / 60
                                     let pSec = partnerSecs % 60
                                     let partnerTimeStr = String(format: "%02d:%02d", pMin, pSec)
@@ -716,29 +717,31 @@ struct ResultsView: View {
                                     )
                                 }
                             } else {
-                                let partnerName = viewModel.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                                let partnerName = viewModel.multipeerManager?.primaryConnectedPeer?.displayName ?? "Partner"
+                                // BUG FIX #4: Use real partnerFinalTime; fallback to own time if not yet received
+                                let partnerSecs = viewModel.partnerFinalTime > 0 ? viewModel.partnerFinalTime : viewModel.elapsedSeconds
+                                let pMin = partnerSecs / 60
+                                let pSec = partnerSecs % 60
+                                let partnerTimeStr = String(format: "%02d:%02d", pMin, pSec)
                                 PlayerResultPod(
                                     rank: "①",
                                     name: partnerName,
-                                    time: viewModel.countdownText,
+                                    time: partnerTimeStr,
                                     image: nil
                                 )
                                 
-                                let ownSecs = viewModel.elapsedSeconds + 12
-                                let oMin = ownSecs / 60
-                                let oSec = ownSecs % 60
-                                let ownTimeStr = String(format: "%02d:%02d", oMin, oSec)
                                 PlayerResultPod(
                                     rank: "②",
                                     name: ownName,
-                                    time: ownTimeStr,
+                                    time: viewModel.countdownText,
                                     image: ownProfileImage
                                 )
                             }
                         }
+
                         
                         VStack(spacing: 16) {
-                            if viewModel.multipeerManager?.connectedPeer != nil {
+                            if viewModel.multipeerManager?.primaryConnectedPeer != nil {
                                 Button(action: {
                                     viewModel.sendRematchRequest()
                                 }) {
