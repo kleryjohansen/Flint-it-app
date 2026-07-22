@@ -26,7 +26,7 @@ public struct WorkoutSetupView: View {
     ]
     
     public init() {}
-
+    
     public var body: some View {
         ZStack(alignment: .top) {
             Color.black.ignoresSafeArea()
@@ -38,10 +38,13 @@ public struct WorkoutSetupView: View {
                 .clipped()
                 .mask(LinearGradient(gradient: Gradient(colors: [.black, .black.opacity(0)]), startPoint: .top, endPoint: .bottom))
                 .ignoresSafeArea()
-                
+            
             VStack(spacing: 0) {
                 // Header Nav
                 HStack {
+                    
+                    let glassStyle: Glass = .regular
+                    
                     Button(action: {
                         if step > 1 {
                             withAnimation { step = 1 }
@@ -53,16 +56,20 @@ public struct WorkoutSetupView: View {
                             }
                         }
                     }) {
+                        // Use chevron if going back a step, otherwise use xmark to close
                         Image(systemName: step > 1 ? "chevron.left" : "xmark")
                             .font(.title3.bold())
-                            .foregroundColor(.white)
-                            .padding(12)
-                            .background(Circle().fill(Color.white.opacity(0.15)))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 6)
+                        
                     }
+                    .buttonStyle(.glass(glassStyle))
+                    .controlSize(.regular)
+                    .buttonBorderShape(.automatic)
                     Spacer()
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.top, 40)
                 
                 // Title Area
                 VStack(alignment: .leading, spacing: 8) {
@@ -83,7 +90,7 @@ public struct WorkoutSetupView: View {
                     Color(white: 0.05)
                         .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                         .ignoresSafeArea(edges: .bottom)
-                        
+                    
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 24) {
                             if step == 1 {
@@ -203,4 +210,9 @@ public struct WorkoutSetupView: View {
         }
         .navigationBarBackButtonHidden(true)
     }
+}
+
+
+#Preview {
+    WorkoutSetupView()
 }
