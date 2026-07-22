@@ -413,7 +413,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                         duration: workout.duration,
                         avgHeartRate: 0.0,
                         calories: 0.0,
-                        partnerName: nil
+                        partnerName: nil,
+                        isVictory: false
                     )
                 }
                 
@@ -1240,13 +1241,15 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         let currentCal = watchCalories > 0 ? watchCalories : Double.random(in: 80...160) // fallback energy
         let partner = currentRoom?.partnerName ?? "Partner"
         
+        let isVictoryVal = (workoutResult == .victory)
         let newWorkout = PastWorkout(
             date: Date(),
             type: currentType,
             duration: currentDuration,
             avgHeartRate: currentHR,
             calories: currentCal,
-            partnerName: partner
+            partnerName: partner,
+            isVictory: isVictoryVal
         )
         
         // Insert at the beginning of list
