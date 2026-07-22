@@ -92,12 +92,6 @@ struct OnboardingView: View {
             .ignoresSafeArea()
 
             VStack {
-                Image("Logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 32)
-                    .padding(.top, 20)
-
                 Spacer()
                 VStack(spacing: 16) {
                     HStack(spacing: 8) {
