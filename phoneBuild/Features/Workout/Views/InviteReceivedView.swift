@@ -14,18 +14,21 @@ struct InviteReceivedView: View {
             VStack(spacing: 28) {
                 // Header Graphic
                 ZStack {
-                    Circle()
-                        .fill(Color.flintRed.opacity(0.12))
-                        .frame(width: 96, height: 96)
+//                    Circle()
+//                        .fill(Color.flintRed.opacity(0.12))
+//                        .frame(width: 96, height: 96)
 
                     Image(systemName: "figure.run")
                         .font(.largeTitle)
-                        .foregroundColor(Color.flintRed)
+                        .foregroundColor(Color.white)
+                        .padding(.horizontal, 3)
                 }
+                .padding(12)
+                .glassEffect(.clear.tint(.flintRed))
                 .padding(.top, 16)
 
-                VStack(spacing: 12) {
-                    Text("\(viewModel.multipeerManager?.pendingInvitingPeer?.displayName ?? "Someone") wants to work out with you!")
+                VStack(spacing: 24) {
+                    Text("\(viewModel.multipeerManager?.pendingInvitingPeer?.displayName ?? "Someone") invite you to a challenge!")
                         .font(.title3).bold()
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.center)
@@ -36,16 +39,16 @@ struct InviteReceivedView: View {
                             .foregroundColor(.primary)
 
                         Text("Accepting will share your real-time distance and direction with this device during the session. Your location is never stored or uploaded.")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundColor(Color("appSecondaryLabel"))
                             .lineSpacing(4)
                     }
-                    .padding(16)
+                    .padding(12)
                     .flintGlassCard()
                 }
 
                 // Action Buttons
-                HStack(spacing: 16) {
+                HStack(spacing: 8) {
                     Button(action: {
                         viewModel.declineInvite()
                         dismiss()
@@ -53,9 +56,12 @@ struct InviteReceivedView: View {
                         Text("Decline")
                             .font(.callout).bold()
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                     }
-                    .buttonStyle(PillButtonStyle(color: Color("appGlassBorder")))
-                    .colorScheme(.light) // Force light style untuk kontras di kedua mode
+                    .buttonStyle(.glass)
+                    .controlSize(.regular)
+                    .buttonBorderShape(.automatic)
+//                    .tint(.accentColor)
 
                     Button(action: {
                         viewModel.acceptInvite()
@@ -64,8 +70,12 @@ struct InviteReceivedView: View {
                         Text("Accept")
                             .font(.callout).bold()
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                     }
-                    .buttonStyle(PillButtonStyle())
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.regular)
+                    .buttonBorderShape(.automatic)
+                    .tint(.flintRed)
                 }
                 .padding(.bottom, 16)
             }

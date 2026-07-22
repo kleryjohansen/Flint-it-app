@@ -460,15 +460,15 @@ struct ActiveWorkoutView: View {
                     
                     VStack(spacing: 16) {
                         Text(viewModel.countdownSeconds == 0 ? "GO!" : "\(viewModel.countdownSeconds)")
-                            .font(.system(size: viewModel.countdownSeconds == 0 ? 110 : 130, weight: .black, design: .rounded))
+                            .font(.system(size: viewModel.countdownSeconds == 0 ? 110 : 130, weight: .bold))
                             .foregroundColor(Color.flintRed)
                             .transition(.scale.combined(with: .opacity))
                             .id(viewModel.countdownSeconds)
                             .animation(.spring(response: 0.4, dampingFraction: 0.6), value: viewModel.countdownSeconds)
                         
-                        Text(viewModel.countdownSeconds == 0 ? "START RIVALRY" : "GET READY")
+                        Text(viewModel.countdownSeconds == 0 ? "START" : "GET READY")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.secondary)
                             .tracking(2)
                     }
                 }
