@@ -367,8 +367,8 @@ struct ActiveWorkoutView: View {
                             .frame(width: 38, alignment: .trailing)
                     }
                     
-                    // Player 2 (Partner)
-                    if viewModel.multipeerManager?.connectedPeer != nil {
+                    // Player 2 (Fastest Partner / Rival)
+                    if let partner = viewModel.fastestPartner {
                         HStack(spacing: 10) {
                             ZStack {
                                 Circle()
@@ -387,12 +387,18 @@ struct ActiveWorkoutView: View {
                                     
                                     Capsule()
                                         .fill(Color.flintRed)
-                                        .frame(width: geometry.size.width * CGFloat(viewModel.partnerProgress), height: 6)
+                                        .frame(width: geometry.size.width * CGFloat(partner.progress), height: 6)
                                 }
                             }
                             .frame(height: 6)
                             
-                            Text("\(Int(viewModel.partnerProgress * 100))%")
+                            Text(partner.displayName)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.6))
+                                .lineLimit(1)
+                                .frame(maxWidth: 80, alignment: .leading)
+                            
+                            Text("\(Int(partner.progress * 100))%")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundColor(.white.opacity(0.8))
                                 .frame(width: 38, alignment: .trailing)
@@ -689,56 +695,35 @@ struct ResultsView: View {
                     }
                     .padding(.bottom, 48)
                     Spacer()
-                    
-                } else {
+                             } else {
                     // Leaderboard / Pod View + Rematch Buttons
                     VStack(spacing: 32) {
-                        HStack(spacing: 24) {
-                            if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
-                                PlayerResultPod(
-                                    rank: "①",
-                                    name: ownName,
-                                    time: viewModel.countdownText,
-                                    image: ownProfileImage
-                                )
-                                
-                                // BUG FIX #4: Use real partnerFinalTime from workoutResults broadcast
-                                if viewModel.multipeerManager?.primaryConnectedPeer != nil {
-                                    let partnerName = viewModel.multipeerManager?.primaryConnectedPeer?.displayName ?? "Partner"
-                                    let partnerSecs = viewModel.partnerFinalTime > 0 ? viewModel.partnerFinalTime : viewModel.elapsedSeconds
-                                    let pMin = partnerSecs / 60
-                                    let pSec = partnerSecs % 60
-                                    let partnerTimeStr = String(format: "%02d:%02d", pMin, pSec)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 24) {
+                                let results = viewModel.allContestantResults
+                                ForEach(Array(results.enumerated()), id: \.element.name) { index, contestant in
+                                    let rankSym: String = {
+                                        let symbols = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"]
+                                        if index < symbols.count {
+                                            return symbols[index]
+                                        }
+                                        return "\(index + 1)"
+                                    }()
+                                    
+                                    let min = contestant.time / 60
+                                    let sec = contestant.time % 60
+                                    let timeStr = String(format: "%02d:%02d", min, sec)
+                                    
                                     PlayerResultPod(
-                                        rank: "②",
-                                        name: partnerName,
-                                        time: partnerTimeStr,
-                                        image: nil
+                                        rank: rankSym,
+                                        name: contestant.name,
+                                        time: timeStr,
+                                        image: contestant.image
                                     )
                                 }
-                            } else {
-                                let partnerName = viewModel.multipeerManager?.primaryConnectedPeer?.displayName ?? "Partner"
-                                // BUG FIX #4: Use real partnerFinalTime; fallback to own time if not yet received
-                                let partnerSecs = viewModel.partnerFinalTime > 0 ? viewModel.partnerFinalTime : viewModel.elapsedSeconds
-                                let pMin = partnerSecs / 60
-                                let pSec = partnerSecs % 60
-                                let partnerTimeStr = String(format: "%02d:%02d", pMin, pSec)
-                                PlayerResultPod(
-                                    rank: "①",
-                                    name: partnerName,
-                                    time: partnerTimeStr,
-                                    image: nil
-                                )
-                                
-                                PlayerResultPod(
-                                    rank: "②",
-                                    name: ownName,
-                                    time: viewModel.countdownText,
-                                    image: ownProfileImage
-                                )
                             }
+                            .padding(.horizontal, 24)
                         }
-
                         
                         VStack(spacing: 16) {
                             if viewModel.multipeerManager?.primaryConnectedPeer != nil {

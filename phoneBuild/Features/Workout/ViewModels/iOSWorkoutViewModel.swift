@@ -133,6 +133,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var avgPaceText: String = "--:--"
     @Published public var workoutResult: WorkoutResult = .solo
     
+    // Multi-peer profile and progress syncing maps
+    @Published public var peerProfiles: [String: PeerProfile] = [:]
+    @Published public var peerProgress: [MCPeerID: Double] = [:]
+    @Published public var peerResults: [String: WorkoutResultsPayload] = [:]
+    
     private var cloudKitSyncTimer: Timer?
     private var isAheadOfPartner: Bool = false
     
@@ -438,8 +443,28 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         pendingPeerToken = nil
         hasReceivedPeerToken = false
         hasSentTokenACK = false
+        
+        var discoveryInfo: [String: String] = [:]
+        if let data = UserDefaults.standard.data(forKey: "savedProfileImageData"),
+           let image = UIImage(data: data) {
+            // Compress image to a very small size (32x32 pixels, low quality JPEG) to fit in TXT record limit
+            let targetSize = CGSize(width: 32, height: 32)
+            UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+            let smallImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+            
+            if let smallImage = smallImage,
+               let jpegData = smallImage.jpegData(compressionQuality: 0.1) {
+                let base64 = jpegData.base64EncodedString()
+                // Ensure length is safe for discoveryInfo
+                if base64.count < 350 {
+                    discoveryInfo["pic"] = base64
+                }
+            }
+        }
 
-        let manager = MultipeerManager(customDisplayName: userName)
+        let manager = MultipeerManager(customDisplayName: userName, discoveryInfo: discoveryInfo)
         self.multipeerManager = manager
 
         manager.onDataReceived = { [weak self] type, payload, peerID in
@@ -458,8 +483,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 }
             case .acceptChallenge:
                 DispatchQueue.main.async {
-                    self.appState = .activeWorkout
-                    self.notifyWatchToStartWorkout()
+                    self.requestHealthKitAuthorization {
+                        DispatchQueue.main.async {
+                            self.appState = .activeWorkout
+                            self.notifyWatchToStartWorkout()
+                        }
+                    }
                 }
             case .rematchRequest:
                 DispatchQueue.main.async {
@@ -489,6 +518,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             case .workoutProgress:
                 if let payloadObj = try? JSONDecoder().decode(WorkoutProgressPayload.self, from: payload) {
                     DispatchQueue.main.async {
+                        self.peerProgress[peerID] = payloadObj.progressRatio
                         self.partnerProgress = payloadObj.progressRatio
                         let challenge = self.selectedChallenge ?? self.receivedChallenge
                         if challenge?.metricType == "distance" {
@@ -521,10 +551,20 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             case .workoutResults:
                 if let payloadObj = try? JSONDecoder().decode(WorkoutResultsPayload.self, from: payload) {
                     DispatchQueue.main.async {
+                        self.peerResults[peerID.displayName] = payloadObj
                         self.partnerFinalDistance = payloadObj.distance
                         self.partnerFinalTime = payloadObj.elapsedSeconds
                         self.partnerFinalCalories = payloadObj.calories
                         print("[iOS] Received partner final stats: \(payloadObj.distance)m in \(payloadObj.elapsedSeconds)s")
+                    }
+                }
+
+            // Handle Profile Exchange
+            case .profileExchange:
+                if let profile = try? JSONDecoder().decode(PeerProfile.self, from: payload) {
+                    DispatchQueue.main.async {
+                        self.peerProfiles[peerID.displayName] = profile
+                        print("[iOS] Saved profile for \(peerID.displayName) (named: \(profile.displayName))")
                     }
                 }
 
@@ -559,6 +599,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 }
             }
 
+            // Send our profile and get theirs
+            self.sendProfileToAll()
+            
             // Send our NI token so proximity can be established
             self.sendLocalNIToken()
             // Share watch connection status
@@ -727,6 +770,101 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         if let data = try? JSONEncoder().encode(message) {
             multipeerManager?.sendData(data)
         }
+    }
+
+    private func sendProfileToAll() {
+        let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "Player"
+        let ownPicData = UserDefaults.standard.data(forKey: "savedProfileImageData")
+        let profile = PeerProfile(displayName: ownName, profileImageData: ownPicData)
+        if let encoded = try? JSONEncoder().encode(profile) {
+            let message = MultipeerMessage(type: .profileExchange, payload: encoded)
+            if let msgData = try? JSONEncoder().encode(message) {
+                multipeerManager?.sendData(msgData)
+                print("[iOS] Sent own profile to peers")
+            }
+        }
+    }
+    
+    public func getProfileImage(for displayName: String) -> UIImage? {
+        if let exchanged = peerProfiles[displayName],
+           let data = exchanged.profileImageData {
+            return UIImage(data: data)
+        }
+        if let found = multipeerManager?.foundPeers.first(where: { $0.displayName == displayName }),
+           let base64 = found.profileImageBase64,
+           let data = Data(base64Encoded: base64) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+    
+    public var fastestPartner: (displayName: String, progress: Double)? {
+        let connected = multipeerManager?.session.connectedPeers ?? []
+        guard !connected.isEmpty else { return nil }
+        
+        if connected.count == 1 {
+            let peer = connected[0]
+            let prog = peerProgress[peer] ?? 0.0
+            return (peer.displayName, prog)
+        }
+        
+        let sorted = connected.map { peer -> (MCPeerID, Double) in
+            let prog = peerProgress[peer] ?? 0.0
+            return (peer, prog)
+        }
+        if let best = sorted.max(by: { $0.1 < $1.1 }) {
+            return (best.0.displayName, best.1)
+        }
+        return nil
+    }
+    
+    public struct ContestantResult: Identifiable {
+        public var id: String { name }
+        public let name: String
+        public let time: Int
+        public let progressValue: Double
+        public let image: UIImage?
+        public let isHost: Bool
+    }
+    
+    public var allContestantResults: [ContestantResult] {
+        var list: [ContestantResult] = []
+        
+        // Add yourself
+        let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
+        let ownPicData = UserDefaults.standard.data(forKey: "savedProfileImageData")
+        let ownPic = ownPicData != nil ? UIImage(data: ownPicData!) : nil
+        list.append(ContestantResult(
+            name: ownName,
+            time: elapsedSeconds,
+            progressValue: selectedChallenge?.metricType == "distance" ? localDistance : localCalories,
+            image: ownPic,
+            isHost: isHost
+        ))
+        
+        // Add all connected peers who are in the room/session
+        let connected = multipeerManager?.session.connectedPeers ?? []
+        for peer in connected {
+            let stats = peerResults[peer.displayName]
+            let peerTime = stats?.elapsedSeconds ?? elapsedSeconds // fallback if not received
+            let peerVal = (selectedChallenge ?? receivedChallenge)?.metricType == "distance" ? (stats?.distance ?? 0.0) : (stats?.calories ?? 0.0)
+            let img = getProfileImage(for: peer.displayName)
+            list.append(ContestantResult(
+                name: peer.displayName,
+                time: peerTime,
+                progressValue: peerVal,
+                image: img,
+                isHost: false
+            ))
+        }
+        
+        // Sort by elapsed seconds asc (faster is better).
+        // If elapsedSeconds is 0, place it at the end.
+        return list.sorted(by: {
+            if $0.time == 0 { return false }
+            if $1.time == 0 { return true }
+            return $0.time < $1.time
+        })
     }
 
     // MARK: - Challenge Functions
@@ -1023,8 +1161,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     func startWorkout() {
-        appState = .activeWorkout
-        notifyWatchToStartWorkout()
+        requestHealthKitAuthorization { [weak self] in
+            DispatchQueue.main.async {
+                self?.appState = .activeWorkout
+                self?.notifyWatchToStartWorkout()
+            }
+        }
     }
     
     var roomIdentifier: String {

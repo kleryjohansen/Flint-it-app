@@ -120,13 +120,25 @@ struct DiscoveryView: View {
                                     }
                                 }) {
                                     VStack(spacing: 4) {
-                                        Image(systemName: "person.crop.circle.fill")
-                                            .resizable()
-                                            .frame(width: 46, height: 46)
-                                            .foregroundColor(Color.flintRed)
-                                            .background(Circle().fill(Color.black))
-                                            .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
-                                            .shadow(color: Color.flintRed.opacity(0.4), radius: 6)
+                                        if let base64 = peer.profileImageBase64,
+                                           let imgData = Data(base64Encoded: base64),
+                                           let uiImg = UIImage(data: imgData) {
+                                            Image(uiImage: uiImg)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 46, height: 46)
+                                                .clipShape(Circle())
+                                                .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
+                                                .shadow(color: Color.flintRed.opacity(0.4), radius: 6)
+                                        } else {
+                                            Image(systemName: "person.crop.circle.fill")
+                                                .resizable()
+                                                .frame(width: 46, height: 46)
+                                                .foregroundColor(Color.flintRed)
+                                                .background(Circle().fill(Color.black))
+                                                .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 2))
+                                                .shadow(color: Color.flintRed.opacity(0.4), radius: 6)
+                                        }
 
                                         Text(peer.displayName)
                                             .font(.caption2).bold()
@@ -185,33 +197,32 @@ struct DiscoveryView: View {
                 }
                 .frame(height: 220)
                 
+                // Solo button directly below search/radar button
+                Button(action: {
+                    withAnimation {
+                        viewModel.skipConnectionAndGoToSetup()
+                    }
+                }) {
+                    Text("Skip to Setup (Solo)")
+                        .font(.callout).bold()
+                        .foregroundColor(.white)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 24)
+                        .background(Color.flintRed)
+                        .clipShape(Capsule())
+                        .glassEffect(.regular.interactive(), in: .capsule)
+                        .shadow(color: Color.flintRed.opacity(0.4), radius: 8)
+                }
+                .padding(.top, 16)
+                
                 Spacer(minLength: 16)
 
-                // Secondary info label & Solo skip
+                // Secondary info label
                 VStack(spacing: 8) {
                     if let count = viewModel.multipeerManager?.foundPeers.count, count > 0 {
                         Text("\(count) peer(s) nearby")
                             .font(.subheadline.bold())
                             .foregroundColor(.white.opacity(0.8))
-                    }
-                    if showSearchSkip && viewModel.appState == .searching {
-                        Button(action: {
-                            withAnimation {
-                                viewModel.skipConnectionAndGoToSetup()
-                            }
-                        }) {
-                            Text("Skip to Setup (Solo)")
-                                .font(.callout).bold()
-                                .foregroundColor(.white)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 24)
-                                .background(Color.flintRed)
-                                .clipShape(Capsule())
-                                .glassEffect(.regular.interactive(), in: .capsule)
-                                .shadow(color: Color.flintRed.opacity(0.4), radius: 8)
-                        }
-                        .padding(.top, 8)
-                        .transition(.scale.combined(with: .opacity))
                     }
                 }
             }

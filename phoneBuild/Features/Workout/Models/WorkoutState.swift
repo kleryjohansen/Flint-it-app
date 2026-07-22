@@ -49,6 +49,12 @@ public struct PastWorkout: Identifiable, Codable {
 public struct PeerInfo: Identifiable, Equatable {
     public let id: MCPeerID
     public var displayName: String { id.displayName }
+    public var profileImageBase64: String?
+
+    public init(id: MCPeerID, profileImageBase64: String? = nil) {
+        self.id = id
+        self.profileImageBase64 = profileImageBase64
+    }
 
     public static func == (lhs: PeerInfo, rhs: PeerInfo) -> Bool {
         lhs.id == rhs.id
@@ -83,6 +89,7 @@ public struct MultipeerMessage: Codable {
         case acceptRematch    // Accepting a rematch request
         case joinRoom         // Broadcast: host signals all peers to enter the room
         case workoutResults   // Broadcast final workout stats to all peers
+        case profileExchange  // Share display name and profile picture
     }
     public let type: MessageType
     public let payload: Data
@@ -91,6 +98,11 @@ public struct MultipeerMessage: Codable {
         self.type = type
         self.payload = payload
     }
+}
+
+public struct PeerProfile: Codable {
+    public let displayName: String
+    public let profileImageData: Data?
 }
 
 public struct WorkoutProgressPayload: Codable {
