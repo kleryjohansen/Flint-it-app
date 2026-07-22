@@ -136,7 +136,7 @@ struct WatchWorkoutView: View {
         .background(Color.black.ignoresSafeArea())
     }
 
-    // MARK: Top bar — workout icon + live clock
+    // MARK: Top bar — workout icon
     private var topBar: some View {
         HStack {
             ZStack {
@@ -149,10 +149,6 @@ struct WatchWorkoutView: View {
             }
 
             Spacer()
-
-            Text(Date(), style: .time)
-                .font(.system(size: 14, weight: .regular, design: .rounded))
-                .foregroundColor(.white.opacity(0.9))
         }
     }
 }
