@@ -198,22 +198,25 @@ struct DiscoveryView: View {
                 .frame(height: 220)
                 
                 // Solo button directly below search/radar button
-                Button(action: {
-                    withAnimation {
-                        viewModel.skipConnectionAndGoToSetup()
+                if showSearchSkip && viewModel.appState == .searching {
+                    Button(action: {
+                        withAnimation {
+                            viewModel.skipConnectionAndGoToSetup()
+                        }
+                    }) {
+                        Text("Skip to Setup (Solo)")
+                            .font(.callout).bold()
+                            .foregroundColor(.white)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 24)
+                            .background(Color.flintRed)
+                            .clipShape(Capsule())
+                            .glassEffect(.regular.interactive(), in: .capsule)
+                            .shadow(color: Color.flintRed.opacity(0.4), radius: 8)
                     }
-                }) {
-                    Text("Skip to Setup (Solo)")
-                        .font(.callout).bold()
-                        .foregroundColor(.white)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 24)
-                        .background(Color.flintRed)
-                        .clipShape(Capsule())
-                        .glassEffect(.regular.interactive(), in: .capsule)
-                        .shadow(color: Color.flintRed.opacity(0.4), radius: 8)
+                    .padding(.top, 16)
+                    .transition(.scale.combined(with: .opacity))
                 }
-                .padding(.top, 16)
                 
                 Spacer(minLength: 16)
 
