@@ -65,13 +65,19 @@ struct DiscoveryView: View {
                 .ignoresSafeArea()
 
             // Layer 1: Centered Content (Tap to find rival & Nearby button)
-            VStack() {
-                // Title Label: "Tap to find rival"
+            VStack(spacing: 0) {
+                // Spacer below top status pill
+                Spacer()
+                    .frame(height: 160)
+                
+                // Title Label
                 Text(viewModel.appState == .home ? "Tap to find\nmatch buddy" : "Finding people nearby...")
                     .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
                     .shadow(color: Color.black.opacity(0.6), radius: 6, x: 0, y: 3)
                     .multilineTextAlignment(.center)
+                
+                Spacer(minLength: 16)
 
                 ZStack {
                     let pulseStroke = Color.white.opacity(0.6)
@@ -178,6 +184,8 @@ struct DiscoveryView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 .frame(height: 220)
+                
+                Spacer(minLength: 16)
 
                 // Secondary info label & Solo skip
                 VStack(spacing: 8) {
@@ -215,10 +223,9 @@ struct DiscoveryView: View {
                     Spacer()
                     
                     HStack(spacing: 8) {
-                        Circle()
-                            .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
-                            .frame(width: 8, height: 8)
-                            .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
+                        Image(systemName: watchSession.isWatchConnected ? "applewatch.radiowaves.left.and.right" : "exclamationmark.applewatch")
+                            .font(.system(size: 14))
+                            .foregroundColor(watchSession.isWatchConnected ? Color.green : Color.orange)
                         
                         Text(watchSession.isWatchConnected ? "Watch is connected" : "Please connect to Apple Watch")
                             .font(.system(size: 14, weight: .semibold))
