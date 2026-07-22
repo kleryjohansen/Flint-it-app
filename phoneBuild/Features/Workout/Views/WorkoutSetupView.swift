@@ -40,10 +40,12 @@ public struct WorkoutSetupView: View {
                     .mask(LinearGradient(gradient: Gradient(colors: [.black, .black.opacity(0)]), startPoint: .top, endPoint: .bottom))
                     .ignoresSafeArea()
 
+                /// this
+                
                 VStack(spacing: 0) {
                     // Header Nav
                     HStack {
-                        var glassStyle: Glass = .regular
+                        let glassStyle: Glass = .regular
 
                         Button(action: {
                             if step > 1 {
@@ -170,6 +172,8 @@ public struct WorkoutSetupView: View {
                         }
                     }
                 } // End main Vertical
+                
+                // end
                 
                 // Floating CTA Button at the absolute bottom
                 VStack {
