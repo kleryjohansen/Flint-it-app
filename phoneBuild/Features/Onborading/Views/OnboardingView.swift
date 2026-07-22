@@ -92,6 +92,7 @@ struct OnboardingView: View {
             .ignoresSafeArea()
 
             VStack {
+
                 Spacer()
                 VStack(spacing: 16) {
                     HStack(spacing: 8) {
