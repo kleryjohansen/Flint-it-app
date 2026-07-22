@@ -59,17 +59,17 @@ struct GlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.flintGlass.opacity(0.3))
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.flintGlass)
                     #if os(iOS)
                     .background(
                         VisualEffectBlur(blurStyle: .systemUltraThinMaterial)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     )
                     #endif
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .stroke(Color.flintCardBorder, lineWidth: 1)
             )
     }
