@@ -22,7 +22,7 @@ struct MatchConfirmationView: View {
     private let successBlue = Color("appOrange")
 
     private var matchedName: String {
-        viewModel.multipeerManager?.connectedPeer?.displayName
+        viewModel.primaryPartnerName
         ?? viewModel.currentRoom?.partnerName
         ?? "Someone nearby"
     }

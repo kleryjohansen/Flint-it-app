@@ -16,8 +16,9 @@ class CloudKitService {
         record["email"] = email as CKRecordValue
         
         // Handle Foto Profil menjadi format CKAsset
-        if let image = profileImage,
-           let imageData = image.jpegData(compressionQuality: 0.8) {
+        if let image = profileImage {
+            let resized = ImageResizer.resize(image, maxDimension: 512)
+            if let imageData = resized.jpegData(compressionQuality: 0.7) {
             
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
             do {
@@ -26,6 +27,7 @@ class CloudKitService {
                 record["profilePhoto"] = asset
             } catch {
                 print("Gagal memproses foto: \(error)")
+            }
             }
         }
         

@@ -7,7 +7,6 @@ public enum AppState {
     case foundPartner       // Muncul profil partner
     case navigating         // Layar panah arah (Nearby Interaction)
     case workoutSetup       // Pilih olahraga & challenge
-    case syncing            // Waiting / Countdown sinkronisasi
     case activeWorkout      // Dashboard olahraga berjalan
     case results            // Layar hasil akhir
     case room               // Workout Room Ready!
@@ -82,6 +81,7 @@ public struct MultipeerMessage: Codable {
         case peerLeftRoom // Inviter or rival left the lobby room
         case rematchRequest // Requesting a rematch
         case acceptRematch // Accepting a rematch request
+        case profilePhoto // User's resized profile photo (JPEG data in payload)
     }
     public let type: MessageType
     public let payload: Data

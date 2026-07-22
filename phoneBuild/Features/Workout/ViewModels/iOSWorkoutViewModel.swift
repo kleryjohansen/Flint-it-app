@@ -6,6 +6,27 @@ import HealthKit
 import AVFoundation
 import AudioToolbox
 
+
+// MARK: - Room Participant
+
+public enum ParticipantStatus {
+    case connected
+    case connecting
+}
+
+public struct RoomParticipant: Identifiable, Equatable {
+    public let id: MCPeerID
+    public var displayName: String
+    public var status: ParticipantStatus
+
+    public init(id: MCPeerID, displayName: String, status: ParticipantStatus) {
+        self.id = id
+        self.displayName = displayName
+        self.status = status
+    }
+}
+
+
 // MARK: - AudioManager Helper
 
 class AudioManager: NSObject {
@@ -77,10 +98,16 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 stopLocalWorkoutTimer()
                 stopRealTimeHealthKitQueries()
                 stopCloudKitSyncTimer()
+                stopRangeTickTimer()
             } else if appState == .searching {
                 startCloudKitSyncTimer()
             } else {
                 stopCloudKitSyncTimer()
+            }
+            if appState == .room {
+                startRangeTickTimer()
+            } else {
+                stopRangeTickTimer()
             }
         }
     }
@@ -95,6 +122,19 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var multipeerManager: MultipeerManager?
     public let niManager = NearbyInteractionManager()
     @Published public var currentRoom: RoomSession?
+    @Published public var roomParticipants: [RoomParticipant] = []
+    @Published public var hostPeerID: MCPeerID?
+
+    /// Convenience: peer pertama yang terkoneksi (untuk label UI 1v1)
+    public var primaryConnectedPeer: MCPeerID? {
+        multipeerManager?.connectedPeers.first
+    }
+
+    /// Convenience: nama display peer pertama yang terkoneksi
+    public var primaryPartnerName: String {
+        if let name = currentRoom?.partnerName { return name }
+        return primaryConnectedPeer?.displayName ?? "Partner"
+    }
     
     // Challenge states
     @Published public var selectedChallenge: WorkoutChallenge?
@@ -106,9 +146,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var partnerWatchConnected: Bool = true
     
     // Workout Results and real-time syncing
-    @Published public var partnerProgress: Double = 0.0
-    @Published public var partnerDistance: Double = 0.0
-    @Published public var partnerCalories: Double = 0.0
+    @Published public var partnerProgress: [MCPeerID: Double] = [:]
+    @Published public var partnerDistance: [MCPeerID: Double] = [:]
+    @Published public var partnerCalories: [MCPeerID: Double] = [:]
     
     @Published public var localProgress: Double = 0.0
     @Published public var localDistance: Double = 0.0
@@ -118,13 +158,33 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     @Published public var localElevation: Double = 0.0
     
     // Proximity logic properties
-    @Published public var currentNearbyDistance: Double = 0.0
+    @Published public var distances: [MCPeerID: Double] = [:]
+    @Published public var profileImages: [MCPeerID: UIImage] = [:]
+    @Published public var lastMessageTime: [MCPeerID: Date] = [:]
+    @Published public var rangeTick: Date = Date()  // increments to retrigger range status UI
+    
+    public enum RangeStatus { case inRange, far, unknown }
+    
+    public func rangeStatus(for peerID: MCPeerID) -> RangeStatus {
+        // Primary signal: NI distance (akurasi tinggi)
+        if let d = distances[peerID] {
+            if d < 2.0 { return .inRange }
+            if d <= 8.0 { return .far }
+            return .unknown
+        }
+        // Fallback: heartbeat proxy (untuk peer tanpa NI)
+        guard let lastTime = lastMessageTime[peerID] else { return .unknown }
+        let elapsed = Date().timeIntervalSince(lastTime)
+        if elapsed < 3.0 { return .inRange }
+        if elapsed <= 10.0 { return .far }
+        return .unknown
+    }
     @Published public var showDistanceWarning: Bool = false
 
     
-    @Published public var partnerSteps: Double = 0.0
-    @Published public var partnerSpeed: Double = 0.0
-    @Published public var partnerElevation: Double = 0.0
+    @Published public var partnerSteps: [MCPeerID: Double] = [:]
+    @Published public var partnerSpeed: [MCPeerID: Double] = [:]
+    @Published public var partnerElevation: [MCPeerID: Double] = [:]
     
     @Published public var avgPaceText: String = "--:--"
     @Published public var workoutResult: WorkoutResult = .solo
@@ -154,6 +214,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // Workout start countdown
     @Published public var countdownSeconds: Int = -1
     private var countdownTimer: Timer?
+    private var rangeTickTimer: Timer?
     
     // Token exchange state
     private var hasSentOwnToken = false
@@ -290,7 +351,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                if self.multipeerManager?.connectedPeer != nil {
+                if self.primaryConnectedPeer != nil {
                     self.sendWatchStatusToPeer()
                 }
             }
@@ -449,6 +510,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
         manager.onDataReceived = { [weak self] type, payload, peerID in
             guard let self = self else { return }
+            // Heartbeat: track kapan terakhir kita terima message dari peer ini
+            self.lastMessageTime[peerID] = Date()
             switch type {
             case .niDiscoveryToken:
                 self.handlePeerTokenReceived(payload)
@@ -458,7 +521,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let challenge = try? JSONDecoder().decode(WorkoutChallenge.self, from: payload) {
                     DispatchQueue.main.async {
                         self.receivedChallenge = challenge
-                        self.acceptChallenge()
+                        // Auto-start workout — guest already agreed to host's room
+                        self.appState = .activeWorkout
+                        self.notifyWatchToStartWorkout()
                     }
                 }
             case .acceptChallenge:
@@ -473,6 +538,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             case .acceptRematch:
                 DispatchQueue.main.async {
                     self.goToRematchSetup()
+                }
+            case .profilePhoto:
+                if let image = UIImage(data: payload) {
+                    DispatchQueue.main.async {
+                        self.profileImages[peerID] = image
+                    }
                 }
             case .endWorkout:
                 DispatchQueue.main.async {
@@ -494,23 +565,27 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             case .workoutProgress:
                 if let payloadObj = try? JSONDecoder().decode(WorkoutProgressPayload.self, from: payload) {
                     DispatchQueue.main.async {
-                        self.partnerProgress = payloadObj.progressRatio
+                        self.partnerProgress[peerID] = payloadObj.progressRatio
                         let challenge = self.selectedChallenge ?? self.receivedChallenge
                         if challenge?.metricType == "distance" {
-                            self.partnerDistance = payloadObj.progressValue
+                            self.partnerDistance[peerID] = payloadObj.progressValue
                         } else {
-                            self.partnerCalories = payloadObj.progressValue
+                            self.partnerCalories[peerID] = payloadObj.progressValue
                         }
                         
-                        self.partnerSteps = payloadObj.steps
-                        self.partnerSpeed = payloadObj.speed
-                        self.partnerElevation = payloadObj.elevation
+                        self.partnerSteps[peerID] = payloadObj.steps
+                        self.partnerSpeed[peerID] = payloadObj.speed
+                        self.partnerElevation[peerID] = payloadObj.elevation
                         
                         let ownGoal = challenge?.goalValue ?? 1.0
                         let targetVal = (challenge?.metricType == "distance") ? (ownGoal * 1000.0) : ownGoal
                         let ownProgressVal = (challenge?.metricType == "distance") ? self.localDistance : self.localCalories
                         let ownRatio = targetVal > 0 ? min(ownProgressVal / targetVal, 1.0) : 0.0
-                        self.checkPassingStatus(localProgress: ownRatio, partnerProgress: payloadObj.progressRatio)
+                        
+                        // Cek status khusus progress rival primer untuk passing notif
+                        if peerID == self.primaryConnectedPeer {
+                            self.checkPassingStatus(localProgress: ownRatio, partnerProgress: payloadObj.progressRatio)
+                        }
                     }
                 }
             default:
@@ -518,25 +593,66 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             }
         }
 
-        manager.onPeerConnected = { [weak self] _ in
+        manager.onPeerConnecting = { [weak self] peerID in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let idx = self.roomParticipants.firstIndex(where: { $0.id == peerID }) {
+                    self.roomParticipants[idx].status = .connecting
+                } else {
+                    self.roomParticipants.append(
+                        RoomParticipant(id: peerID, displayName: peerID.displayName, status: .connecting)
+                    )
+                }
+            }
+        }
+
+        manager.onPeerConnected = { [weak self] peerID in
             guard let self = self else { return }
             // Reset state on new connection
             self.hasSentOwnToken = false
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
-            
-            // Saat peer terkoneksi, ubah appState = .navigating
-            // PENTING: Jangan overwrite self.isHost di sini agar penentu host tetap diatur saat invite/terima.
+
+            // Auto-lock when room reaches 7 guests (8 total with host)
+            if self.isHost && self.roomParticipants.count >= 7 {
+                self.multipeerManager?.lockRoom()
+            }
+
             DispatchQueue.main.async {
+                if let idx = self.roomParticipants.firstIndex(where: { $0.id == peerID }) {
+                    self.roomParticipants[idx].status = .connected
+                    self.roomParticipants[idx].displayName = peerID.displayName
+                } else {
+                    self.roomParticipants.append(
+                        RoomParticipant(id: peerID, displayName: peerID.displayName, status: .connected)
+                    )
+                }
+
+                // Penanda host (peer yang first connect saat appState == .navigating) — host adalah kita
+                if self.isHost {
+                    // host tidak berubah
+                } else {
+                    // kalau ini peer pertama kita connect dengan, dia host kita
+                    if self.hostPeerID == nil {
+                        self.hostPeerID = peerID
+                        self.isHost = false
+                    }
+                    // Guest: stop discovery begitu masuk room
+                    self.multipeerManager?.stopAll()
+                }
+
                 self.appState = .navigating
             }
-            
+
             // Send our token
             self.sendLocalNIToken()
-            
+
             // Send our watch connection status to the peer
             self.sendWatchStatusToPeer()
+
+            // Send our profile photo to the peer
+            self.sendProfilePhotoToPeer()
         }
 
         niManager.onProximityUpdate = { [weak self] distance in
@@ -546,7 +662,11 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.syncDistanceToWatch(Float(distance))
             
             DispatchQueue.main.async {
-                self.currentNearbyDistance = distance
+                // NI 1:1 — update distance for the primary partner only.
+                // For additional guests, distances[peerID] stays nil (red dot).
+                if let primary = self.primaryConnectedPeer {
+                    self.distances[primary] = distance
+                }
                 
                 // If the user has already entered the lobby/workout session
                 // Proximity distance check is ONLY active in the lobby (.room) before the match starts!
@@ -566,7 +686,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 } else if self.appState == .navigating {
                     // Not in the lobby yet: if they get < 2.0 meters, enter the lobby
                     if distance < 2.0 {
-                        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+                        let partnerName = self.primaryPartnerName
                         self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
                         self.appState = .room
                     }
@@ -577,22 +697,53 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             }
         }
 
-        manager.onPeerDisconnected = { [weak self] in
+        manager.onPeerDisconnected = { [weak self] peerID in
             guard let self = self else { return }
             // Reset token exchange state
             self.hasSentOwnToken = false
             self.pendingPeerToken = nil
             self.hasReceivedPeerToken = false
             self.hasSentTokenACK = false
-            
-            // Restart advertising so we can be discovered again
-            self.multipeerManager?.startAdvertising()
-            
+
             DispatchQueue.main.async {
-                self.isHost = false
-                self.partnerWatchConnected = true // Reset to true
-                self.currentRoom = nil
-                self.appState = .home
+                // Hapus participant dari room
+                self.roomParticipants.removeAll { $0.id == peerID }
+                // Cleanup per-peer state
+                self.distances.removeValue(forKey: peerID)
+                self.profileImages.removeValue(forKey: peerID)
+                self.lastMessageTime.removeValue(forKey: peerID)
+                self.partnerProgress.removeValue(forKey: peerID)
+                self.partnerDistance.removeValue(forKey: peerID)
+                self.partnerCalories.removeValue(forKey: peerID)
+                self.partnerSteps.removeValue(forKey: peerID)
+                self.partnerSpeed.removeValue(forKey: peerID)
+                self.partnerElevation.removeValue(forKey: peerID)
+
+                if self.isHost {
+                    // Host: stay di room, tetap advertising agar device lain bisa masuk
+                    if self.roomParticipants.count < 7 {
+                        self.multipeerManager?.startAdvertising()
+                    }
+                } else {
+                    // Guest: jika host pergi, cleanup total
+                    if peerID == self.hostPeerID || self.roomParticipants.isEmpty {
+                        self.isHost = false
+                        self.hostPeerID = nil
+                        self.currentRoom = nil
+                        self.roomParticipants = []
+                        self.partnerWatchConnected = true
+                        self.distances.removeAll()
+                        self.profileImages.removeAll()
+                        self.lastMessageTime.removeAll()
+                        self.partnerProgress.removeAll()
+                        self.partnerDistance.removeAll()
+                        self.partnerCalories.removeAll()
+                        self.partnerSteps.removeAll()
+                        self.partnerSpeed.removeAll()
+                        self.partnerElevation.removeAll()
+                        self.appState = .home
+                    }
+                }
             }
         }
     }
@@ -600,7 +751,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // MARK: - Token Exchange Handshake
 
     private func sendLocalNIToken() {
-        guard multipeerManager?.connectedPeer != nil else {
+        guard primaryConnectedPeer != nil else {
             print("[ViewModel] Skipping token send: no connected peer")
             return
         }
@@ -634,7 +785,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     private func sendTokenACK() {
-        guard multipeerManager?.connectedPeer != nil, !hasSentTokenACK else { return }
+        guard primaryConnectedPeer != nil, !hasSentTokenACK else { return }
         let envelope = MultipeerMessage(type: .niTokenACK, payload: Data())
         if let encoded = try? JSONEncoder().encode(envelope) {
             multipeerManager?.sendData(encoded)
@@ -697,6 +848,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         selectedChallenge = nil
         receivedChallenge = nil
         watchCalories = 0.0
+        partnerProgress.removeAll()
+        partnerDistance.removeAll()
+        partnerCalories.removeAll()
+        partnerSteps.removeAll()
+        partnerSpeed.removeAll()
+        partnerElevation.removeAll()
         appState = .home
 
         print("[ViewModel] Full cleanup done")
@@ -705,7 +862,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     // MARK: - Challenge Functions
     
     public func sendChallenge(_ challenge: WorkoutChallenge) {
-        if multipeerManager?.connectedPeer == nil {
+        if multipeerManager?.connectedPeers.isEmpty ?? true {
             self.selectedChallenge = challenge
             self.workoutResult = .solo
             self.appState = .activeWorkout
@@ -716,28 +873,18 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 if let messageData = try? JSONEncoder().encode(message) {
                     multipeerManager?.sendData(messageData)
                     self.selectedChallenge = challenge
-                    self.appState = .syncing // screen: "Waiting for Erling..."
+                    // Auto-start workout for host too — challenge applies to everyone in room
+                    self.appState = .activeWorkout
+                    notifyWatchToStartWorkout()
+                    // Host: lock discovery setelah broadcast
+                    if self.isHost {
+                        self.multipeerManager?.lockRoom()
+                    }
                 }
             }
         }
     }
     
-    public func acceptChallenge() {
-        let message = MultipeerMessage(type: .acceptChallenge, payload: Data())
-        if let messageData = try? JSONEncoder().encode(message) {
-            multipeerManager?.sendData(messageData)
-            self.appState = .activeWorkout
-            notifyWatchToStartWorkout()
-        }
-    }
-    
-    public func declineChallenge() {
-        self.receivedChallenge = nil
-        DispatchQueue.main.async {
-            self.appState = self.isHost ? .workoutSetup : .room
-        }
-    }
-
     // MARK: - Watch Commands
     
     func notifyWatchToStartWorkout() {
@@ -1008,7 +1155,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
 
     public func endWorkout() {
-        if multipeerManager?.connectedPeer == nil {
+        if primaryConnectedPeer == nil {
             self.workoutResult = .solo
             AudioManager.shared.playSoloComplete()
         } else {
@@ -1043,7 +1190,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     private func endWorkoutNatively() {
-        if multipeerManager?.connectedPeer != nil && self.workoutResult != .victory {
+        if primaryConnectedPeer != nil && self.workoutResult != .victory {
             self.workoutResult = .defeat
             AudioManager.shared.playDefeat()
         }
@@ -1118,9 +1265,12 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         DispatchQueue.main.async {
             self.activeAlert = nil
             // Reset active workout metrics
-            self.partnerProgress = 0.0
-            self.partnerDistance = 0.0
-            self.partnerCalories = 0.0
+            self.partnerProgress.removeAll()
+            self.partnerDistance.removeAll()
+            self.partnerCalories.removeAll()
+            self.partnerSteps.removeAll()
+            self.partnerSpeed.removeAll()
+            self.partnerElevation.removeAll()
             self.watchCalories = 0.0
             self.heartRate = 0.0
             self.countdownText = "00:00"
@@ -1133,7 +1283,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     }
     
     public func skipProximityAndGoToRoom() {
-        let partnerName = self.multipeerManager?.connectedPeer?.displayName ?? "Partner"
+        let partnerName = self.primaryPartnerName
         DispatchQueue.main.async {
             self.currentRoom = RoomSession(partnerName: partnerName, formedAt: Date())
             self.appState = .room
@@ -1143,6 +1293,9 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
     public func skipConnectionAndGoToSetup() {
         DispatchQueue.main.async {
             self.appState = .workoutSetup
+            if self.isHost {
+                self.multipeerManager?.lockRoom()
+            }
         }
     }
     
@@ -1166,6 +1319,16 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 multipeerManager?.sendData(messageData)
                 print("[iOS] Sent watch status to peer: \(isConnected)")
             }
+        }
+    }
+
+    private func sendProfilePhotoToPeer() {
+        guard let image = loadProfileImageFromDisk(),
+              let jpegData = image.jpegData(compressionQuality: 0.7) else { return }
+        let message = MultipeerMessage(type: .profilePhoto, payload: jpegData)
+        if let messageData = try? JSONEncoder().encode(message) {
+            multipeerManager?.sendData(messageData)
+            print("[iOS] Sent profile photo (\(jpegData.count) bytes) to peer")
         }
     }
     
@@ -1245,6 +1408,18 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         cloudKitSyncTimer?.invalidate()
         cloudKitSyncTimer = nil
     }
+
+    private func startRangeTickTimer() {
+        stopRangeTickTimer()
+        rangeTickTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.rangeTick = Date()
+        }
+    }
+
+    private func stopRangeTickTimer() {
+        rangeTickTimer?.invalidate()
+        rangeTickTimer = nil
+    }
     
     private func performCloudKitSync() {
         let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "Player"
@@ -1305,33 +1480,40 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 
                 if let workoutData = try? await CloudKitService.shared.fetchWorkoutData(roomID: roomID) {
                     DispatchQueue.main.async {
-                        if self.isHost {
-                            self.partnerProgress = workoutData.guestProgressRatio
-                            self.partnerDistance = workoutData.guestProgressValue
-                            self.partnerCalories = workoutData.guestProgressValue
-                            self.partnerSteps = workoutData.guestSteps
-                            self.partnerSpeed = workoutData.guestSpeed
-                            self.partnerElevation = workoutData.guestElevation
-                            if workoutData.guestFinished && self.appState == .activeWorkout {
-                                self.endWorkoutNatively()
-                            }
-                        } else {
-                            self.partnerProgress = workoutData.hostProgressRatio
-                            self.partnerDistance = workoutData.hostProgressValue
-                            self.partnerCalories = workoutData.hostProgressValue
-                            self.partnerSteps = workoutData.hostSteps
-                            self.partnerSpeed = workoutData.hostSpeed
-                            self.partnerElevation = workoutData.hostElevation
-                            if workoutData.hostFinished && self.appState == .activeWorkout {
-                                self.endWorkoutNatively()
+                        if let peerID = self.primaryConnectedPeer {
+                            if self.isHost {
+                                self.partnerProgress[peerID] = workoutData.guestProgressRatio
+                                self.partnerDistance[peerID] = workoutData.guestProgressValue
+                                self.partnerCalories[peerID] = workoutData.guestProgressValue
+                                self.partnerSteps[peerID] = workoutData.guestSteps
+                                self.partnerSpeed[peerID] = workoutData.guestSpeed
+                                self.partnerElevation[peerID] = workoutData.guestElevation
+                                if workoutData.guestFinished && self.appState == .activeWorkout {
+                                    self.endWorkoutNatively()
+                                }
+                            } else {
+                                self.partnerProgress[peerID] = workoutData.hostProgressRatio
+                                self.partnerDistance[peerID] = workoutData.hostProgressValue
+                                self.partnerCalories[peerID] = workoutData.hostProgressValue
+                                self.partnerSteps[peerID] = workoutData.hostSteps
+                                self.partnerSpeed[peerID] = workoutData.hostSpeed
+                                self.partnerElevation[peerID] = workoutData.hostElevation
+                                if workoutData.hostFinished && self.appState == .activeWorkout {
+                                    self.endWorkoutNatively()
+                                }
                             }
                         }
                         
-                        let ownGoal = self.selectedChallenge?.goalValue ?? self.receivedChallenge?.goalValue ?? 1.0
-                        let targetVal = (self.selectedChallenge?.metricType ?? self.receivedChallenge?.metricType == "distance") ? (ownGoal * 1000.0) : ownGoal
-                        let ownProgressVal = (self.selectedChallenge?.metricType ?? self.receivedChallenge?.metricType == "distance") ? self.localDistance : self.localCalories
+                        let challenge = self.selectedChallenge ?? self.receivedChallenge
+                        let ownGoal = challenge?.goalValue ?? 1.0
+                        let isDistance = challenge?.metricType == "distance"
+                        let targetVal = isDistance ? (ownGoal * 1000.0) : ownGoal
+                        let ownProgressVal = isDistance ? self.localDistance : self.localCalories
                         let ownRatio = targetVal > 0 ? min(ownProgressVal / targetVal, 1.0) : 0.0
-                        self.checkPassingStatus(localProgress: ownRatio, partnerProgress: self.partnerProgress)
+                        if let peerID = self.primaryConnectedPeer,
+                           let rivalProgress = self.partnerProgress[peerID] {
+                            self.checkPassingStatus(localProgress: ownRatio, partnerProgress: rivalProgress)
+                        }
                     }
                 }
             }
