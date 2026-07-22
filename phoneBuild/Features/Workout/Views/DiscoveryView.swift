@@ -67,7 +67,7 @@ struct DiscoveryView: View {
             // Layer 1: Centered Content (Tap to find rival & Nearby button)
             VStack() {
                 // Title Label: "Tap to find rival"
-                Text(viewModel.appState == .home ? "Tap to find rival" : "Finding people nearby...")
+                Text(viewModel.appState == .home ? "Tap to find\nmatch buddy" : "Finding people nearby...")
                     .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
                     .shadow(color: Color.black.opacity(0.6), radius: 6, x: 0, y: 3)
