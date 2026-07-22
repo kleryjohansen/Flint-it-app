@@ -48,7 +48,7 @@ struct RoomFormedView: View {
                     Text("Create the challenge")
                         .font(.system(size: 34, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Discuss with your rivals to create the challenge")
+                    Text("Discuss with your match buddy to create the challenge")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.7))
                 }
