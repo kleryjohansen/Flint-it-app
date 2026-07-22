@@ -128,45 +128,45 @@ struct ProfileView: View {
     }
         
     private var profileAvatar: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             // Avatar Background/Image
-            ZStack {
-                if let uiImage = profileImage {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                } else {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(white: 0.2), Color(white: 0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+            if let uiImage = profileImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 100, height: 100)
+                    .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(white: 0.2), Color(white: 0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .frame(width: 100, height: 100)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 40, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.8))
-                        )
-                }
+                    )
+                    .frame(width: 100, height: 100)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 40, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                    )
             }
             
-            // Edit Pencil Button
+            // Edit Pencil Button placed perfectly on the top-right curve edge
             PhotosPicker(selection: $selectedProfileItem, matching: .images) {
                 Image(systemName: "pencil")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.white)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 26, height: 26)
                     .background(Circle().fill(Color("appPrimary")))
-                    .shadow(color: .black.opacity(0.8), radius: 24)
+                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                    .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
             }
             .buttonStyle(.plain)
-            .offset(x: 4, y: 4)
+            .offset(x: 35, y: -35)
         }
+        .frame(width: 100, height: 100)
     }
 
     private var historySection: some View {
