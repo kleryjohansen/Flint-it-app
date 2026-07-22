@@ -12,6 +12,8 @@ class WatchWorkoutViewModel: ObservableObject {
     @Published var avgPaceString: String  = "--:--"
     @Published var stepsString: String    = "0 steps"
     @Published var speedString: String    = "0.0 km/h"
+    @Published var workoutResult: String? = nil
+    @Published var activeSport: String    = "Running"
     
     // Countdown state local to watch
     @Published var countdownSeconds: Int = -1
@@ -22,6 +24,20 @@ class WatchWorkoutViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        workoutService.$activeSport
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] sport in
+                self?.activeSport = sport
+            }
+            .store(in: &cancellables)
+
+        workoutService.$workoutResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                self?.workoutResult = result
+            }
+            .store(in: &cancellables)
+
         workoutService.$metrics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] metrics in

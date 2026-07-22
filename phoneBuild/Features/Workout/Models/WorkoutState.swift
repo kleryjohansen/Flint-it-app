@@ -79,6 +79,8 @@ public struct MultipeerMessage: Codable {
         case watchStatus // Companion watch connection status
         case workoutProgress // Realtime progress metrics
         case peerLeftRoom // Inviter or rival left the lobby room
+        case rematchRequest // Requesting a rematch
+        case acceptRematch // Accepting a rematch request
     }
     public let type: MessageType
     public let payload: Data

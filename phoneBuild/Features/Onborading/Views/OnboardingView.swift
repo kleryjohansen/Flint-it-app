@@ -1,6 +1,7 @@
 import SwiftUI
 import AuthenticationServices
 import PhotosUI
+import Combine
 
 // MARK: - Data Model
 
@@ -20,21 +21,21 @@ struct OnboardingView: View {
         OnboardingPage(
             title: "Ride Without Limits",
             description: "Discover cycling partners within your range. Challenge nearby friends and track every route you take. It's time to go further with Nearfit.",
-            imageName: "cycling"
+            imageName: "onboardingBgdCycling"
         ),
         OnboardingPage(
             title: "Never Run Alone",
             description: "Find local runners for friendly matches. Track your distance and pace in real-time while creating a fresh and exciting experience with Nearfit.",
-            imageName: "run"
+            imageName: "onboardingBgRunning"
         ),
         OnboardingPage(
             title: "Dive In Together",
             description: "Find swimming partners at your local pool. Challenge nearby swimmers to friendly matches and track every lap you swim with Nearfit.",
-            imageName: "swim"
+            imageName: "onboardingBgSwimming"
         )
     ]
 
-    var isLastPage: Bool { currentPage == pages.count - 1 }
+    let timer = Timer.publish(every: 5.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -51,29 +52,35 @@ struct OnboardingView: View {
                                 .clipped()
                                 
                             // Gradient
+                            
+                            Rectangle()
+                                .fill(.thinMaterial)
+                                .frame(height: 450)
+                                .mask {
+                                    LinearGradient(colors: [Color.black, Color.black, Color.black, Color.black.opacity(0)], startPoint: .bottom, endPoint: .top)
+                                }
                             LinearGradient(
-                                colors: [.clear, .black.opacity(0.4), .black.opacity(0.95), .black],
+                                colors: [.clear, .black.opacity(0.5), .black.opacity(0.9)],
                                 startPoint: .center,
                                 endPoint: .bottom
                             )
                             
                             // Text Container
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text(page.title)
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .minimumScaleFactor(0.8)
+                                    .font(.title .weight(.bold))
+                                    .foregroundStyle(.primary)
+//                                    .minimumScaleFactor(0.8)
                                 
                                 Text(page.description)
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .lineSpacing(4)
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
                                     // Fix: let wrapping work naturally without fixedSize horizontal forces
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 24)
-                            .padding(.bottom, 200)
+                            .padding(.bottom, 212)
                         }
                         .frame(width: geometry.size.width, height: geometry.size.height)
                     }
@@ -85,14 +92,15 @@ struct OnboardingView: View {
             .ignoresSafeArea()
 
             VStack {
-                Image("Logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 32)
-                    .padding(.top, 20)
+//                Image("LogoOnboarding")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(height: 40)
+//                    .padding(.top, 20)
+//                    .shadow(color: .black.opacity(1), radius: 24, x: 0, y: 4)
 
                 Spacer()
-                VStack(spacing: 16) {
+                VStack(spacing: 24) {
                     HStack(spacing: 8) {
                         ForEach(0..<pages.count, id: \.self) { index in
                             Capsule()
@@ -102,51 +110,36 @@ struct OnboardingView: View {
                         }
                     }
 
-                    if !isLastPage {
-                        Button {
-                            withAnimation { currentPage += 1 }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Text("Continue")
-                            }
-                        }
-                        .padding(.horizontal, 24)
-                        .buttonStyle(FlintPrimaryButtonStyle())
-                        
-                    } else {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(1.2)
-                                .frame(height: 50)
-                        } else {
-                            SignInWithAppleButton(.signIn) { request in
-                                request.requestedScopes = [.fullName]
-                            } onCompletion: { result in
-                                handleAppleResult(result)
-                            }
-                            .cornerRadius(72)
-                            .signInWithAppleButtonStyle(.white)
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.2)
                             .frame(height: 50)
-                            .padding(.horizontal, 24)
-                            
+                    } else {
+                        SignInWithAppleButton(.signIn) { request in
+                            request.requestedScopes = [.fullName]
+                        } onCompletion: { result in
+                            handleAppleResult(result)
                         }
+                        .cornerRadius(72)
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 50)
+                        .padding(.horizontal, 24)
+                    }
 
-                        if !viewModel.errorMessage.isEmpty {
-                            HStack(spacing: 6) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.caption)
-                                Text(viewModel.errorMessage)
-                                    .font(.caption.bold())
-                            }
-                            .foregroundColor(Color.flintRed)
-                            
+                    if !viewModel.errorMessage.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                            Text(viewModel.errorMessage)
+                                .font(.caption.bold())
                         }
+                        .foregroundColor(Color.flintRed)
                     }
 
                     Text("By continuing, you agree to our \(Text("Terms of Service").foregroundColor(Color.flintRed)) and \(Text("Privacy Policy").foregroundColor(Color.flintRed)).")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                 }
@@ -154,6 +147,11 @@ struct OnboardingView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onReceive(timer) { _ in
+            withAnimation(.easeInOut(duration: 0.8)) {
+                currentPage = (currentPage + 1) % pages.count
+            }
+        }
         .fullScreenCover(isPresented: $viewModel.isSignedIn) {
             ProfileSetupView(viewModel: viewModel)
         }

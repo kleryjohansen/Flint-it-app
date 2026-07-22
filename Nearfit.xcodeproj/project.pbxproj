@@ -18,6 +18,8 @@
 		EE9859FA30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE9859FB30020B8D007EB100 /* WorkoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */; };
 		EE985C1630050D12007EB100 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE985C0D30050D12007EB100 /* DesignSystem.swift */; };
+		EEF15F32300E80EA0017042D /* NearfitIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = EEF15F31300E80EA0017042D /* NearfitIcon.icon */; };
+		EEF15F33300E80EA0017042D /* NearfitIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = EEF15F31300E80EA0017042D /* NearfitIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +67,7 @@
 		EE9859D12FFFB530007EB100 /* watchBuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchBuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutMetrics.swift; sourceTree = "<group>"; };
 		EE985C0D30050D12007EB100 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		EEF15F31300E80EA0017042D /* NearfitIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = NearfitIcon.icon; sourceTree = "<group>"; };
 		FLINT00100010001FFF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -137,6 +140,7 @@
 				EE1B4B21300619990080CC08 /* FlintColors.swift */,
 				EE9859E42FFFB687007EB100 /* WorkoutMetrics.swift */,
 				EE985C0D30050D12007EB100 /* DesignSystem.swift */,
+				EEF15F31300E80EA0017042D /* NearfitIcon.icon */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -256,6 +260,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EEF15F32300E80EA0017042D /* NearfitIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,6 +275,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EEF15F33300E80EA0017042D /* NearfitIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -434,13 +440,13 @@
 		EE9859C82FFFB461007EB100 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -455,7 +461,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -471,13 +477,13 @@
 		EE9859C92FFFB461007EB100 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FlintItApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -492,7 +498,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -508,13 +514,13 @@
 		EE9859DD2FFFB531007EB100 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "watchBuild/watchpairworkout Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
@@ -522,14 +528,14 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.watchpairworkout;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
@@ -548,13 +554,13 @@
 		EE9859DE2FFFB531007EB100 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NearfitIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "watchBuild/watchpairworkout Watch App.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = CJZ2787AMQ;
+				DEVELOPMENT_TEAM = 8V4LVBCX83;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "wathpairworkout-Watch-App-Info.plist";
@@ -562,14 +568,14 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Flint needs to read your heart rate and workout data.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Flint needs to save your workout sessions and health metrics.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.zain.watchpairworkout;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.academy.klery.watchpairworkout;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.academy.zain.watchpairworkout.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.academy.klery.watchpairworkout.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
