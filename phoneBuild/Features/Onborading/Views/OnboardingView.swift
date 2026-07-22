@@ -174,7 +174,7 @@ struct OnboardingView: View {
                 fullName: fullNameString.isEmpty ? nil : fullNameString
             )
         case .failure(let error):
-            viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
+            viewModel.errorMessage = "Sign In failed, Try Again"
         }
     }
 }
