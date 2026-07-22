@@ -32,11 +32,10 @@ struct ProfileView: View {
             // Top ambient background gradient/image
             profileBackground
             
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     
                     Spacer().frame(height: 120)
-                    
-                    // Push content down to show background
                     
                     // Main Profile Card
                     ZStack(alignment: .top) {
@@ -71,7 +70,7 @@ struct ProfileView: View {
                     .frame(height: 232)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 32)
-//                    Spacer()
+                    
                     VStack(spacing: 32){
                         
                         historySection
@@ -89,22 +88,17 @@ struct ProfileView: View {
                             .foregroundColor(Color("appPrimary"))
                         }
                         .padding(.vertical, 40)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-//                        .padding(.bottom, 80)
-                        
-                        // Tab bar clearance
                         
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
                             .fill(Color.black)
                     )
-                    .ignoresSafeArea(edges: .all)
                 }
-                    // History Section
             }
             .ignoresSafeArea(edges: .horizontal)
+        }
         .onAppear {
             loadLocalProfileImage()
         }
