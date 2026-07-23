@@ -185,12 +185,11 @@ struct ActiveWorkoutView: View {
                     HStack {
                         Spacer()
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(watchSession.isWatchConnected ? Color.green : Color.orange)
-                                .frame(width: 8, height: 8)
-                                .shadow(color: (watchSession.isWatchConnected ? Color.green : Color.orange).opacity(0.8), radius: 4)
+                            Image(systemName: watchSession.isWatchConnected ? "applewatch.radiowaves.left.and.right" : "exclamationmark.applewatch")
+                                .font(.system(size: 14))
+                                .foregroundColor(watchSession.isWatchConnected ? Color.green : Color.orange)
                             
-                            Text(watchSession.isWatchConnected ? "Watch is connected" : "Connect Apple Watch")
+                            Text(watchSession.isWatchConnected ? "Watch is connected" : "Please connect to Apple Watch")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                         }
@@ -370,6 +369,12 @@ struct ActiveWorkoutView: View {
                                 }
                             }
                             .frame(height: 6)
+                            
+                            Text(viewModel.primaryPartnerName)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.6))
+                                .lineLimit(1)
+                                .frame(maxWidth: 80, alignment: .leading)
                             
                             Text("\(Int(rivalProgress * 100))%")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
