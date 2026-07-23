@@ -137,49 +137,6 @@ struct ActiveWorkoutView: View {
 
     var body: some View {
         ZStack {
-            switch challenge?.sport {
-            case .running:
-                Image("bgifrun")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            case .cycling:
-                Image("bgifcycling")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            case .swimming:
-                Image("bgifswim")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            default:
-                Image("bgLobby")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            }
-            
-            VStack(spacing: 0) {
-                LinearGradient(
-                    colors: [.black.opacity(0.65), .black.opacity(0)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 220)
-
-                Spacer()
-
-                LinearGradient(
-                    colors: [.black.opacity(0), .black.opacity(0.7)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 220)
-            }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
             VStack(spacing: 12) {
                 VStack {
                     HStack {
@@ -198,7 +155,7 @@ struct ActiveWorkoutView: View {
                         .glassEffect(.regular, in: .capsule)
                         Spacer()
                     }
-                    .padding(.top, 80)
+                    .padding(.top, 16)
                     .padding(.bottom, 16)
                 }
                 
@@ -387,7 +344,53 @@ struct ActiveWorkoutView: View {
                 .background(Color.black.opacity(0.6))
                 .cornerRadius(24)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(.bottom, 16)
+            }
+            .background {
+                ZStack {
+                    switch challenge?.sport {
+                    case .running:
+                        Image("bgifrun")
+                            .resizable()
+                            .scaledToFill()
+                            .ignoresSafeArea()
+                    case .cycling:
+                        Image("bgifcycling")
+                            .resizable()
+                            .scaledToFill()
+                            .ignoresSafeArea()
+                    case .swimming:
+                        Image("bgifswim")
+                            .resizable()
+                            .scaledToFill()
+                            .ignoresSafeArea()
+                    default:
+                        Image("bgLobby")
+                            .resizable()
+                            .scaledToFill()
+                            .ignoresSafeArea()
+                    }
+                    
+                    VStack(spacing: 0) {
+                        LinearGradient(
+                            colors: [.black.opacity(0.65), .black.opacity(0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 220)
+
+                        Spacer()
+
+                        LinearGradient(
+                            colors: [.black.opacity(0), .black.opacity(0.7)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 220)
+                    }
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                }
             }
 
             if viewModel.countdownSeconds >= 0 {
@@ -431,14 +434,8 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack {
-            Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBG" : "loseBG")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                VStack(spacing: 4) {
+        VStack(spacing: 0) {
+            VStack(spacing: 4) {
                     if let ch = challenge {
                         Text("\(ch.challengeName) • \(ch.sport.rawValue)")
                             .font(.title2.bold())
@@ -454,7 +451,7 @@ struct ResultsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.top, 80)
+                .padding(.top, 16)
 
                 Spacer()
 
@@ -594,7 +591,12 @@ struct ResultsView: View {
                     .padding(.bottom, 48)
                 }
             }
-        }
+            .background {
+                Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBG" : "loseBG")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+            }
         .navigationBarBackButtonHidden(true)
         .preferredColorScheme(.dark)
     }
