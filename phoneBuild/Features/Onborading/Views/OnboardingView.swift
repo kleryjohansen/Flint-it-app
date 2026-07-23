@@ -51,7 +51,8 @@ struct OnboardingView: View {
                                 .frame(width: geometry.size.width, height: geometry.size.height)
                                 .clipped()
                                 
-                            // Gradient overlay for better text readability
+                            // Gradient
+                            
                             Rectangle()
                                 .fill(.thinMaterial)
                                 .frame(height: 450)
@@ -65,22 +66,21 @@ struct OnboardingView: View {
                             )
                             
                             // Text Container
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text(page.title)
                                     .font(.title .weight(.bold))
                                     .foregroundStyle(.primary)
-                                    //.minimumScaleFactor(0.8)
+//                                    .minimumScaleFactor(0.8)
                                 
                                 Text(page.description)
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
-                                    .lineSpacing(4)
                                     // Fix: let wrapping work naturally without fixedSize horizontal forces
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 24)
-                            .padding(.bottom, 200)
+                            .padding(.bottom, 212)
                         }
                         .frame(width: geometry.size.width, height: geometry.size.height)
                     }
@@ -92,14 +92,15 @@ struct OnboardingView: View {
             .ignoresSafeArea()
 
             VStack {
-                Image("Logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 32)
-                    .padding(.top, 20)
+//                Image("LogoOnboarding")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(height: 40)
+//                    .padding(.top, 20)
+//                    .shadow(color: .black.opacity(1), radius: 24, x: 0, y: 4)
 
                 Spacer()
-                VStack(spacing: 16) {
+                VStack(spacing: 24) {
                     HStack(spacing: 8) {
                         ForEach(0..<pages.count, id: \.self) { index in
                             Capsule()
@@ -137,8 +138,8 @@ struct OnboardingView: View {
                     }
 
                     Text("By continuing, you agree to our \(Text("Terms of Service").foregroundColor(Color.flintRed)) and \(Text("Privacy Policy").foregroundColor(Color.flintRed)).")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                 }
@@ -174,7 +175,7 @@ struct OnboardingView: View {
                 fullName: fullNameString.isEmpty ? nil : fullNameString
             )
         case .failure(let error):
-            viewModel.errorMessage = "Sign In failed: \(error.localizedDescription)"
+            viewModel.errorMessage = "Sign In failed, Try Again"
         }
     }
 }
