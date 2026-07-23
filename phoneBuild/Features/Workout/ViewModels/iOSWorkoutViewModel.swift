@@ -960,6 +960,57 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         return nil
     }
 
+    public struct ContestantResult: Identifiable {
+        public var id: String { name }
+        public let name: String
+        public let time: Int
+        public let progressValue: Double
+        public let image: UIImage?
+        public let isHost: Bool
+    }
+
+    public var allContestantResults: [ContestantResult] {
+        var list: [ContestantResult] = []
+        let challenge = selectedChallenge ?? receivedChallenge
+        let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
+        let ownPicData = UserDefaults.standard.data(forKey: "savedProfileImageData")
+        let ownPic = ownPicData.flatMap { UIImage(data: $0) } ?? loadProfileImageFromDisk()
+
+        list.append(
+            ContestantResult(
+                name: ownName,
+                time: elapsedSeconds,
+                progressValue: challenge?.metricType == "distance" ? localDistance : localCalories,
+                image: ownPic,
+                isHost: isHost
+            )
+        )
+
+        let connectedPeers = multipeerManager?.connectedPeers ?? []
+        for peer in connectedPeers {
+            let stats = peerResults[peer.displayName]
+            let peerValue = challenge?.metricType == "distance"
+                ? (stats?.distance ?? partnerDistance[peer] ?? 0.0)
+                : (stats?.calories ?? partnerCalories[peer] ?? 0.0)
+
+            list.append(
+                ContestantResult(
+                    name: peer.displayName,
+                    time: stats?.elapsedSeconds ?? elapsedSeconds,
+                    progressValue: peerValue,
+                    image: getProfileImage(for: peer.displayName),
+                    isHost: false
+                )
+            )
+        }
+
+        return list.sorted {
+            if $0.time == 0 { return false }
+            if $1.time == 0 { return true }
+            return $0.time < $1.time
+        }
+    }
+
     // MARK: - Challenge Functions
     
     public func sendChallenge(_ challenge: WorkoutChallenge) {

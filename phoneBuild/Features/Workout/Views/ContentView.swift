@@ -425,125 +425,161 @@ struct ActiveWorkoutView: View {
 struct ResultsView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
     @State private var showLeaderboard = false
-    
+
     private var challenge: WorkoutChallenge? {
         viewModel.selectedChallenge ?? viewModel.receivedChallenge
-    }
-    
-    private var ownName: String {
-        UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
     }
 
     var body: some View {
         ZStack {
-            if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
-                Image("winBG")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            } else {
-                Image("loseBG")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-            }
-            
-            VStack {
+            Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winBG" : "loseBG")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                VStack(spacing: 4) {
+                    if let ch = challenge {
+                        Text("\(ch.challengeName) • \(ch.sport.rawValue)")
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+                    } else {
+                        Text("Workout Complete")
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
+                    }
+
+                    Text(Date(), style: .date)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 80)
+
                 Spacer()
-                
-                VStack(spacing: 24) {
-                    VStack(spacing: -16) {
-                        ZStack {
-                            if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
-                                Image(systemName: "trophy.fill")
-                                    .font(.system(size: 44))
-                                    .foregroundColor(.white)
-                                    .padding(24)
-                                    .glassEffect(.regular.tint(Color("appPrimary")))
-                                    .shadow(color: Color("appPrimary").opacity(1), radius: 32)
-                            } else {
-                                Image(systemName: "hands.clap.fill")
-                                    .font(.system(size: 36))
-                                    .foregroundColor(.white)
-                                    .padding(24)
-                                    .glassEffect(.regular.tint(.black))
-                                    .shadow(color: .black.opacity(0.6), radius: 32)
+
+                if !showLeaderboard {
+                    Button {
+                        withAnimation(.spring()) {
+                            showLeaderboard = true
+                        }
+                    } label: {
+                        VStack(spacing: 24) {
+                            ZStack {
+                                Image(viewModel.workoutResult == .victory || viewModel.workoutResult == .solo ? "winCardBg" : "loseCardBg")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                                    .cornerRadius(32)
+
+                                if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
+                                    Image(systemName: "trophy.fill")
+                                        .font(.system(size: 44))
+                                        .foregroundColor(.white)
+                                        .padding(24)
+                                        .glassEffect(.regular.tint(Color("appPrimary")))
+                                        .shadow(color: Color("appPrimary").opacity(1), radius: 32)
+                                } else {
+                                    Image(systemName: "hands.clap.fill")
+                                        .font(.system(size: 36))
+                                        .foregroundColor(.white)
+                                        .padding(24)
+                                        .glassEffect(.regular.tint(.black))
+                                        .shadow(color: .black.opacity(0.6), radius: 32)
+                                }
+                            }
+
+                            VStack(spacing: 12) {
+                                if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
+                                    Text("Congratulations!")
+                                        .font(.largeTitle.weight(.bold))
+                                        .foregroundStyle(.primary)
+
+                                    Text("You've just won")
+                                        .font(.body)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("Try again buddy!")
+                                        .font(.largeTitle.weight(.bold))
+                                        .foregroundStyle(.primary)
+
+                                    Text("Nice try on")
+                                        .font(.body)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Text(challenge?.challengeName ?? "Workout Complete")
+                                    .font(.title2.bold())
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.center)
                             }
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                                .fill(Color.black.opacity(0.8))
+                        )
+                        .glassEffect(in: .rect(cornerRadius: 32))
                     }
-                    
-                    VStack(spacing: 12) {
-                        if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
-                            Text("Congratulations!")
-                                .font(.largeTitle.weight(.bold))
-                                .foregroundStyle(.primary)
-                            
-                            Text("You've just won")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Try again buddy!")
-                                .font(.largeTitle.weight(.bold))
-                                .foregroundStyle(.primary)
-                            
-                            Text("Nice try on")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 24)
+
+                    Spacer()
+
+                    VStack(spacing: 6) {
+                        Image(systemName: "chevron.up")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                        Text("Tap the card above")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.bottom, 48)
+
+                    Spacer()
+                } else {
+                    VStack(spacing: 32) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 24) {
+                                ForEach(Array(viewModel.allContestantResults.enumerated()), id: \.element.name) { index, contestant in
+                                    let minutes = contestant.time / 60
+                                    let seconds = contestant.time % 60
+                                    let time = String(format: "%02d:%02d", minutes, seconds)
+
+                                    PlayerResultPod(
+                                        rank: "\(index + 1)",
+                                        name: contestant.name,
+                                        time: time,
+                                        image: contestant.image
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 24)
                         }
 
-                        if let ch = challenge {
-                            Text("\(ch.challengeName) • \(ch.sport.rawValue)")
-                                .font(.title3.bold())
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                        }
-                        
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                            .padding(.vertical, 8)
-                        
-                        HStack(spacing: 20) {
-                            metricItem(
-                                title: "Distance",
-                                value: String(format: "%.1f", challenge?.metricType == "distance" ? viewModel.localDistance : (viewModel.localDistance / 1000.0)),
-                                unit: challenge?.metricType == "distance" ? "m" : "km",
-                                icon: "figure.run"
-                            )
-                            
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                                .frame(height: 40)
-                            
-                            metricItem(
-                                title: "Time",
-                                value: viewModel.countdownText,
-                                unit: "min",
-                                icon: "stopwatch"
-                            )
-                        }
-                    }
-                    
-                    VStack(spacing: 12) {
-                        if viewModel.primaryConnectedPeer != nil && viewModel.workoutResult != .solo {
-                            Button(action: {
-                                withAnimation {
-                                    showLeaderboard = true
+                        VStack(spacing: 16) {
+                            if viewModel.primaryConnectedPeer != nil {
+                                Button {
+                                    viewModel.sendRematchRequest()
+                                } label: {
+                                    Text("Rematch")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(Color.flintRed)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .background(
+                                            Capsule()
+                                                .stroke(Color.flintRed, lineWidth: 2)
+                                        )
                                 }
-                            }) {
-                                Text("View Statistics")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .glassEffect(.regular, in: .capsule)
-                                    .shadow(color: Color.black.opacity(0.2), radius: 10, y: 5)
                             }
-                            
-                            Button(action: {
-                                viewModel.sendRematchRequest()
-                            }) {
-                                Text("Rematch")
-                                    .font(.headline)
+
+                            Button {
+                                viewModel.fullCleanup()
+                            } label: {
+                                Text("Back to home")
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 16)
@@ -552,157 +588,71 @@ struct ResultsView: View {
                                     .shadow(color: Color.flintRed.opacity(0.3), radius: 10, y: 5)
                             }
                         }
-                        
-                        Button(action: {
-                            withAnimation {
-                                viewModel.fullCleanup()
-                            }
-                        }) {
-                            Text("Done")
-                                .font(.headline)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .padding(.top, 8)
+                        .padding(.horizontal, 24)
                     }
-                    .padding(.top, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.bottom, 48)
                 }
-                .padding(32)
-                .background(
-                    ZStack {
-                        if viewModel.workoutResult == .victory || viewModel.workoutResult == .solo {
-                            Image("winCardBg")
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Image("loseCardBg")
-                                .resizable()
-                                .scaledToFill()
-                        }
-                        Color(red: 0.1, green: 0.1, blue: 0.1).opacity(0.65)
-                    }
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 32))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 32)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.3), radius: 30, y: 15)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
             }
         }
         .navigationBarBackButtonHidden(true)
-        .sheet(isPresented: $showLeaderboard) {
-            LeaderboardSheet(ownName: ownName)
-                .environmentObject(viewModel)
-        }
-    }
-    
-    private func metricItem(title: String, value: String, unit: String, icon: String) -> some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.caption)
-                Text(title)
-                    .font(.caption)
-            }
-            .foregroundColor(.white.opacity(0.5))
-            
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-                Text(unit)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-        }
-        .frame(maxWidth: .infinity)
+        .preferredColorScheme(.dark)
     }
 }
 
-// MARK: - Leaderboard Sheet
-struct LeaderboardSheet: View {
-    @EnvironmentObject var viewModel: iOSWorkoutViewModel
-    @Environment(\.dismiss) var dismiss
-    let ownName: String
-    
+struct PlayerResultPod: View {
+    let rank: String
+    let name: String
+    let time: String
+    let image: UIImage?
+
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                VStack(spacing: 24) {
-                    let ownVal = viewModel.localDistance
-                    let rivalID = viewModel.primaryConnectedPeer
-                    let rivalVal = rivalID != nil ? (viewModel.partnerDistance[rivalID!] ?? 0.0) : 0.0
-                    let rivalName = viewModel.primaryPartnerName
-                    
-                    let weWon = viewModel.workoutResult == .victory || viewModel.workoutResult == .solo
-                    
-                    participantRow(
-                        rank: weWon ? "1" : "2",
-                        name: "\(ownName) (You)",
-                        value: "\(String(format: "%.0f", ownVal))m",
-                        isWinner: weWon
-                    )
-                    
-                    if rivalID != nil {
-                        participantRow(
-                            rank: weWon ? "2" : "1",
-                            name: rivalName,
-                            value: "\(String(format: "%.0f", rivalVal))m",
-                            isWinner: !weWon
-                        )
+        VStack(spacing: 8) {
+            ZStack(alignment: .bottom) {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
+                        .clipShape(Circle())
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(width: 80, height: 80)
+
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white.opacity(0.6))
                     }
-                    
-                    Spacer()
                 }
-                .padding(.top, 32)
-                .padding(.horizontal, 24)
-            }
-            .navigationTitle("Final Results")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .foregroundColor(Color.flintRed)
+
+                ZStack {
+                    Circle()
+                        .fill(rank == "1" ? Color.flintRed : Color.white.opacity(0.18))
+                        .frame(width: 24, height: 24)
+
+                    Text(rank)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
                 }
+                .offset(y: 10)
             }
-        }
-        .preferredColorScheme(.dark)
-    }
-    
-    private func participantRow(rank: String, name: String, value: String, isWinner: Bool) -> some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(isWinner ? Color.flintRed : Color.white.opacity(0.1))
-                    .frame(width: 40, height: 40)
-                Text(rank)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(isWinner ? .white : .white.opacity(0.6))
-            }
-            
+            .padding(.bottom, 6)
+
             Text(name)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.white)
-            
-            Spacer()
-            
-            Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.8))
+                .lineLimit(1)
+
+            Text(time)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.6))
         }
-        .padding(16)
+        .frame(width: 110)
+        .padding(.vertical, 16)
         .background(Color.white.opacity(0.04))
         .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(isWinner ? Color.flintRed.opacity(0.3) : Color.white.opacity(0.05), lineWidth: 1)
-        )
     }
 }
 
