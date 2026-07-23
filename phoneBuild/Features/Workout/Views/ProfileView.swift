@@ -3,10 +3,12 @@ import PhotosUI
 
 struct ProfileView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
-    // Bug 1 fix: @AppStorage reactive terhadap perubahan UserDefaults
-    @AppStorage("savedUsername") private var username: String = "Nearfit Athlete"
     @State private var profileImage: UIImage? = nil
     @State private var selectedProfileItem: PhotosPickerItem? = nil
+
+    private var username: String {
+        UserDefaults.standard.string(forKey: "savedUsername") ?? "Nearfit Athlete"
+    }
 
     private var totalChallenges: Int {
         viewModel.pastWorkouts.count
@@ -23,46 +25,70 @@ struct ProfileView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
+            // Strict dark background
             Color(red: 0.05, green: 0.04, blue: 0.04)
                 .ignoresSafeArea()
-
+            
+            // Top ambient background gradient/image
             profileBackground
-
+            
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: 120)
-
+                    
+                    Spacer().frame(height: 120)
+                    
+                    // Main Profile Card
                     ZStack(alignment: .top) {
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
                             .fill(Color.black)
-
-                        VStack(spacing: 22) {
-                            Spacer()
-                                .frame(height: 50)
-
+                        // Card Background
+                        
+                        VStack(spacing: 24) {
+                            Spacer().frame(height: 50)
+                            // Space for overlapping avatar
+                            
+                            // Name
                             Text(username)
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.75)
-                                .padding(.horizontal, 24)
-
-                            statsGrid
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 28)
+                            
+                            // Stats Grid
+                            HStack(spacing: 16) {
+                                StatCard(title: "Challenges", value: "\(totalChallenges)", icon: "figure.run", iconColor: Color("appPrimary"))
+                                StatCard(title: "Wins", value: "\(wonChallenges)", icon: "trophy.fill", iconColor: Color("appPrimary"))
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 28)
+                            
                         }
-
+                        
+                        // Overlapping Avatar with Edit Button
                         profileAvatar
                             .offset(y: -40)
                     }
-                    .frame(minHeight: 306)
+                    .frame(height: 232)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 32)
-
-                    VStack(spacing: 32) {
+                    
+                    VStack(spacing: 32){
+                        
                         historySection
                             .padding(.top, 32)
+                        
+                        // Log Out CTA
+                        Button(action: {
+                            // Log out action here
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("Log Out")
+                                Image(systemName: "chevron.right")
+                            }
+                            .font(.subheadline.bold())
+                            .foregroundColor(Color("appPrimary"))
+                        }
+                        .padding(.vertical, 40)
+                        
                     }
                     .padding(.bottom, 120)
                     .background(
@@ -74,8 +100,7 @@ struct ProfileView: View {
             .ignoresSafeArea(edges: .all)
         }
         .onAppear {
-            // Bug 2 fix: baca dari Documents/profile.jpg
-            profileImage = loadProfileImageFromDisk()
+            loadLocalProfileImage()
         }
         .onChange(of: selectedProfileItem) { _, newItem in
             Task {
@@ -98,18 +123,19 @@ struct ProfileView: View {
                 )
             )
             .ignoresSafeArea()
+            // Add a red tint to match the design's hue if the image doesn't natively have it
             .overlay(Color("appPrimary").opacity(0.15).ignoresSafeArea())
     }
-
+        
     private var profileAvatar: some View {
         ZStack {
+            // Avatar Background/Image
             if let uiImage = profileImage {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 100, height: 100)
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1.5))
             } else {
                 Circle()
                     .fill(
@@ -125,9 +151,9 @@ struct ProfileView: View {
                             .font(.system(size: 40, weight: .semibold))
                             .foregroundColor(.white.opacity(0.8))
                     )
-                    .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1.5))
             }
-
+            
+            // Edit Pencil Button placed perfectly on the top-right curve edge
             PhotosPicker(selection: $selectedProfileItem, matching: .images) {
                 Image(systemName: "pencil")
                     .font(.system(size: 11, weight: .bold))
@@ -142,19 +168,9 @@ struct ProfileView: View {
         .frame(width: 100, height: 100)
     }
 
-    private var statsGrid: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 14) {
-                StatCard(title: "Challenges", value: "\(totalChallenges)", icon: "figure.run", iconColor: Color("appPrimary"))
-                StatCard(title: "Wins", value: "\(wonChallenges)", icon: "trophy.fill", iconColor: Color("appPrimary"))
-            }
-
-            StatCard(title: "Win Ratio", value: "\(winRatio)%", icon: "chart.line.uptrend.xyaxis", iconColor: Color("appOrange"))
-        }
-    }
-
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Section Header
             HStack {
                 Text("Challenge History")
                     .font(.headline.bold())
@@ -163,8 +179,9 @@ struct ProfileView: View {
                 Spacer()
 
                 Button {
+                    // See all action
                 } label: {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 2) {
                         Text("See all")
                         Image(systemName: "chevron.right")
                             .font(.caption2.bold())
@@ -176,6 +193,7 @@ struct ProfileView: View {
             }
             .padding(.horizontal, 24)
 
+            // Content
             if viewModel.pastWorkouts.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "clock.badge.exclamationmark")
@@ -210,6 +228,13 @@ struct ProfileView: View {
         }
     }
 
+    private func loadLocalProfileImage() {
+        if let data = UserDefaults.standard.data(forKey: "savedProfileImageData"),
+           let image = UIImage(data: data) {
+            self.profileImage = image
+        }
+    }
+
     @MainActor
     private func loadSelectedProfileImage(from item: PhotosPickerItem?) async {
         guard let item,
@@ -218,13 +243,12 @@ struct ProfileView: View {
             return
         }
 
-        // Bug 2 fix: simpan ke Documents/profile.jpg, bukan UserDefaults
         profileImage = image
-        saveProfileImageToDisk(image)
+        UserDefaults.standard.set(data, forKey: "savedProfileImageData")
     }
 }
 
-// MARK: - Row Components
+// MARK: - Subcomponents
 
 struct StatCard: View {
     let title: String
@@ -237,8 +261,6 @@ struct StatCard: View {
             Text(title)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
 
             HStack(spacing: 12) {
                 Circle()
@@ -253,8 +275,6 @@ struct StatCard: View {
                 Text(value)
                     .font(.title2.bold())
                     .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -272,22 +292,13 @@ struct HistoryRow: View {
 
     private var formattedDate: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy, HH:mm"
+        formatter.dateFormat = "d MMMM yyyy • HH:mm"
         return formatter.string(from: workout.date)
-    }
-
-    private var durationString: String {
-        let minutes = Int(workout.duration) / 60
-        let seconds = Int(workout.duration) % 60
-        if minutes > 0 {
-            return "\(minutes)m \(seconds)s"
-        } else {
-            return "\(seconds)s"
-        }
     }
 
     var body: some View {
         HStack(spacing: 16) {
+            // Icon
             Circle()
                 .fill(Color(white: 0.2))
                 .frame(width: 48, height: 48)
@@ -297,19 +308,12 @@ struct HistoryRow: View {
                         .foregroundColor(.white)
                 )
 
+            // Info
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(workout.type.rawValue)
-                        .font(.headline.bold())
-                        .foregroundColor(.white)
-
-                    if let partner = workout.partnerName {
-                        Text("vs \(partner)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
+                Text("\(workout.type.rawValue) vs \(workout.partnerName ?? "Partner")")
+                    .font(.headline.bold())
+                    .foregroundColor(.white)
+                    .lineLimit(1)
 
                 Text(formattedDate)
                     .font(.caption)
@@ -318,40 +322,22 @@ struct HistoryRow: View {
 
             Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(durationString)
-                    .font(.subheadline.bold())
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-
-                HStack(spacing: 8) {
-                    if workout.avgHeartRate > 0 {
-                        metricBadge(icon: "heart.fill", value: "\(Int(workout.avgHeartRate))", color: Color("appRed"))
-                    }
-
-                    if let cal = workout.calories, cal > 0 {
-                        metricBadge(icon: "flame.fill", value: String(format: "%.0f", cal), color: Color("appOrange"))
-                    }
-                }
-            }
+            // Right-side indicator (matching the circle style from design)
+            Circle()
+                .stroke(Color.secondary, lineWidth: 1.5)
+                .frame(width: 32, height: 32)
+                .overlay(
+                    Text("1") // Or swap for duration logic if you prefer dynamic text here
+                        .font(.subheadline.bold())
+                        .foregroundColor(.secondary)
+                )
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 16)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color(white: 0.12))
         )
-    }
-
-    private func metricBadge(icon: String, value: String, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundColor(color)
-            Text(value)
-                .font(.caption2.weight(.semibold))
-                .foregroundColor(.white.opacity(0.7))
-        }
     }
 }
 
