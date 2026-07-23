@@ -28,6 +28,7 @@ public final class MultipeerManager: NSObject {
     private let serviceType = "fit-challenge"
     private let maxRetryAttempts = 3
     private let retryDelayBase: TimeInterval = 1.0
+    private let maxPeers = 7
 
     public let peerID: MCPeerID
     public let session: MCSession
@@ -41,6 +42,8 @@ public final class MultipeerManager: NSObject {
         }
     }
     public private(set) var connectedPeers: [MCPeerID] = []
+    public var primaryConnectedPeer: MCPeerID? { connectedPeers.first }
+    public var connectedPeer: MCPeerID? { primaryConnectedPeer }
     public private(set) var connectingPeers: [MCPeerID] = []
     public private(set) var pendingInvitingPeer: MCPeerID?
     public private(set) var invitedPeer: MCPeerID?
@@ -124,6 +127,20 @@ public final class MultipeerManager: NSObject {
         stopBrowsing()
     }
 
+    public func fullReset() {
+        stopAll()
+        session.disconnect()
+        DispatchQueue.main.async {
+            self.connectedPeers.removeAll()
+            self.connectingPeers.removeAll()
+            self.invitedPeer = nil
+            self.pendingInvitingPeer = nil
+            self.foundPeers.removeAll()
+        }
+        startAdvertising()
+        print("[MP] Full reset complete")
+    }
+
     public func lockRoom() {
         isRoomLocked = true
         stopAll()
@@ -204,9 +221,7 @@ public final class MultipeerManager: NSObject {
     }
     
     public func setConnectedPeer(_ peer: MCPeerID) {
-        if !connectedPeers.contains(peer) {
-            connectedPeers.append(peer)
-        }
+        addConnectedPeer(peer)
         self.invitedPeer = nil
         self.onPeerConnected?(peer)
     }
@@ -226,6 +241,16 @@ public final class MultipeerManager: NSObject {
         }
     }
 
+    public func sendData(_ data: Data, to peers: [MCPeerID]) {
+        guard !peers.isEmpty else { return }
+        do {
+            try session.send(data, toPeers: peers, with: .reliable)
+            print("[MP] Sent \(data.count) bytes to \(peers.count) targeted peer(s)")
+        } catch {
+            print("[MP] Targeted send error: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Disconnect
 
     public func disconnect() {
@@ -238,6 +263,13 @@ public final class MultipeerManager: NSObject {
             self.foundPeers.removeAll()
         }
         print("[MP] Disconnected")
+    }
+
+    private func addConnectedPeer(_ peer: MCPeerID) {
+        guard !connectedPeers.contains(peer), connectedPeers.count < maxPeers else { return }
+        connectedPeers.append(peer)
+        invitedPeer = nil
+        print("[MP] Added connected peer: \(peer.displayName) (total: \(connectedPeers.count))")
     }
 }
 
@@ -393,11 +425,8 @@ extension MultipeerManager: MCSessionDelegate {
         case .connected:
             print("[MP] Connected to: \(peerID.displayName)")
             DispatchQueue.main.async {
-                if !self.connectedPeers.contains(peerID) {
-                    self.connectedPeers.append(peerID)
-                }
+                self.addConnectedPeer(peerID)
                 self.connectingPeers.removeAll { $0 == peerID }
-                self.invitedPeer = nil
                 self.onPeerConnected?(peerID)
             }
 

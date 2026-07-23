@@ -88,6 +88,9 @@ public struct MultipeerMessage: Codable {
         case rematchRequest // Requesting a rematch
         case acceptRematch // Accepting a rematch request
         case profilePhoto // User's resized profile photo (JPEG data in payload)
+        case joinRoom // Host signals peers to enter the room
+        case workoutResults // Final workout stats broadcast
+        case profileExchange // Share display name and profile picture
     }
     public let type: MessageType
     public let payload: Data
@@ -98,6 +101,11 @@ public struct MultipeerMessage: Codable {
     }
 }
 
+public struct PeerProfile: Codable {
+    public let displayName: String
+    public let profileImageData: Data?
+}
+
 public struct WorkoutProgressPayload: Codable {
     public let progressValue: Double
     public let progressRatio: Double
@@ -105,6 +113,14 @@ public struct WorkoutProgressPayload: Codable {
     public let steps: Double
     public let speed: Double
     public let elevation: Double
+}
+
+public struct WorkoutResultsPayload: Codable {
+    public let senderResult: String
+    public let distance: Double
+    public let elapsedSeconds: Int
+    public let calories: Double
+    public let steps: Double
 }
 
 public enum WorkoutResult: String, Codable {
