@@ -67,21 +67,21 @@ struct RoomFormedView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
 
-                            if !viewModel.partnerWatchConnected {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "exclamationmark.applewatch")
-                                        .foregroundColor(.orange)
-                                    Text("\(viewModel.currentRoom?.partnerName ?? "Partner") is not connected to their Apple Watch.")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                }
-                                .padding(14)
-                                .background(Color.white.opacity(0.06))
-                                .cornerRadius(16)
-                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.orange.opacity(0.35), lineWidth: 1))
-                                .padding(.top, 8)
-                            }
+//                            if !viewModel.partnerWatchConnected {
+//                                HStack(spacing: 12) {
+//                                    Image(systemName: "exclamationmark.applewatch")
+//                                        .foregroundColor(.orange)
+//                                    Text("\(viewModel.currentRoom?.partnerName ?? "Partner") is not connected to their Apple Watch.")
+//                                        .font(.system(size: 12, weight: .semibold))
+//                                        .foregroundColor(.white)
+//                                    Spacer()
+//                                }
+//                                .padding(14)
+//                                .background(Color.white.opacity(0.06))
+//                                .cornerRadius(16)
+//                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.orange.opacity(0.35), lineWidth: 1))
+//                                .padding(.top, 8)
+//                            }
 
                             // SECTION 1: Who's in
                             let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
