@@ -510,12 +510,8 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         hasSentTokenACK = false
 
         var discoveryInfo: [String: String] = [:]
-        if let imageData = UserDefaults.standard.data(forKey: "savedProfileImageData"),
-           let image = UIImage(data: imageData),
+        if let image = loadProfileImageFromDisk(),
            let profileBase64 = makeDiscoveryProfileImageBase64(from: image) {
-            discoveryInfo["pic"] = profileBase64
-        } else if let image = loadProfileImageFromDisk(),
-                  let profileBase64 = makeDiscoveryProfileImageBase64(from: image) {
             discoveryInfo["pic"] = profileBase64
         }
 
@@ -937,8 +933,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
 
     private func sendProfileToAll() {
         let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "Player"
-        let ownPicData = UserDefaults.standard.data(forKey: "savedProfileImageData")
-            ?? loadProfileImageFromDisk()?.jpegData(compressionQuality: 0.7)
+        let ownPicData = loadProfileImageFromDisk()?.jpegData(compressionQuality: 0.7)
         let profile = PeerProfile(displayName: ownName, profileImageData: ownPicData)
 
         if let encoded = try? JSONEncoder().encode(profile) {
@@ -977,8 +972,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         var list: [ContestantResult] = []
         let challenge = selectedChallenge ?? receivedChallenge
         let ownName = UserDefaults.standard.string(forKey: "savedUsername") ?? "You"
-        let ownPicData = UserDefaults.standard.data(forKey: "savedProfileImageData")
-        let ownPic = ownPicData.flatMap { UIImage(data: $0) } ?? loadProfileImageFromDisk()
+        let ownPic = loadProfileImageFromDisk()
 
         list.append(
             ContestantResult(

@@ -229,9 +229,13 @@ struct ProfileView: View {
     }
 
     private func loadLocalProfileImage() {
-        if let data = UserDefaults.standard.data(forKey: "savedProfileImageData"),
-           let image = UIImage(data: data) {
+        if let image = loadProfileImageFromDisk() {
             self.profileImage = image
+        } else if let data = UserDefaults.standard.data(forKey: "savedProfileImageData"),
+                  let image = UIImage(data: data) {
+            // Fallback for older versions, then save it to disk for future
+            self.profileImage = image
+            saveProfileImageToDisk(image)
         }
     }
 
@@ -244,7 +248,8 @@ struct ProfileView: View {
         }
 
         profileImage = image
-        UserDefaults.standard.set(data, forKey: "savedProfileImageData")
+        // Save to disk with compression instead of raw Data to UserDefaults
+        saveProfileImageToDisk(image)
     }
 }
 
