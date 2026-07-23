@@ -254,6 +254,10 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 guard self.appState == .activeWorkout else { return }
                 
                 let incomingSessionId = state["sessionId"] as? String ?? ""
+                if !incomingSessionId.isEmpty && incomingSessionId != self.activeWorkoutSessionId {
+                    print("[iOS] Ignoring stale data from previous watch session: \(incomingSessionId)")
+                    return
+                }
                 
                 if let hr = state["heartRate"] as? Double, hr > 0 {
                     self.heartRate = hr
@@ -1448,6 +1452,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.watchCalories = 0.0
             self.heartRate = 0.0
             self.countdownText = "00:00"
+            self.countdownSeconds = -1
             self.localDistance = 0.0
             self.localCalories = 0.0
             self.localProgress = 0.0
@@ -1457,6 +1462,7 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
             self.elapsedSeconds = 0
             self.selectedChallenge = nil
             self.receivedChallenge = nil
+            self.workoutResult = .solo
             
             // Route based on role: host goes to workoutSetup, guest goes to room formed
             self.appState = self.isHost ? .workoutSetup : .room
