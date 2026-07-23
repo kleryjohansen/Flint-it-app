@@ -49,6 +49,12 @@ public struct PastWorkout: Identifiable, Codable {
 public struct PeerInfo: Identifiable, Equatable {
     public let id: MCPeerID
     public var displayName: String { id.displayName }
+    public var profileImageBase64: String?
+
+    public init(id: MCPeerID, profileImageBase64: String? = nil) {
+        self.id = id
+        self.profileImageBase64 = profileImageBase64
+    }
 
     public static func == (lhs: PeerInfo, rhs: PeerInfo) -> Bool {
         lhs.id == rhs.id

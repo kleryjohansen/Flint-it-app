@@ -5,6 +5,7 @@ import MultipeerConnectivity
 import HealthKit
 import AVFoundation
 import AudioToolbox
+import UIKit
 
 
 // MARK: - Room Participant
@@ -499,7 +500,17 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
         hasReceivedPeerToken = false
         hasSentTokenACK = false
 
-        let manager = MultipeerManager(customDisplayName: userName)
+        var discoveryInfo: [String: String] = [:]
+        if let imageData = UserDefaults.standard.data(forKey: "savedProfileImageData"),
+           let image = UIImage(data: imageData),
+           let profileBase64 = makeDiscoveryProfileImageBase64(from: image) {
+            discoveryInfo["pic"] = profileBase64
+        } else if let image = loadProfileImageFromDisk(),
+                  let profileBase64 = makeDiscoveryProfileImageBase64(from: image) {
+            discoveryInfo["pic"] = profileBase64
+        }
+
+        let manager = MultipeerManager(customDisplayName: userName, discoveryInfo: discoveryInfo)
         self.multipeerManager = manager
 
         manager.onFoundPeersChanged = { [weak self] peers in
@@ -746,6 +757,21 @@ public class iOSWorkoutViewModel: NSObject, ObservableObject {
                 }
             }
         }
+    }
+
+    private func makeDiscoveryProfileImageBase64(from image: UIImage) -> String? {
+        let targetSize = CGSize(width: 32, height: 32)
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let smallImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+
+        guard let jpegData = smallImage.jpegData(compressionQuality: 0.1) else {
+            return nil
+        }
+
+        let base64 = jpegData.base64EncodedString()
+        return base64.count < 350 ? base64 : nil
     }
     
     // MARK: - Token Exchange Handshake

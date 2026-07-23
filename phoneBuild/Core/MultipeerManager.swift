@@ -61,14 +61,14 @@ public final class MultipeerManager: NSObject {
 
     // MARK: - Init
 
-    public init(customDisplayName: String) {
+    public init(customDisplayName: String, discoveryInfo: [String: String]? = nil) {
         self.peerID = MCPeerID(displayName: customDisplayName)
         self.session = MCSession(
             peer: peerID,
             securityIdentity: nil,
             encryptionPreference: .none
         )
-        self.advertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: serviceType)
+        self.advertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: discoveryInfo, serviceType: serviceType)
         self.browser = MCNearbyServiceBrowser(peer: peerID, serviceType: serviceType)
 
         super.init()
@@ -245,7 +245,7 @@ public final class MultipeerManager: NSObject {
 
 extension MultipeerManager: MCNearbyServiceBrowserDelegate {
     public func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String: String]?) {
-        let peerInfo = PeerInfo(id: peerID)
+        let peerInfo = PeerInfo(id: peerID, profileImageBase64: info?["pic"])
         DispatchQueue.main.async {
             if !self.foundPeers.contains(peerInfo) {
                 self.foundPeers.append(peerInfo)
