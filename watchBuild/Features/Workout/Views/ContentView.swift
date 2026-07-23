@@ -136,7 +136,7 @@ struct WatchWorkoutView: View {
         .background(Color.black.ignoresSafeArea())
     }
 
-    // MARK: Top bar — workout icon + live clock
+    // MARK: Top bar — workout icon
     private var topBar: some View {
         HStack {
             ZStack {
@@ -159,44 +159,34 @@ struct WatchWorkoutResultView: View {
     @ObservedObject var viewModel: WatchWorkoutViewModel
 
     var body: some View {
-        ZStack {
-            Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-            
-            Color.black.opacity(0.6)
-                .ignoresSafeArea()
-            
+        ScrollView {
             VStack(spacing: 8) {
-                Spacer()
-                
                 // Central Trophy / Clapping badge with rays
                 ZStack {
                     Image(viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" ? "winBackground" : "loseBackground")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 110, height: 110)
+                        .frame(width: 100, height: 100)
                         .opacity(0.85)
                     
                     ZStack {
                         Circle()
                             .fill(Color("appPrimary"))
-                            .frame(width: 54, height: 54)
+                            .frame(width: 50, height: 50)
                             .shadow(color: Color("appPrimary").opacity(0.4), radius: 6)
                         
                         if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
                             Image(systemName: "trophy.fill")
-                                .font(.system(size: 26))
+                                .font(.system(size: 24))
                                 .foregroundColor(.white)
                         } else {
                             Image(systemName: "hands.clap.fill")
-                                .font(.system(size: 26))
+                                .font(.system(size: 24))
                                 .foregroundColor(.white)
                         }
                     }
                 }
-                .frame(height: 110)
+                .frame(height: 100)
                 
                 VStack(spacing: 2) {
                     if viewModel.workoutResult == "Victory" || viewModel.workoutResult == "Solo" {
@@ -235,12 +225,11 @@ struct WatchWorkoutResultView: View {
                 .background(Color.white.opacity(0.12))
                 .clipShape(Capsule())
                 .padding(.top, 4)
-                
-                Spacer()
             }
             .padding(.horizontal, 6)
             .padding(.bottom, 8)
         }
+        .background(Color.black.ignoresSafeArea())
     }
 }
 
