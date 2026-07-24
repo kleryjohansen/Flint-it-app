@@ -3,6 +3,7 @@ import PhotosUI
 
 struct ProfileView: View {
     @EnvironmentObject var viewModel: iOSWorkoutViewModel
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var profileImage: UIImage? = nil
     @State private var selectedProfileItem: PhotosPickerItem? = nil
 
@@ -78,7 +79,7 @@ struct ProfileView: View {
                         
                         // Log Out CTA
                         Button(action: {
-                            // Log out action here
+                            hasCompletedOnboarding = false
                         }) {
                             HStack(spacing: 4) {
                                 Text("Log Out")
